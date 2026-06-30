@@ -39,12 +39,12 @@ For each station, figures are summed across **every 2020 Census tract within
 tracts, so all of them are included). Roosevelt sits on a boundary and spans
 four tracts; the other three points are tract-interior.
 
-| Station | Census tract(s) within 50 ft | Jobs | Households |
-|---------|------------------------------|-----:|-----------:|
-| Roosevelt | 3206, 3301.02, 3302, 8390 | 11,533 | 19,458 |
-| Taylor/Clinton | 8419 | 24,894 | 1,671 |
-| Union Station (West) | 2819 | 37,015 | 4,529 |
-| Randolph/Clinton | 2801 | 29,493 | 5,641 |
+| Station | Census tract(s) within 50 ft | Residents | Jobs | Households |
+|---------|------------------------------|----------:|-----:|-----------:|
+| Roosevelt | 3206, 3301.02, 3302, 8390 | 32,626 | 11,533 | 19,458 |
+| Taylor/Clinton | 8419 | 6,567 | 24,894 | 1,671 |
+| Union Station (West) | 2819 | 6,907 | 37,015 | 4,529 |
+| Randolph/Clinton | 2801 | 7,742 | 29,493 | 5,641 |
 
 ## Data and methodology
 
@@ -76,6 +76,11 @@ Total households, ACS table **B11001 (Household Type)**, estimate `B11001_001`,
 **ACS 2024 5-year (2020–2024)**, retrieved per tract from the Census Reporter API
 and summed across each station's tract set.
 
+### Residents (population)
+Total population, ACS table **B01003 (Total Population)**, estimate `B01003_001`,
+**ACS 2024 5-year (2020–2024)**, retrieved per tract from the Census Reporter API
+and summed across each station's tract set.
+
 > **Vintage note:** the jobs figure is LODES 2023 and the households figure is
 > ACS 2020–2024. They are close but not the same reference year.
 
@@ -97,6 +102,8 @@ cannot reach the database or APIs) and embedded in the HTML.
   <https://lehd.ces.census.gov/data/lodes/LODES8/il/wac/>
 - **Households** — U.S. Census Bureau, ACS 5-year table B11001, via
   [Census Reporter](https://censusreporter.org/) (<https://api.censusreporter.org/>).
+- **Residents (population)** — U.S. Census Bureau, ACS 5-year table B01003, via
+  [Census Reporter](https://censusreporter.org/).
 - **Census tract boundaries** — U.S. Census Bureau 2020 TIGER/Line.
 - **CRCL alignment & stations** — CrossTowner concept data in the
   [Chicago Cityscape](https://www.chicagocityscape.com/) database.
