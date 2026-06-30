@@ -9,7 +9,7 @@ Status: **working first version**, two enhancements left to wire up (below).
 ---
 
 ## Files (in this directory, `~/Sites/BuildTheTunnel/`)
-- `CRCL_3D_flythrough.html` — the viewer (single file, data embedded inline).
+- `index.html` — the viewer (single file, data embedded inline).
 - `crcl_geo.json` — **finalized** geometry/animation data (use this; see below).
 
 The HTML currently has an OLDER embedded dataset (unsmoothed 419-pt path, 294
@@ -26,7 +26,7 @@ server in this dir and open via http:
 
 ```bash
 python3 -m http.server 8000
-# then http://localhost:8000/CRCL_3D_flythrough.html
+# then http://localhost:8000/index.html
 ```
 
 Needs internet (MapLibre CDN + OpenFreeMap tiles).

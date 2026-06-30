@@ -6,12 +6,12 @@ proposed line of the CrossTowner transit concept — over real extruded building
 The camera dwells at each of the four stations and shows how many **jobs** and
 **households** are in the surrounding Census tract(s).
 
-The whole thing is one HTML file (`CRCL_3D_flythrough.html`) with the geometry
+The whole thing is one HTML file (`index.html`) with the geometry
 and statistics embedded inline, so it runs straight from disk.
 
 ## Running it
 
-Open `CRCL_3D_flythrough.html` in any modern browser. It needs an internet
+Open `index.html` in any modern browser. It needs an internet
 connection for the MapLibre library (CDN) and the OpenFreeMap vector tiles, but
 no server and no API keys — all CRCL geometry and the per-station statistics are
 baked into the file.
@@ -111,7 +111,7 @@ OpenStreetMap."**
 
 | File | Purpose |
 |------|---------|
-| `CRCL_3D_flythrough.html` | The viewer (data embedded inline). |
+| `index.html` | The viewer (data embedded inline). |
 | `crcl_geo.json` | Finalized geometry: camera `path`, drawn `line`, and `stations`. |
 | `CRCL_3D_FLYTHROUGH_HANDOFF.md` | Build/handoff notes and backlog. |
 
