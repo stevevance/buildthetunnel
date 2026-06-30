@@ -9,6 +9,8 @@
  #ui{position:absolute;left:12px;top:12px;z-index:5;font:14px system-ui;background:rgba(255,255,255,.9);
      padding:10px 12px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.2)}
  #ui b{color:#8d5a99}
+ #ui a{color:#8d5a99;font-weight:600;text-decoration:none}
+ #ui a:hover{text-decoration:underline}
  button{font:13px system-ui;margin-top:6px;margin-right:6px;padding:6px 10px;border:0;border-radius:8px;background:#8d5a99;color:#fff;cursor:pointer}
  label{display:block;margin-top:6px}
  #now{margin-top:8px;font-weight:600;color:#d62728;min-height:18px}
@@ -30,6 +32,7 @@
 <div id="map"></div>
 <div id="ui">
   <div><b>Clinton-Roosevelt Connector Line</b> &mdash; 3D flythrough</div>
+  <div style="margin-top:2px"><a href="https://buildthetunnel.org" target="_blank" rel="noopener">BuildTheTunnel.org &rarr;</a></div>
   <label>Pitch <input id="pitch" type="range" min="0" max="80" value="62"></label>
   <label>Zoom <input id="zoom" type="range" min="14" max="17.5" step="0.1" value="16"></label>
   <button id="pause">Pause</button>
