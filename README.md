@@ -1,109 +1,109 @@
-# CRCL 3D flythrough
+# Transit line 3D flythrough
 
-A self-contained [MapLibre GL JS](https://maplibre.org/) viewer that flies a
-pitched 3D camera along the **Clinton-Roosevelt Connector Line (CRCL)** — a
-proposed line of the CrossTowner transit concept — over real extruded buildings.
-The camera dwells at each of the four stations and shows how many **jobs** and
-**households** are in the surrounding Census tract(s).
+A [MapLibre GL JS](https://maplibre.org/) viewer that flies a pitched 3D camera
+along a transit line over real extruded buildings. It opens by framing the whole
+line, then dives to the start and travels stop to stop, dwelling at each station.
 
-The whole thing is one HTML file (`index.html`) with the geometry
-and statistics embedded inline, so it runs straight from disk.
+Four lines are selectable, each directly linkable via a URL hash:
+
+| Line | Status | Permalink |
+|------|--------|-----------|
+| **Chicago — Clinton–Roosevelt Connector (CRCL)** | proposed | [`#crcl`](https://stevevance.github.io/buildthetunnel/#crcl) |
+| **Toulouse — Ligne C (Line 3)** | under construction | [`#toulouse`](https://stevevance.github.io/buildthetunnel/#toulouse) |
+| **Austin — Light Rail (Project Connect)** | planned | [`#austin`](https://stevevance.github.io/buildthetunnel/#austin) |
+| **Hamburg — U5** | under construction / planned | [`#hamburg`](https://stevevance.github.io/buildthetunnel/#hamburg) |
+
+The viewer is `index.html` plus `lines.js` (the line datasets). It runs straight
+from disk — no server and no API keys — because all geometry and statistics are
+baked into `lines.js`.
 
 ## Running it
 
-Open `index.html` in any modern browser. It needs an internet
-connection for the MapLibre library (CDN) and the OpenFreeMap vector tiles, but
-no server and no API keys — all CRCL geometry and the per-station statistics are
-baked into the file.
+Open `index.html` in any modern browser, or visit the live version at
+<https://stevevance.github.io/buildthetunnel/>. It needs an internet connection
+for the MapLibre library (CDN) and the OpenFreeMap vector tiles only.
 
 ### Controls
+- **Line** selector switches lines (also settable via the `#`-permalink).
 - **Pitch / Zoom** sliders adjust the camera.
-- **Pause / Play** pauses and resumes the flythrough (you can still drag to look around while paused).
-- **Replay** restarts from the south end.
-- **Drag** to look around at any time.
+- **▶ / ⏸** plays or pauses; pausing (or clicking a station, or dragging) keeps
+  the current position so you can pan and explore. **Resume** continues from
+  where it stopped.
+- **Replay** restarts from the beginning.
+- **Click a station** to re-show its label.
 
 ## What you see
 
-- A dashed purple **tunnel alignment** with a soft "trench" casing. MapLibre
-  GL JS cannot place geometry below ground level, so the subsurface line is drawn
-  with the conventional cartographic tunnel treatment rather than true 3D depth.
-- Four red **station markers**. The camera decelerates into each, dwells ~5 s
-  while a callout shows the jobs/households figures, then accelerates out.
-- Two teal **non-dwell annotations** at the ends: *"Connection to Metra Electric
-  District"* (south) and *"Low Line connection"* (north).
+- The **alignment**: a dashed line with a soft "trench" casing for subway/tunnel
+  lines (CRCL, Hamburg U5) or a solid line for surface/elevated lines (Toulouse,
+  Austin). MapLibre GL JS cannot place geometry below grade, so subsurface track
+  uses the conventional cartographic tunnel treatment rather than true 3D depth.
+- **Station markers**. The camera decelerates into each and dwells while a callout
+  appears.
+- Per line, optional extras:
+  - **Existing-rail context** drawn as a muted grey dashed network beneath the
+    featured line — the **Metra** network under CRCL, and the existing
+    **MetroRail Red Line** under Austin.
+  - **Census callouts** (U.S. lines only) showing residents, jobs, and households
+    for each station's tract — CRCL and Austin.
+  - **Branch announcements** for Austin's Y-shaped route (see below).
+  - A secondary info box (CRCL) linking <https://buildthetunnelchicago.org>.
 
-## Stations: jobs and households
+### Austin's Y-shaped tour
+The Austin light rail splits into two branches at a downtown junction (near the
+Waterfront stop). The flythrough runs the trunk (38th St → junction), continues
+down one branch to Oltorf, **flies back to the split**, then runs the other
+branch to Yellow Jacket, with an on-screen banner announcing each leg.
 
-For each station, figures are summed across **every 2020 Census tract within
-50 ft of the station point** (a point on a tract boundary can touch several
-tracts, so all of them are included). Roosevelt sits on a boundary and spans
-four tracts; the other three points are tract-interior.
+## Data sources
 
-| Station | Census tract(s) within 50 ft | Residents | Jobs | Households |
-|---------|------------------------------|----------:|-----:|-----------:|
-| Roosevelt | 3206, 3301.02, 3302, 8390 | 32,626 | 11,533 | 19,458 |
-| Taylor/Clinton | 8419 | 6,567 | 24,894 | 1,671 |
-| Union Station (West) | 2819 | 6,907 | 37,015 | 4,529 |
-| Randolph/Clinton | 2801 | 7,742 | 29,493 | 5,641 |
+### Line alignments and stations
+- **CRCL** geometry comes from the CrossTowner alignment in the
+  [Chicago Cityscape](https://www.chicagocityscape.com/) PostGIS database
+  (`b_crosstowner_lines` / `b_crosstowner_stations`). Processed in QGIS: reproject
+  to EPSG:3435, Chaikin-smooth (4 iterations), resample to ~25 ft spacing (670
+  points), reproject back to EPSG:4326.
+- **Toulouse, Austin, and Hamburg** alignments and stations — and the existing
+  **Metra** and **MetroRail** context overlays — come from **Transit Explorer**,
+  the interactive transit map by **[The Transport Politic](https://www.thetransportpolitic.com/)**
+  (Yonah Freemark): <https://www.transitexplorer.com/>. They are pulled from the
+  mirrored `transitexplorer_lines_20260405` / `transitexplorer_stations_20260405`
+  tables in the Chicago Cityscape database (filtered by agency, line, and status),
+  then, per line, the drawn alignment is simplified into a smooth camera `path`
+  and each station is projected to its along-track position.
 
-## Data and methodology
+### Station statistics (U.S. lines: CRCL and Austin)
+For each station, figures are taken from its 2020 Census tract(s):
 
-### CRCL geometry (`crcl_geo.json`)
-The line and camera path come from the CrossTowner alignment stored in the
-[Chicago Cityscape](https://www.chicagocityscape.com/) PostGIS database (layer
-`b_crosstowner_lines`, feature *Clinton-Roosevelt Connector Line (CRCL)*).
-Processing, in QGIS:
+- **Jobs (workplace)** — total jobs (`C000`) from the U.S. Census Bureau **LEHD
+  LODES8 Workplace Area Characteristics (WAC)**, vintage **2023**
+  (`il_wac_S000_JT00_2023` for CRCL, `tx_wac_S000_JT00_2023` for Austin), block
+  counts aggregated to tracts.
+- **Households** — ACS table **B11001** (`B11001_001`), **ACS 2024 5-year**, via
+  the [Census Reporter](https://censusreporter.org/) API.
+- **Residents** — ACS table **B01003** (`B01003_001`), **ACS 2024 5-year**, via
+  Census Reporter.
 
-1. Reproject to **EPSG:3435** (Illinois State Plane East, US feet).
-2. Round corners with **Chaikin smoothing (4 iterations)**.
-3. Resample to a uniform **~25 ft** point spacing (670 points).
-4. Reproject back to **EPSG:4326** for the web map.
+CRCL sums across every 2020 tract within 50 ft of the station point (Roosevelt
+spans four tracts on a boundary); Austin uses each station's containing 2020 tract
+(all 15 are in Travis County). Non-U.S. lines (Toulouse, Hamburg) show
+name-only callouts. All statistics are precomputed and embedded in `lines.js`.
 
-Stations come from `b_crosstowner_stations`; the four CRCL stops carry the
-`X1`–`X4` tags. (Union Station Riverside is intentionally excluded — it is ~619 ft
-off on the parallel SCAL line.)
-
-### Jobs (workplace)
-Total jobs (`C000`) from the U.S. Census Bureau **LEHD LODES8 Workplace Area
-Characteristics (WAC)** dataset for Illinois, vintage **2023**
-(`il_wac_S000_JT00_2023` — S000 = all workers, JT00 = all jobs). Block-level
-counts are aggregated to 2020 Census tracts and summed across each station's
-tract set. This is the same column and aggregation used by the Chicago Cityscape
-Demographics Snapshot "Jobs (workplace)" metric.
-
-### Households
-Total households, ACS table **B11001 (Household Type)**, estimate `B11001_001`,
-**ACS 2024 5-year (2020–2024)**, retrieved per tract from the Census Reporter API
-and summed across each station's tract set.
-
-### Residents (population)
-Total population, ACS table **B01003 (Total Population)**, estimate `B01003_001`,
-**ACS 2024 5-year (2020–2024)**, retrieved per tract from the Census Reporter API
-and summed across each station's tract set.
-
-> **Vintage note:** the jobs figure is LODES 2023 and the households figure is
-> ACS 2020–2024. They are close but not the same reference year.
-
-### Tract boundaries
-Point-in-tract and the 50-ft buffer test use **2020 TIGER/Line Census tract**
-geometry (`b_census_tracts_illinois_2020`, EPSG:3435). 2020 tracts are used to
-match the vintage of the LODES8 block geocodes.
-
-The per-station statistics are precomputed (this viewer runs from `file://` and
-cannot reach the database or APIs) and embedded in the HTML.
+> **Vintage note:** jobs are LODES 2023 while households/residents are ACS
+> 2020–2024 — close but not the same reference year.
 
 ## Sources
 
 - **Base map & 3D buildings** — [OpenFreeMap](https://openfreemap.org/) "Liberty"
-  style and vector tiles. © OpenMapTiles, data © OpenStreetMap contributors
-  (rendered via MapLibre).
+  style and vector tiles. © OpenMapTiles, data © OpenStreetMap contributors.
 - **Map library** — [MapLibre GL JS](https://github.com/maplibre/maplibre-gl-js) v4.7.1.
+- **Transit line geometry & stations (Toulouse, Austin, Hamburg; Metra/MetroRail
+  context)** — [Transit Explorer](https://www.transitexplorer.com/) by
+  [The Transport Politic](https://www.thetransportpolitic.com/) (Yonah Freemark).
 - **Jobs** — U.S. Census Bureau, LEHD LODES8 WAC:
-  <https://lehd.ces.census.gov/data/lodes/LODES8/il/wac/>
-- **Households** — U.S. Census Bureau, ACS 5-year table B11001, via
-  [Census Reporter](https://censusreporter.org/) (<https://api.censusreporter.org/>).
-- **Residents (population)** — U.S. Census Bureau, ACS 5-year table B01003, via
-  [Census Reporter](https://censusreporter.org/).
+  <https://lehd.ces.census.gov/data/lodes/LODES8/>
+- **Households / Residents** — U.S. Census Bureau ACS 5-year (tables B11001,
+  B01003) via [Census Reporter](https://censusreporter.org/).
 - **Census tract boundaries** — U.S. Census Bureau 2020 TIGER/Line.
 - **CRCL alignment & stations** — CrossTowner concept data in the
   [Chicago Cityscape](https://www.chicagocityscape.com/) database.
@@ -118,8 +118,9 @@ OpenStreetMap."**
 
 | File | Purpose |
 |------|---------|
-| `index.html` | The viewer (data embedded inline). |
-| `crcl_geo.json` | Finalized geometry: camera `path`, drawn `line`, and `stations`. |
+| `index.html` | The viewer — map, camera engine, UI, and per-line theming. |
+| `lines.js` | The line datasets and the `TRANSIT_LINES` config registry. |
+| `crcl_geo.json` | The finalized CRCL geometry (camera `path`, drawn `line`, `stations`). |
 
 Rendered video files (`*.mp4`, `*.mov`) are gitignored — they exceed GitHub's
 file-size limits and the live viewer reproduces the flythrough.
