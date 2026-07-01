@@ -14,6 +14,7 @@
  #ui a{color:var(--accent);font-weight:600;text-decoration:none}
  #ui a:hover{text-decoration:underline}
  button{font:13px system-ui;margin-top:6px;margin-right:6px;padding:6px 10px;border:0;border-radius:8px;background:var(--accent);color:#fff;cursor:pointer}
+ #pause{min-width:38px;padding:6px 12px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle}
  label{display:block;margin-top:6px}
  select{font:13px system-ui;margin-top:2px;padding:4px 6px;border-radius:6px;border:1px solid #ccc;max-width:230px}
  #now{margin-top:8px;font-weight:600;color:#d62728;min-height:18px}
@@ -32,9 +33,11 @@
  .callout .maplibregl-popup-content{background:var(--accent);color:#fff;font:13px system-ui;
      padding:8px 12px;border-radius:9px;box-shadow:0 3px 10px rgba(0,0,0,.35);white-space:nowrap;text-align:center}
  .callout .ttl{font-weight:700;font-size:14px;margin-bottom:3px}
- .callout .job{font-size:13px}
- .callout .job b{font-size:16px}
  .callout .sub{font-size:11px;opacity:.8;margin-top:2px}
+ /* census stats: left-aligned "Label: value", label and value the same size */
+ .callout .census{text-align:left}
+ .callout .census .row{font-size:13px;line-height:1.5}
+ .callout .census .v{font-weight:700;margin-left:4px}
  .callout.maplibregl-popup-anchor-bottom .maplibregl-popup-tip{border-top-color:var(--accent)}
  .callout.maplibregl-popup-anchor-top .maplibregl-popup-tip{border-bottom-color:var(--accent)}
  /* non-dwell annotation callout (teal) */
@@ -57,8 +60,8 @@
   </label>
   <label>Pitch <input id="pitch" type="range" min="0" max="80" value="62"></label>
   <label>Zoom <input id="zoom" type="range" min="14" max="17.5" step="0.1" value="16"></label>
-  <button id="pause">Pause</button>
-  <button id="play">Replay</button>
+  <button id="pause" title="Pause"><svg width="10" height="12" viewBox="0 0 10 12" aria-hidden="true" style="vertical-align:-1px"><rect width="3.5" height="12" fill="#fff"/><rect x="6.5" width="3.5" height="12" fill="#fff"/></svg></button>
+  <button id="play" title="Replay">Replay</button>
   <span style="font-size:11px;color:#555">drag to pan &middot; click a station</span>
   <div id="now"></div>
   <div id="legend"></div>
@@ -140,11 +143,11 @@ function showCallout(st){
     const jobs = (st.jobs!=null) ? st.jobs.toLocaleString() : '—';
     const hh   = (st.households!=null) ? st.households.toLocaleString() : '—';
     const pop  = (st.population!=null) ? st.population.toLocaleString() : '—';
-    html = '<div class="ttl">'+st.name+'</div>'
-      + '<div class="job"><b>'+pop+'</b> residents</div>'
-      + '<div class="job"><b>'+jobs+'</b> jobs</div>'
-      + '<div class="job"><b>'+hh+'</b> households</div>'
-      + '<div class="sub">in '+(st.tractName||'this Census tract')+'</div>';
+    html = '<div class="census"><div class="ttl">'+st.name+'</div>'
+      + '<div class="row">Residents:<span class="v">'+pop+'</span></div>'
+      + '<div class="row">Jobs:<span class="v">'+jobs+'</span></div>'
+      + '<div class="row">Households:<span class="v">'+hh+'</span></div>'
+      + '<div class="sub">in '+(st.tractName||'this Census tract')+'</div></div>';
   } else {
     html = '<div class="ttl">'+(st.name_local||st.name)+'</div>';
     if(st.name_local && st.name_local!==st.name) html += '<div class="sub">'+st.name+'</div>';
@@ -181,6 +184,9 @@ const pitchEl=()=>+document.getElementById('pitch').value;
 const zoomEl=()=>+document.getElementById('zoom').value;
 const nowEl=()=>document.getElementById('now');
 const pauseBtn=()=>document.getElementById('pause');
+const PLAY_ICON='<svg width="11" height="12" viewBox="0 0 11 12" aria-hidden="true" style="vertical-align:-1px"><path d="M0 0 11 6 0 12z" fill="#fff"/></svg>';
+const PAUSE_ICON='<svg width="10" height="12" viewBox="0 0 10 12" aria-hidden="true" style="vertical-align:-1px"><rect width="3.5" height="12" fill="#fff"/><rect x="6.5" width="3.5" height="12" fill="#fff"/></svg>';
+function setPauseState(playing){ const b=pauseBtn(); b.innerHTML=playing?PAUSE_ICON:PLAY_ICON; b.title=playing?'Pause':'Play'; }
 
 function render(el){
   const L=TRANSIT_LINES[activeLineKey];
@@ -236,19 +242,26 @@ function loop(ts){
   lastTs=ts;
   render(Math.min(elapsed, timeline.total));
   if(elapsed < timeline.total){ raf=requestAnimationFrame(loop); }
-  else { raf=null; nowEl().textContent=''; hideCallout(); pauseBtn().textContent='Replay'; }
+  else { raf=null; nowEl().textContent=''; hideCallout(); setPauseState(false); }  // finished -> play icon (replays)
 }
 
-function startFly(){
+function startFly(){                 // full restart from the beginning
   if(raf) cancelAnimationFrame(raf);
   camBearing=null; camZoom=null; elapsed=0; lastTs=null; paused=false;
   hideCallout(); hideNote();
   timeline=buildTimeline();
-  pauseBtn().textContent='Pause';
+  setPauseState(true);
   raf=requestAnimationFrame(loop);
 }
-// halt the auto-fly so the user can freely pan/zoom the map
-function stopFly(){ if(raf){cancelAnimationFrame(raf); raf=null;} paused=false; pauseBtn().textContent='Replay'; }
+// pause: halt the auto-fly (keeps position) so the user can pan or read a station
+function pauseFly(){ if(raf){cancelAnimationFrame(raf); raf=null;} paused=true; setPauseState(false); }
+// resume from the current position (or replay if it already finished)
+function resumeFly(){
+  if(raf) return;
+  if(!timeline || elapsed>=timeline.total){ startFly(); return; }
+  paused=false; lastTs=null; setPauseState(true);
+  raf=requestAnimationFrame(loop);
+}
 
 // (re)build the map layers for the active line
 function buildLine(){
@@ -256,17 +269,20 @@ function buildLine(){
   ['ctx-line','ctx-st','crcl-casing','crcl-line','notes','st'].forEach(id=>{ if(map.getLayer(id)) map.removeLayer(id); });
   ['ctx','ctx-st','route','notes','st'].forEach(id=>{ if(map.getSource(id)) map.removeSource(id); });
 
-  // existing-rail context overlay, drawn first so the featured line sits on top
+  // existing-rail context overlay, drawn first so the featured line sits on top.
+  // context.lines = network (array of linestrings); context.line = single linestring.
   if(L.context){
+    const segs = L.context.lines || [L.context.line];
     map.addSource('ctx',{type:'geojson',
-      data:{type:'Feature',geometry:{type:'LineString',coordinates:L.context.line}}});
+      data:{type:'Feature',geometry:{type:'MultiLineString',coordinates:segs}}});
     map.addLayer({id:'ctx-line',type:'line',source:'ctx',layout:{'line-cap':'round','line-join':'round'},
-      paint:{'line-color':'#8a8a8a','line-width':4,'line-opacity':0.75,'line-dasharray':[2,1.6]}});
+      paint:{'line-color':'#6b6b6b','line-width':5,'line-opacity':0.8,'line-dasharray':[2,1.6]}});
+    const ctxSt = L.context.stations || [];
     map.addSource('ctx-st',{type:'geojson',
-      data:{type:'FeatureCollection',features:L.context.stations.map(s=>({type:'Feature',
+      data:{type:'FeatureCollection',features:ctxSt.map(s=>({type:'Feature',
         properties:{name:s.name},geometry:{type:'Point',coordinates:s.lonlat}}))}});
     map.addLayer({id:'ctx-st',type:'circle',source:'ctx-st',
-      paint:{'circle-radius':5.5,'circle-color':'#fff','circle-stroke-color':'#8a8a8a','circle-stroke-width':2.5}});
+      paint:{'circle-radius':5.5,'circle-color':'#fff','circle-stroke-color':'#6b6b6b','circle-stroke-width':2.5}});
   }
 
   map.addSource('route',{type:'geojson',
@@ -320,7 +336,7 @@ function loadLine(key){
 
   // legend for a context overlay (e.g. existing rail)
   const lg=document.getElementById('legend');
-  if(L.context){ lg.innerHTML='<span style="display:inline-block;width:16px;border-top:3px dashed #8a8a8a;vertical-align:middle;margin-right:6px"></span>'+L.contextLabel; lg.style.display='block'; }
+  if(L.context){ lg.innerHTML='<span style="display:inline-block;width:16px;border-top:3px dashed #6b6b6b;vertical-align:middle;margin-right:6px"></span>'+L.contextLabel; lg.style.display='block'; }
   else lg.style.display='none';
 
   // permalink: keep the URL hash in sync (replaceState avoids firing hashchange)
@@ -343,10 +359,10 @@ document.getElementById('lineSel').onchange=e=>loadLine(e.target.value);
 // permalink: respond to hash edits / back-forward navigation
 window.addEventListener('hashchange',()=>{ const k=location.hash.slice(1); if(TRANSIT_LINES[k] && k!==activeLineKey) loadLine(k); });
 
-// let users explore: any manual drag stops the auto-fly so the map can be panned
-map.on('dragstart',()=>{ if(raf!==null) stopFly(); });
+// let users explore: any manual drag pauses the auto-fly so the map can be panned
+map.on('dragstart',()=>{ if(raf!==null) pauseFly(); });
 // click a station marker (featured or existing-rail context) to re-show its name
-function stationClick(st){ if(!st) return; stopFly(); showCallout(st); nowEl().textContent='▶ '+st.name; }
+function stationClick(st){ if(!st) return; pauseFly(); showCallout(st); nowEl().textContent='▶ '+st.name; }
 for(const lyr of ['st','ctx-st']){
   map.on('mouseenter',lyr,()=>{ map.getCanvas().style.cursor='pointer'; });
   map.on('mouseleave',lyr,()=>{ map.getCanvas().style.cursor=''; });
@@ -354,10 +370,6 @@ for(const lyr of ['st','ctx-st']){
 map.on('click','st',e=>stationClick(activeLine.stations.find(s=>s.name===e.features[0].properties.name)));
 map.on('click','ctx-st',e=>stationClick({name:e.features[0].properties.name, lonlat:e.features[0].geometry.coordinates.slice()}));
 
-document.getElementById('play').onclick=startFly;
-document.getElementById('pause').onclick=()=>{
-  if(raf===null){ startFly(); return; }       // finished -> replay
-  paused=!paused;
-  pauseBtn().textContent = paused ? 'Play' : 'Pause';
-};
+document.getElementById('play').onclick=startFly;   // Replay -> restart from the beginning
+document.getElementById('pause').onclick=()=>{ if(raf) pauseFly(); else resumeFly(); };
 </script></body></html>
