@@ -1,0 +1,7 @@
+route_id,agency_id,route_short_name,route_long_name,route_type
+X1,CROSSTOWNER,X1,"Highland Park to 93rd/South Chicago, every 30 minutes via tunnel",2
+X2,CROSSTOWNER,X2,"Palatine to 93rd/South Chicago, every 30 minutes via tunnel",2
+X3,CROSSTOWNER,X3,"Des Plaines to Harvey, every 30 minutes via tunnel",2
+X4,CROSSTOWNER,X4,"Winnetka to 115th (Kensington) and Blue Island, every 30 minutes via tunnel",2
+X5,CROSSTOWNER,X5,"Downers Grove-Main St to O'Hare Transfer, every 30 minutes via Union Station Riverside",2
+X6,CROSSTOWNER,X6,"Elmhurst to Auburn Park and Blue Island, every 30 minutes via Union Station Riverside",2

@@ -1,0 +1,143 @@
+stop_id,stop_name,stop_lat,stop_lon
+crosstownerstation-103rd-rosemoor,103rd (Rosemoor),41.706914,-87.607169
+crosstownerstation-107th-street-63,107th,41.699673,-87.608929
+crosstownerstation-111th-pullman,111th (Pullman),41.692751,-87.610474
+crosstownerstation-119th-rlx,119th (RLX),41.678921,-87.613698
+crosstownerstation-119th-street,119th,41.676374,-87.672529
+crosstownerstation-123rd-street,123rd,41.669995,-87.673645
+crosstownerstation-130th-indiana,130th/Indiana,41.659414,-87.617934
+crosstownerstation-18th-soldier-field,18th (Soldier Field),41.858502,-87.618198
+crosstownerstation-27th-street,27th,41.844182,-87.61322
+crosstownerstation-35th-street-lou-jones,"35th (""Lou"" Jones)",41.831136,-87.629013
+crosstownerstation-47th-kenwood,47th (Kenwood),41.80974,-87.591333
+crosstownerstation-51st-53rd-hyde-park,51st/53rd,41.800015,-87.586784
+crosstownerstation-55th-56th-57th,55th-56th-57th,41.79336,-87.587643
+crosstownerstation-59th-perry,59th/Perry,41.786989,-87.628267
+crosstownerstation-59th-university-of-chicago,59th (University of Chicago),41.788049,-87.58863
+crosstownerstation-63rd-street,63rd,41.780241,-87.590475
+crosstownerstation-67th,67th,41.773259,-87.592035
+crosstownerstation-75th-grand-crossing,75th (Grand Crossing),41.758828,-87.595324
+crosstownerstation-79th-auburn-park,79th (Auburn Park),41.750814,-87.639446
+crosstownerstation-79th-chatham,79th (Chatham),41.750856,-87.597213
+crosstownerstation-79th-cheltenham,79th (Cheltenham),41.752233,-87.552538
+crosstownerstation-83rd-avalon-park,83rd (Avalon Park),41.74426,-87.598715
+crosstownerstation-83rd-street,83rd,41.745349,-87.551508
+crosstownerstation-87th-street,87th,41.737792,-87.548332
+crosstownerstation-87th-woodruff,87th (Woodruff),41.737184,-87.60026
+crosstownerstation-91st-street-60,91st (Chesterfield),41.729465,-87.602148
+crosstownerstation-93rd-south-chicago,93rd/South Chicago,41.726647,-87.547774
+crosstownerstation-95th-chicago-state-university,95th-Chicago State,41.72149,-87.603865
+crosstownerstation-addison-lincoln,Addison/Lincoln,41.946957,-87.673744
+crosstownerstation-arlington-heights,Arlington Heights,42.084306,-87.98358
+crosstownerstation-arlington-park,Arlington Park,42.095261,-88.009114
+crosstownerstation-ashland-ogden,Ashland-Ogden,41.888732,-87.665663
+crosstownerstation-bellwood,Bellwood,41.891224,-87.881098
+crosstownerstation-belmont-kedzie,Belmont/Kedzie,41.939571,-87.707253
+crosstownerstation-berkeley,Berkeley,41.896048,-87.915301
+crosstownerstation-berwyn-harlem-ave,Berwyn - Harlem Ave,41.831328,-87.801919
+crosstownerstation-berwyn-oak-park-ave,Berwyn - Oak Park Ave,41.833087,-87.793679
+crosstownerstation-blue-island,Blue Island,41.655696,-87.676735
+crosstownerstation-braeside,Braeside,42.152842,-87.772565
+crosstownerstation-brainerd,Brainerd,41.732252,-87.658925
+crosstownerstation-burr-oak,Burr Oak,41.662204,-87.66901
+crosstownerstation-central-ave-hanson-park,Central Ave (Hanson Park),41.916585,-87.766986
+crosstownerstation-chicago-halsted-bally-s,Chicago/Halsted (Bally's),41.895754,-87.647364
+crosstownerstation-cicero,Cicero,41.844118,-87.745571
+crosstownerstation-cicero-kinzie,Cicero/Lake,41.887678,-87.745571
+crosstownerstation-clarendon-hills,Clarendon Hills,41.797072,-87.953539
+crosstownerstation-clybourn,Clybourn,41.917096,-87.668152
+crosstownerstation-congress-park,Congress Park,41.819016,-87.857623
+crosstownerstation-dee-road,Dee Road,42.024144,-87.856207
+crosstownerstation-des-plaines,Des Plaines,42.040943,-87.886505
+crosstownerstation-des-plaines-river-rd,Des Plaines River Rd,41.933407,-87.84965
+crosstownerstation-division-elston,Division/Elston,41.903426,-87.660335
+crosstownerstation-downers-grove-main-street,Downers Grove - Main St,41.795312,-88.009758
+crosstownerstation-edison-park,Edison Park,42.002558,-87.818012
+crosstownerstation-elmhurst,Elmhurst,41.899754,-87.940836
+crosstownerstation-elmwood-park-conti-circle,Elmwood Park - Conti Cir,41.926453,-87.820065
+crosstownerstation-evanston-central-st,Central/Green Bay (Evanston),42.064332,-87.698193
+crosstownerstation-evanston-davis-st,Davis St (Evanston),42.047763,-87.684631
+crosstownerstation-franklin-park-belmont-ave,Franklin Park - Belmont Ave,41.93769,-87.860026
+crosstownerstation-gladstone-park,Gladstone Park,41.979783,-87.778058
+crosstownerstation-glencoe,Glencoe,42.135691,-87.758145
+crosstownerstation-grand-cicero,Grand/Cicero,41.914446,-87.746086
+crosstownerstation-grand-harlem,Grand/Harlem,41.923579,-87.807705
+crosstownerstation-gresham,Gresham,41.736351,-87.644763
+crosstownerstation-halsted-18th,Halsted/16th,41.86042,-87.647038
+crosstownerstation-harvey,Harvey,41.609827,-87.643175
+crosstownerstation-highland-park,Highland Park,42.183282,-87.797413
+crosstownerstation-highlands,Highlands,41.805038,-87.918348
+crosstownerstation-hinsdale,Hinsdale,41.802798,-87.928348
+crosstownerstation-hollywood,Hollywood,41.824453,-87.833805
+crosstownerstation-howard-clark,Howard/Clark,42.019245,-87.676962
+crosstownerstation-hubbard-woods,Hubbard Woods,42.118058,-87.743468
+crosstownerstation-humboldt-park,Humboldt Park,41.898022,-87.708429
+crosstownerstation-indian-hill,Indian Hill,42.094497,-87.723813
+crosstownerstation-irving-park,Irving Park/Keeler,41.952533,-87.730122
+crosstownerstation-jefferson-park,Jefferson Park,41.971712,-87.76351
+crosstownerstation-kedzie,Kedzie,41.888221,-87.706518
+crosstownerstation-kenilworth,Kenilworth,42.086376,-87.716689
+crosstownerstation-lagrange-road,LaGrange Road,41.815786,-87.87097
+crosstownerstation-lagrange-stone-ave,LaGrange - Stone Ave,41.814186,-87.878351
+crosstownerstation-lawrence-ruby,Lawrence/Ruby,41.965808,-87.87082
+crosstownerstation-maywood,Maywood,41.888381,-87.838612
+crosstownerstation-mccormick-place,McCormick Place,41.851534,-87.61631
+crosstownerstation-melrose-park,Melrose Park,41.89033,-87.855649
+crosstownerstation-montrose-mayfair,Montrose (Mayfair),41.960616,-87.744389
+crosstownerstation-mount-prospect,Mount Prospect,42.063026,-87.936072
+crosstownerstation-narragansett-ave-galewood,Narragansett Ave (Galewood),41.916394,-87.785869
+crosstownerstation-north-ridgeway,North/Ridgeway,41.909009,-87.719629
+crosstownerstation-norwood-park,Norwood Park,41.991586,-87.798872
+crosstownerstation-o-hare-transfer,O'Hare Transfer,41.994935,-87.880497
+crosstownerstation-oak-park-ave-mars,Oak Park Ave (Mars),41.919076,-87.794452
+crosstownerstation-oak-park-harlem-lake,Oak Park - Harlem/Lake,41.887071,-87.802176
+crosstownerstation-oakwood-blvd,Oakwood Blvd,41.824736,-87.602285
+crosstownerstation-palatine,Palatine,42.11306,-88.048253
+crosstownerstation-park-ridge,Park Ridge,42.010275,-87.831616
+crosstownerstation-peterson-ridge,Peterson/Ridge,41.991487,-87.675032
+crosstownerstation-prairie-street,Prairie St,41.662493,-87.675061
+crosstownerstation-randolph-clinton,Randolph/Clinton (Ogilvie),41.884432,-87.641273
+crosstownerstation-ravenswood,Ravenswood,41.968808,-87.674332
+crosstownerstation-ravinia,Ravinia,42.165153,-87.782736
+crosstownerstation-river-forest,River Forest,41.886943,-87.825007
+crosstownerstation-river-grove,River Grove,41.930986,-87.83608
+crosstownerstation-riverside,Riverside,41.827139,-87.820072
+crosstownerstation-rogers-park,Rogers Park,42.008999,-87.675533
+crosstownerstation-roosevelt,Roosevelt,41.867434,-87.627466
+crosstownerstation-rosemont-balmoral-ave,Rosemont - Balmoral Ave,41.976019,-87.873759
+crosstownerstation-schiller-park-irving-park-rd,Schiller Park - Irving Park Rd,41.954224,-87.865906
+crosstownerstation-south-shore,South Shore,41.765102,-87.565627
+crosstownerstation-state-street,State St,41.674418,-87.621932
+crosstownerstation-stewart-ridge,Stewart Ridge,41.674482,-87.631674
+crosstownerstation-stony-island,Stony Island,41.766062,-87.586913
+crosstownerstation-taylor-clinton,Taylor/Clinton,41.86978,-87.640785
+crosstownerstation-union-station,Union Station,41.8787,-87.639077
+crosstownerstation-west-hinsdale,West Hinsdale,41.799088,-87.945385
+crosstownerstation-west-pullman,West Pullman,41.674098,-87.642145
+crosstownerstation-western-18th,Western/18th,41.857608,-87.685747
+crosstownerstation-western-kinzie,Western/Hubbard,41.888988,-87.68815
+crosstownerstation-western-logan,Western/Logan,41.928731,-87.687809
+crosstownerstation-western-springs,Western Springs,41.80894,-87.901182
+crosstownerstation-westmont,Westmont,41.79544,-87.976413
+crosstownerstation-wilmette,Wilmette,42.077266,-87.709265
+crosstownerstation-winnetka,Winnetka,42.105228,-87.732868
+metra-103rd-bev,103rd (Beverly Hills),41.7061111,-87.6688889
+metra-107th-bev,107th (Beverly Hills),41.6988889,-87.67
+metra-111th-bev,111th (Morgan Park),41.6927778,-87.6705556
+metra-115th-bev,115th (Morgan Park),41.685,-87.6716667
+metra-147th-up,147th (Sibley Blvd),41.6227778,-87.6361111
+metra-91st-bev,91st (Beverly Hills),41.7280556,-87.6672222
+metra-95th-bev,95th (Beverly Hills),41.7213889,-87.6672222
+metra-99th-bev,99th (Beverly Hills),41.7136111,-87.6675
+metra-ashland,Ashland,41.6694444,-87.6605556
+metra-brynmawr,Bryn Mawr,41.7661111,-87.5766667
+metra-cumberland,Cumberland,42.0525,-87.9122222
+metra-fairviewdg,Fairview Ave,41.7952778,-87.9936111
+metra-ivanhoe,Ivanhoe,41.6333333,-87.6302778
+metra-kensingtn,Kensington,41.6858333,-87.6122222
+metra-lavergne,LaVergne,41.8355556,-87.7833333
+metra-mainst,Main St (Evanston),42.0333333,-87.68
+metra-racine,Racine,41.6741667,-87.6519444
+metra-raviniapk,Ravinia Park,42.1580556,-87.7769444
+metra-riverdale,Riverdale,41.6466667,-87.6233333
+metra-windsorpk,Windsor Park,41.7586111,-87.5594444

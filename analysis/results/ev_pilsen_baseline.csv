@@ -1,0 +1,6 @@
+network,option,departure_time,total_duration,segment,mode,route,segment_duration,wait
+baseline,1,08:02:02,55.5,1,WALK,"",2.8,0
+baseline,1,08:02:02,55.5,2,RAIL,UP-N,28,2.2
+baseline,1,08:02:02,55.5,3,WALK,"",10.7,0
+baseline,1,08:02:02,55.5,4,BUS,8,8.8,1.6
+baseline,1,08:02:02,55.5,5,WALK,"",1.5,0

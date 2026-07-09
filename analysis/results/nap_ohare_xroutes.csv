@@ -1,0 +1,8 @@
+network,option,departure_time,total_duration,segment,mode,route,segment_duration,wait
+xroutes,1,08:09:44,108.5,1,WALK,"",0.6,0
+xroutes,1,08:09:44,108.5,2,RAIL,BNSF,43,6.7
+xroutes,1,08:09:44,108.5,3,WALK,"",2.7,0
+xroutes,1,08:09:44,108.5,4,BUS,7,4.3,1.1
+xroutes,1,08:09:44,108.5,5,WALK,"",0.5,0
+xroutes,1,08:09:44,108.5,6,SUBWAY,Blue,46,3.6
+xroutes,1,08:09:44,108.5,7,WALK,"",0.1,0

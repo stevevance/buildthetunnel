@@ -1,0 +1,2 @@
+feed_publisher_name,feed_publisher_url,feed_lang,feed_start_date,feed_end_date,feed_version,feed_contact_url
+"Chicago Cityscape (schedule by Star:Line Chicago, proposed service)",https://buildthetunnelchicago.org,en,20260101,20261231,crcl-plan-skeleton-2026-07-08,https://buildthetunnelchicago.org

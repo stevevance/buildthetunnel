@@ -1,0 +1,13 @@
+network,option,departure_time,total_duration,segment,mode,route,segment_duration,wait
+xroutes,1,08:04:02,46.8,1,WALK,"",2.8,0
+xroutes,1,08:04:02,46.8,2,RAIL,X4,27,1.2
+xroutes,1,08:04:02,46.8,3,WALK,"",2.5,0
+xroutes,1,08:04:02,46.8,4,BUS,18,10.8,1.1
+xroutes,1,08:04:02,46.8,5,WALK,"",1.5,0
+xroutes,2,08:09:44,42.5,1,WALK,"",2.8,0
+xroutes,2,08:09:44,42.5,2,RAIL,X1,25,2.5
+xroutes,2,08:09:44,42.5,3,WALK,"",0.5,0
+xroutes,2,08:09:44,42.5,4,BUS,157,2.3,1.4
+xroutes,2,08:09:44,42.5,5,WALK,"",1,0
+xroutes,2,08:09:44,42.5,6,BUS,8,3.5,2.1
+xroutes,2,08:09:44,42.5,7,WALK,"",1.5,0

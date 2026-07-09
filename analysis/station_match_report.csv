@@ -1,0 +1,243 @@
+sheet_name,route,stop_id,match_method,mi_to_alignment
+103rd (Beverly Hills),X6,metra-103rd-bev,full-name,0.0
+103rd (Rosemoor),X3,crosstownerstation-103rd-rosemoor,full-name+nearest-of-2,0.0
+103rd (Rosemoor),X4,crosstownerstation-103rd-rosemoor,full-name+nearest-of-2,0.0
+107th,X3,crosstownerstation-107th-street-63,full-name+nearest-of-3,0.0
+107th,X4,crosstownerstation-107th-street-63,full-name+nearest-of-3,0.0
+107th (Beverly Hills),X6,metra-107th-bev,full-name,0.0
+111th (Morgan Park),X6,metra-111th-bev,full-name,0.0
+111th (Pullman),X3,crosstownerstation-111th-pullman,full-name+nearest-of-2,0.0
+111th (Pullman),X4,crosstownerstation-111th-pullman,full-name+nearest-of-2,0.0
+115th (Morgan Park),X6,metra-115th-bev,full-name,0.0
+119th,X6,crosstownerstation-119th-street,full-name+nearest-of-2,0.0
+119th (RLX),X3,crosstownerstation-119th-rlx,full-name,0.01
+123rd,X6,crosstownerstation-123rd-street,full-name+nearest-of-2,0.0
+130th/Indiana,X3,crosstownerstation-130th-indiana,full-name,0.0
+147th (Sibley Blvd),X3,metra-147th-up,loose-name+nearest-of-2,0.01
+18th (Soldier Field),X1,crosstownerstation-18th-soldier-field,full-name,0.0
+18th (Soldier Field),X2,crosstownerstation-18th-soldier-field,full-name,0.0
+18th (Soldier Field),X3,crosstownerstation-18th-soldier-field,full-name,0.0
+18th (Soldier Field),X4,crosstownerstation-18th-soldier-field,full-name,0.0
+27th,X1,crosstownerstation-27th-street,full-name+nearest-of-2,0.0
+27th,X2,crosstownerstation-27th-street,full-name+nearest-of-2,0.0
+27th,X3,crosstownerstation-27th-street,full-name+nearest-of-2,0.0
+27th,X4,crosstownerstation-27th-street,full-name+nearest-of-2,0.0
+"35th (""Lou"" Jones)",X6,crosstownerstation-35th-street-lou-jones,alias,0.09
+47th (Kenwood),X1,crosstownerstation-47th-kenwood,full-name+nearest-of-2,0.0
+47th (Kenwood),X2,crosstownerstation-47th-kenwood,full-name+nearest-of-2,0.0
+47th (Kenwood),X3,crosstownerstation-47th-kenwood,full-name+nearest-of-2,0.0
+47th (Kenwood),X4,crosstownerstation-47th-kenwood,full-name+nearest-of-2,0.0
+51st/53rd,X1,crosstownerstation-51st-53rd-hyde-park,loose-name+nearest-of-2,0.0
+51st/53rd,X2,crosstownerstation-51st-53rd-hyde-park,loose-name+nearest-of-2,0.0
+51st/53rd,X3,crosstownerstation-51st-53rd-hyde-park,loose-name+nearest-of-2,0.0
+51st/53rd,X4,crosstownerstation-51st-53rd-hyde-park,loose-name+nearest-of-2,0.0
+55th-56th-57th,X1,crosstownerstation-55th-56th-57th,full-name+nearest-of-2,0.0
+55th-56th-57th,X2,crosstownerstation-55th-56th-57th,full-name+nearest-of-2,0.0
+55th-56th-57th,X3,crosstownerstation-55th-56th-57th,full-name+nearest-of-2,0.0
+55th-56th-57th,X4,crosstownerstation-55th-56th-57th,full-name+nearest-of-2,0.0
+59th (University of Chicago),X1,crosstownerstation-59th-university-of-chicago,full-name,0.0
+59th (University of Chicago),X2,crosstownerstation-59th-university-of-chicago,full-name,0.0
+59th (University of Chicago),X3,crosstownerstation-59th-university-of-chicago,full-name,0.0
+59th (University of Chicago),X4,crosstownerstation-59th-university-of-chicago,full-name,0.0
+59th/Perry,X6,crosstownerstation-59th-perry,full-name,0.0
+63rd,X1,crosstownerstation-63rd-street,full-name+nearest-of-2,0.0
+63rd,X2,crosstownerstation-63rd-street,full-name+nearest-of-2,0.0
+63rd,X3,crosstownerstation-63rd-street,full-name+nearest-of-2,0.0
+63rd,X4,crosstownerstation-63rd-street,full-name+nearest-of-2,0.0
+67th,X1,crosstownerstation-67th,full-name,0.0
+67th,X2,crosstownerstation-67th,full-name,0.0
+67th,X3,crosstownerstation-67th,full-name,0.0
+67th,X4,crosstownerstation-67th,full-name,0.0
+75th (Grand Crossing),X3,crosstownerstation-75th-grand-crossing,full-name+nearest-of-2,0.0
+75th (Grand Crossing),X4,crosstownerstation-75th-grand-crossing,full-name+nearest-of-2,0.0
+79th (Auburn Park),X6,crosstownerstation-79th-auburn-park,full-name,0.0
+79th (Chatham),X3,crosstownerstation-79th-chatham,full-name+nearest-of-2,0.0
+79th (Chatham),X4,crosstownerstation-79th-chatham,full-name+nearest-of-2,0.0
+79th (Cheltenham),X1,crosstownerstation-79th-cheltenham,full-name,0.0
+79th (Cheltenham),X2,crosstownerstation-79th-cheltenham,full-name,0.0
+83rd,X1,crosstownerstation-83rd-street,full-name+nearest-of-2,0.0
+83rd,X2,crosstownerstation-83rd-street,full-name+nearest-of-2,0.0
+83rd (Avalon Park),X3,crosstownerstation-83rd-avalon-park,full-name+nearest-of-2,0.0
+83rd (Avalon Park),X4,crosstownerstation-83rd-avalon-park,full-name+nearest-of-2,0.0
+87th,X1,crosstownerstation-87th-street,full-name+nearest-of-2,0.0
+87th,X2,crosstownerstation-87th-street,full-name+nearest-of-2,0.0
+87th (Woodruff),X3,crosstownerstation-87th-woodruff,full-name+nearest-of-2,0.0
+87th (Woodruff),X4,crosstownerstation-87th-woodruff,full-name+nearest-of-2,0.0
+91st (Beverly Hills),X6,metra-91st-bev,full-name,0.0
+91st (Chesterfield),X3,crosstownerstation-91st-street-60,loose-name+nearest-of-3,0.0
+91st (Chesterfield),X4,crosstownerstation-91st-street-60,loose-name+nearest-of-3,0.0
+93rd/South Chicago,X1,crosstownerstation-93rd-south-chicago,full-name,0.0
+93rd/South Chicago,X2,crosstownerstation-93rd-south-chicago,full-name,0.0
+95th (Beverly Hills),X6,metra-95th-bev,full-name,0.0
+95th-Chicago State,X3,crosstownerstation-95th-chicago-state-university,alias,0.0
+95th-Chicago State,X4,crosstownerstation-95th-chicago-state-university,alias,0.0
+99th (Beverly Hills),X6,metra-99th-bev,full-name,0.0
+Addison/Lincoln,X1,crosstownerstation-addison-lincoln,full-name,0.0
+Addison/Lincoln,X4,crosstownerstation-addison-lincoln,full-name,0.0
+Arlington Heights,X2,crosstownerstation-arlington-heights,full-name+nearest-of-2,0.0
+Arlington Heights,X3,crosstownerstation-arlington-heights,full-name+nearest-of-2,0.0
+Arlington Park,X2,crosstownerstation-arlington-park,full-name+nearest-of-2,0.0
+Arlington Park,X3,crosstownerstation-arlington-park,full-name+nearest-of-2,0.0
+Ashland,X4,metra-ashland,full-name,0.0
+Ashland-Ogden,X5,crosstownerstation-ashland-ogden,full-name,0.0
+Ashland-Ogden,X6,crosstownerstation-ashland-ogden,full-name,0.0
+Bellwood,X6,crosstownerstation-bellwood,full-name+nearest-of-2,0.0
+Belmont/Kedzie,X2,crosstownerstation-belmont-kedzie,full-name,0.0
+Belmont/Kedzie,X3,crosstownerstation-belmont-kedzie,full-name,0.0
+Berkeley,X6,crosstownerstation-berkeley,full-name+nearest-of-2,0.0
+Berwyn - Harlem Ave,X5,crosstownerstation-berwyn-harlem-ave,full-name,0.0
+Berwyn - Oak Park Ave,X5,crosstownerstation-berwyn-oak-park-ave,full-name,0.0
+Blue Island,X4,crosstownerstation-blue-island,full-name+nearest-of-2,0.0
+Blue Island,X6,crosstownerstation-blue-island,full-name+nearest-of-2,0.0
+Braeside,X1,crosstownerstation-braeside,full-name+nearest-of-2,0.0
+Brainerd,X6,crosstownerstation-brainerd,full-name+nearest-of-2,0.0
+Bryn Mawr,X1,metra-brynmawr,full-name,0.0
+Bryn Mawr,X2,metra-brynmawr,full-name,0.0
+Burr Oak,X4,crosstownerstation-burr-oak,full-name+nearest-of-2,0.0
+Central Ave (Hanson Park),X5,crosstownerstation-central-ave-hanson-park,full-name,0.0
+Central/Green Bay (Evanston),X1,crosstownerstation-evanston-central-st,alias,0.0
+Central/Green Bay (Evanston),X4,crosstownerstation-evanston-central-st,alias,0.0
+Chicago/Halsted (Bally's),X1,crosstownerstation-chicago-halsted-bally-s,full-name,0.0
+Chicago/Halsted (Bally's),X2,crosstownerstation-chicago-halsted-bally-s,full-name,0.0
+Chicago/Halsted (Bally's),X3,crosstownerstation-chicago-halsted-bally-s,full-name,0.0
+Chicago/Halsted (Bally's),X4,crosstownerstation-chicago-halsted-bally-s,full-name,0.0
+Cicero,X5,crosstownerstation-cicero,full-name+nearest-of-2,0.0
+Cicero/Lake,X6,crosstownerstation-cicero-kinzie,alias,0.0
+Clarendon Hills,X5,crosstownerstation-clarendon-hills,full-name+nearest-of-2,0.0
+Clybourn,X1,crosstownerstation-clybourn,full-name+nearest-of-2,0.0
+Clybourn,X2,crosstownerstation-clybourn,full-name+nearest-of-2,0.0
+Clybourn,X3,crosstownerstation-clybourn,full-name+nearest-of-2,0.0
+Clybourn,X4,crosstownerstation-clybourn,full-name+nearest-of-2,0.0
+Congress Park,X5,crosstownerstation-congress-park,full-name+nearest-of-2,0.0
+Cumberland,X2,metra-cumberland,full-name,0.0
+Cumberland,X3,metra-cumberland,full-name,0.0
+Davis St (Evanston),X1,crosstownerstation-evanston-davis-st,alias,0.0
+Davis St (Evanston),X4,crosstownerstation-evanston-davis-st,alias,0.0
+Dee Road,X2,crosstownerstation-dee-road,full-name+nearest-of-2,0.0
+Dee Road,X3,crosstownerstation-dee-road,full-name+nearest-of-2,0.0
+Des Plaines,X2,crosstownerstation-des-plaines,full-name+nearest-of-2,0.0
+Des Plaines,X3,crosstownerstation-des-plaines,full-name+nearest-of-2,0.0
+Des Plaines River Rd,X5,crosstownerstation-des-plaines-river-rd,full-name,0.0
+Division/Elston,X1,crosstownerstation-division-elston,full-name,0.0
+Division/Elston,X2,crosstownerstation-division-elston,full-name,0.0
+Division/Elston,X3,crosstownerstation-division-elston,full-name,0.0
+Division/Elston,X4,crosstownerstation-division-elston,full-name,0.0
+Downers Grove - Main St,X5,crosstownerstation-downers-grove-main-street,full-name,0.0
+Edison Park,X2,crosstownerstation-edison-park,full-name+nearest-of-2,0.0
+Edison Park,X3,crosstownerstation-edison-park,full-name+nearest-of-2,0.0
+Elmhurst,X6,crosstownerstation-elmhurst,full-name+nearest-of-2,0.0
+Elmwood Park - Conti Cir,X5,crosstownerstation-elmwood-park-conti-circle,alias,0.0
+Fairview Ave,X5,metra-fairviewdg,full-name,0.0
+Franklin Park - Belmont Ave,X5,crosstownerstation-franklin-park-belmont-ave,full-name,0.0
+Gladstone Park,X2,crosstownerstation-gladstone-park,full-name+nearest-of-2,0.0
+Gladstone Park,X3,crosstownerstation-gladstone-park,full-name+nearest-of-2,0.0
+Glencoe,X1,crosstownerstation-glencoe,full-name+nearest-of-2,0.0
+Grand/Cicero,X5,crosstownerstation-grand-cicero,full-name+nearest-of-2,0.0
+Grand/Harlem,X5,crosstownerstation-grand-harlem,full-name,0.0
+Gresham,X6,crosstownerstation-gresham,full-name+nearest-of-2,0.0
+Halsted/16th,X5,crosstownerstation-halsted-18th,alias,0.0
+Harvey,X3,crosstownerstation-harvey,full-name+nearest-of-2,0.0
+Highland Park,X1,crosstownerstation-highland-park,full-name+nearest-of-2,0.0
+Highlands,X5,crosstownerstation-highlands,full-name+nearest-of-2,0.0
+Hinsdale,X5,crosstownerstation-hinsdale,full-name+nearest-of-2,0.0
+Hollywood,X5,crosstownerstation-hollywood,full-name+nearest-of-2,0.0
+Howard/Clark,X1,crosstownerstation-howard-clark,full-name,0.0
+Howard/Clark,X4,crosstownerstation-howard-clark,full-name,0.0
+Hubbard Woods,X1,crosstownerstation-hubbard-woods,full-name+nearest-of-2,0.0
+Humboldt Park,X5,crosstownerstation-humboldt-park,full-name,0.0
+Indian Hill,X1,crosstownerstation-indian-hill,full-name+nearest-of-2,0.0
+Indian Hill,X4,crosstownerstation-indian-hill,full-name+nearest-of-2,0.0
+Irving Park/Keeler,X2,crosstownerstation-irving-park,alias,0.0
+Irving Park/Keeler,X3,crosstownerstation-irving-park,alias,0.0
+Ivanhoe,X3,metra-ivanhoe,full-name,0.0
+Jefferson Park,X2,crosstownerstation-jefferson-park,full-name+nearest-of-2,0.0
+Jefferson Park,X3,crosstownerstation-jefferson-park,full-name+nearest-of-2,0.0
+Kedzie,X6,crosstownerstation-kedzie,full-name+nearest-of-2,0.0
+Kenilworth,X1,crosstownerstation-kenilworth,full-name+nearest-of-2,0.0
+Kenilworth,X4,crosstownerstation-kenilworth,full-name+nearest-of-2,0.0
+Kensington,X3,metra-kensingtn,full-name,0.0
+Kensington,X4,metra-kensingtn,full-name,0.0
+LaGrange - Stone Ave,X5,crosstownerstation-lagrange-stone-ave,full-name,0.0
+LaGrange Road,X5,crosstownerstation-lagrange-road,full-name+nearest-of-2,0.0
+LaVergne,X5,metra-lavergne,full-name,0.0
+Lawrence/Ruby,X5,crosstownerstation-lawrence-ruby,full-name,0.0
+Main St (Evanston),X1,metra-mainst,loose-name,0.01
+Main St (Evanston),X4,metra-mainst,loose-name,0.01
+Maywood,X6,crosstownerstation-maywood,full-name+nearest-of-2,0.0
+McCormick Place,X1,crosstownerstation-mccormick-place,full-name+nearest-of-2,0.0
+McCormick Place,X2,crosstownerstation-mccormick-place,full-name+nearest-of-2,0.0
+McCormick Place,X3,crosstownerstation-mccormick-place,full-name+nearest-of-2,0.0
+McCormick Place,X4,crosstownerstation-mccormick-place,full-name+nearest-of-2,0.0
+Melrose Park,X6,crosstownerstation-melrose-park,full-name+nearest-of-2,0.0
+Montrose (Mayfair),X2,crosstownerstation-montrose-mayfair,full-name,0.0
+Montrose (Mayfair),X3,crosstownerstation-montrose-mayfair,full-name,0.01
+Mount Prospect,X2,crosstownerstation-mount-prospect,full-name,0.0
+Mount Prospect,X3,crosstownerstation-mount-prospect,full-name,0.0
+Narragansett Ave (Galewood),X5,crosstownerstation-narragansett-ave-galewood,full-name,0.0
+North/Ridgeway,X5,crosstownerstation-north-ridgeway,full-name,0.0
+Norwood Park,X2,crosstownerstation-norwood-park,full-name+nearest-of-2,0.0
+Norwood Park,X3,crosstownerstation-norwood-park,full-name+nearest-of-2,0.0
+O'Hare Transfer,X5,crosstownerstation-o-hare-transfer,full-name+nearest-of-2,0.0
+Oak Park - Harlem/Lake,X6,crosstownerstation-oak-park-harlem-lake,full-name,0.0
+Oak Park Ave (Mars),X5,crosstownerstation-oak-park-ave-mars,full-name,0.0
+Oakwood Blvd,X1,crosstownerstation-oakwood-blvd,full-name,0.0
+Oakwood Blvd,X2,crosstownerstation-oakwood-blvd,full-name,0.0
+Oakwood Blvd,X3,crosstownerstation-oakwood-blvd,full-name,0.0
+Oakwood Blvd,X4,crosstownerstation-oakwood-blvd,full-name,0.0
+Palatine,X2,crosstownerstation-palatine,full-name+nearest-of-2,0.0
+Park Ridge,X2,crosstownerstation-park-ridge,full-name+nearest-of-2,0.0
+Park Ridge,X3,crosstownerstation-park-ridge,full-name+nearest-of-2,0.0
+Peterson/Ridge,X1,crosstownerstation-peterson-ridge,full-name+nearest-of-2,0.0
+Peterson/Ridge,X4,crosstownerstation-peterson-ridge,full-name+nearest-of-2,0.0
+Prairie St,X6,crosstownerstation-prairie-street,full-name+nearest-of-2,0.0
+Racine,X4,metra-racine,full-name,0.0
+Randolph/Clinton (Ogilvie),X1,crosstownerstation-randolph-clinton,loose-name,0.0
+Randolph/Clinton (Ogilvie),X2,crosstownerstation-randolph-clinton,loose-name,0.0
+Randolph/Clinton (Ogilvie),X3,crosstownerstation-randolph-clinton,loose-name,0.0
+Randolph/Clinton (Ogilvie),X4,crosstownerstation-randolph-clinton,loose-name,0.0
+Ravenswood,X1,crosstownerstation-ravenswood,full-name+nearest-of-2,0.0
+Ravenswood,X4,crosstownerstation-ravenswood,full-name+nearest-of-2,0.0
+Ravinia,X1,crosstownerstation-ravinia,full-name+nearest-of-2,0.0
+Ravinia Park,X1,metra-raviniapk,full-name,0.0
+River Forest,X6,crosstownerstation-river-forest,full-name+nearest-of-2,0.0
+River Grove,X5,crosstownerstation-river-grove,full-name+nearest-of-2,0.0
+Riverdale,X3,metra-riverdale,full-name,0.0
+Riverside,X5,crosstownerstation-riverside,full-name+nearest-of-2,0.0
+Rogers Park,X1,crosstownerstation-rogers-park,full-name+nearest-of-2,0.0
+Rogers Park,X4,crosstownerstation-rogers-park,full-name+nearest-of-2,0.0
+Roosevelt,X1,crosstownerstation-roosevelt,full-name,0.0
+Roosevelt,X2,crosstownerstation-roosevelt,full-name,0.0
+Roosevelt,X3,crosstownerstation-roosevelt,full-name,0.0
+Roosevelt,X4,crosstownerstation-roosevelt,full-name,0.0
+Rosemont - Balmoral Ave,X5,crosstownerstation-rosemont-balmoral-ave,full-name,0.0
+Schiller Park - Irving Park Rd,X5,crosstownerstation-schiller-park-irving-park-rd,full-name,0.0
+South Shore,X1,crosstownerstation-south-shore,full-name+nearest-of-2,0.0
+South Shore,X2,crosstownerstation-south-shore,full-name+nearest-of-2,0.0
+State St,X4,crosstownerstation-state-street,full-name+nearest-of-2,0.0
+Stewart Ridge,X4,crosstownerstation-stewart-ridge,full-name+nearest-of-2,0.0
+Stony Island,X1,crosstownerstation-stony-island,full-name+nearest-of-2,0.0
+Stony Island,X2,crosstownerstation-stony-island,full-name+nearest-of-2,0.0
+Taylor/Clinton,X1,crosstownerstation-taylor-clinton,full-name,0.0
+Taylor/Clinton,X2,crosstownerstation-taylor-clinton,full-name,0.0
+Taylor/Clinton,X3,crosstownerstation-taylor-clinton,full-name,0.0
+Taylor/Clinton,X4,crosstownerstation-taylor-clinton,full-name,0.0
+Union Station,X1,crosstownerstation-union-station,full-name,0.1
+Union Station,X2,crosstownerstation-union-station,full-name,0.1
+Union Station,X3,crosstownerstation-union-station,full-name,0.1
+Union Station,X4,crosstownerstation-union-station,full-name,0.1
+Union Station,X5,crosstownerstation-union-station,full-name,0.02
+Union Station,X6,crosstownerstation-union-station,full-name,0.02
+West Hinsdale,X5,crosstownerstation-west-hinsdale,full-name+nearest-of-2,0.0
+West Pullman,X4,crosstownerstation-west-pullman,full-name+nearest-of-2,0.0
+Western Springs,X5,crosstownerstation-western-springs,full-name+nearest-of-2,0.0
+Western/18th,X5,crosstownerstation-western-18th,full-name,0.0
+Western/Hubbard,X5,crosstownerstation-western-kinzie,alias,0.0
+Western/Logan,X2,crosstownerstation-western-logan,full-name,0.02
+Western/Logan,X3,crosstownerstation-western-logan,full-name,0.02
+Westmont,X5,crosstownerstation-westmont,full-name+nearest-of-2,0.0
+Wilmette,X1,crosstownerstation-wilmette,full-name+nearest-of-2,0.0
+Wilmette,X4,crosstownerstation-wilmette,full-name+nearest-of-2,0.0
+Windsor Park,X1,metra-windsorpk,full-name,0.0
+Windsor Park,X2,metra-windsorpk,full-name,0.0
+Winnetka,X1,crosstownerstation-winnetka,full-name+nearest-of-2,0.0
+Winnetka,X4,crosstownerstation-winnetka,full-name+nearest-of-2,0.0
