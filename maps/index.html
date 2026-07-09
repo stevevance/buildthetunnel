@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CrossTowner trip comparisons</title>
+<meta name="description" content="Five before-and-after trip comparisons for the CrossTowner regional rail proposal, routed with the Conveyal R5 engine on identical street and schedule data.">
+<meta property="og:title" content="CrossTowner trip comparisons">
+<meta property="og:description" content="Five before-and-after trip comparisons for the CrossTowner regional rail proposal, routed with the Conveyal R5 engine.">
+<style>
+  :root{--paper:#F4F6F7;--ink:#1B2126;--muted:#5B6770;--hair:#D7DEE2;--crcl:#0B7285}
+  *{box-sizing:border-box}
+  body{background:var(--paper);color:var(--ink);margin:0;padding:2.5rem 1.25rem 4rem;
+    font-family:"Helvetica Neue",Helvetica,Arial,system-ui,sans-serif}
+  .wrap{max-width:720px;margin:0 auto}
+  .eyebrow{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--crcl);font-weight:700}
+  h1{font-size:clamp(1.6rem,4vw,2.2rem);line-height:1.15;margin:.35rem 0 .5rem;letter-spacing:-.015em;text-wrap:balance}
+  .standfirst{color:var(--muted);line-height:1.55;font-size:.98rem;max-width:60ch;margin:0 0 2rem}
+  ol.maps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.9rem}
+  ol.maps a{display:block;background:#fff;border:1px solid var(--hair);border-left:4px solid var(--crcl);
+    border-radius:6px;padding:1rem 1.2rem;text-decoration:none;color:inherit}
+  ol.maps a:hover{border-color:var(--crcl)}
+  ol.maps b{display:block;font-size:1.02rem;margin-bottom:.2rem;color:var(--crcl)}
+  ol.maps span{color:var(--muted);font-size:.87rem;line-height:1.45}
+  .foot{color:var(--muted);font-size:.78rem;line-height:1.6;margin-top:2.25rem;max-width:64ch}
+  .foot a{color:var(--crcl)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">CrossTowner regional rail · Build the Tunnel</div>
+  <h1>Five trips, today and with the CrossTowner</h1>
+  <p class="standfirst">Each page compares a real trip on today's CTA/Metra/Pace network against the same trip on the CrossTowner draft schedule. Both sides are planned by the same routing engine (Conveyal R5) on identical street and schedule data — the only difference is the proposed service. Cards mark out-of-station transfers and station wheelchair accessibility, and airport trips are measured to the Terminal 2 security line.</p>
+  <ol class="maps">
+    <li><a href="map-arlington-heights-to-hyde-park.html"><b>Arlington Heights → Hyde Park</b><span>75 minutes and two transfers today; a one-seat 60-minute ride on the X2.</span></a></li>
+    <li><a href="map-evanston-to-pilsen.html"><b>Evanston → Pilsen</b><span>The X4 replaces a 12-minute walk across the Loop with a curbside transfer at Union Station.</span></a></li>
+    <li><a href="map-beverly-to-ohare.html"><b>Beverly → O'Hare</b><span>The Union Station pulse working as designed: a timed 5-minute transfer, 7-12 minutes saved, and a fully accessible route where today's is not.</span></a></li>
+    <li><a href="map-downers-grove-to-ohare.html"><b>Downers Grove → O'Hare</b><span>Three vehicles become one seat to the airport's front door — plus the surprising Pace itinerary the router discovered.</span></a></li>
+    <li><a href="map-naperville-to-ohare.html"><b>Naperville → O'Hare</b><span>An honest null result: the draft X5 schedule saves no time here, and the fixes are specific and small.</span></a></li>
+  </ol>
+  <p class="foot">The CrossTowner service pattern and timetable are from <a href="https://buildthetunnelchicago.org">Star:Line Chicago's proposal</a>. Methodology, data provenance, validations, and limitations are documented in <a href="https://github.com/stevevance/buildthetunnel/blob/main/analysis/METHODOLOGY.md">METHODOLOGY.md</a>; the scenario GTFS feed, generator code, and all results are in the <a href="https://github.com/stevevance/buildthetunnel/tree/main/analysis">analysis folder</a> of this repository.</p>
+</div>
+</body>
+</html>

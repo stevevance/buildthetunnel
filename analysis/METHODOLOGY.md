@@ -432,5 +432,5 @@ JAVA_HOME=/opt/homebrew/Cellar/openjdk@21/21.0.11/libexec/openjdk.jdk/Contents/H
 | `data/metra_stops.txt` | Metra GTFS stops (fallback station matching) |
 | `r5r_xroutes_run.R` | the r5r analysis script (isochrones, jobs overlay, routed itinerary) |
 | `results/` | isochrone GeoJSONs (baseline / shuttle / X-routes / OTP cross-check), Transitous reachable-stops GeoJSON, jobs-comparison CSVs |
-| `crosstowner-trip-map.html` | trip-comparison artifact source |
+| `../maps/` | the five published trip-comparison pages (see `maps/index.html`) |
 | `METHODOLOGY.md` | this document |
