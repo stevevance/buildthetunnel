@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 Build a scheduled GTFS feed for the CrossTowner X1-X6 routes from Scott's
-clockface skeleton timetables in "CrossTowner Schedules.xlsx".
+clockface skeleton timetables in ../private/CrossTowner Schedules.xlsx
+(shared privately; the private/ folder is not in the public repository).
 
 How the skeleton works:
   - Worksheets "CRCL Plan - NB Skeleton" / "CRCL Plan - SB Skeleton"
@@ -30,7 +31,7 @@ from datetime import time as dtime
 import openpyxl
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-XLSX = os.path.join(HERE, "CrossTowner Schedules.xlsx")
+XLSX = os.path.join(HERE, "..", "private", "CrossTowner Schedules.xlsx")
 OUTDIR = os.path.join(HERE, "crosstowner_xroutes_gtfs")
 OUTZIP = os.path.join(HERE, "crosstowner-xroutes-gtfs.zip")
 

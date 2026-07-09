@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 Extract GTFS-generator inputs directly from Scott's Google My Maps KML
-("CrossTowner Regional Rail - System Diagram.kml", in ../data/), so the
-whole pipeline is reproducible from files in this repository:
+("CrossTowner Regional Rail - System Diagram.kml", in ../private/, shared
+privately and not in the public repository), regenerating:
 
   1. data/xroute_lines.tsv  — X1-X6 alignments as GeoJSON LineStrings
      (consumed by build_gtfs_from_skeletons.py for shapes.txt)
@@ -16,7 +16,7 @@ import json, math, os, re
 import xml.etree.ElementTree as ET
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-KML = os.path.join(HERE, "..", "data", "CrossTowner Regional Rail - System Diagram.kml")
+KML = os.path.join(HERE, "..", "private", "CrossTowner Regional Rail - System Diagram.kml")
 NS = {"k": "http://www.opengis.net/kml/2.2"}
 
 

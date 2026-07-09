@@ -5,3 +5,6 @@
 
 # macOS
 .DS_Store
+
+# Privately shared source files (Scott/Star:Line) — not for publication
+private/

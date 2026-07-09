@@ -119,7 +119,8 @@ were explicitly checked:
   generator ship in this repo: `data/ct_stations.tsv` (stations) and
   `data/xroute_lines.tsv` (X-route alignments).
 - **Timetable:** "CrossTowner Schedules.xlsx" (Scott / Star:Line Chicago,
-  received 2026-07-08), sha256
+  received 2026-07-08; shared privately — kept in the untracked `private/`
+  folder, available on request), sha256
   `1e33a9087638b602810de60d65ecea8d5cc4783f8b26b69e2ade2dff2ea0782e`.
   Worksheets used: "CRCL Plan - NB Skeleton", "CRCL Plan - SB Skeleton".
   The "2034sight" worksheets are not used.
@@ -175,8 +176,8 @@ Translation rules, exactly as implemented:
 ### 4.1 Route shapes and the KML pipeline
 
 `shapes.txt` is generated from the X1-X6 alignments in Scott's Google My
-Maps KML export ("CrossTowner Regional Rail - System Diagram.kml", in
-`../data/` of this repo). `kml_to_inputs.py` extracts the alignments to
+Maps KML export ("CrossTowner Regional Rail - System Diagram.kml", shared
+privately — kept in the untracked `private/` folder). `kml_to_inputs.py` extracts the alignments to
 `data/xroute_lines.tsv` and also verifies every coordinate in
 `data/ct_stations.tsv` against the KML's point placemarks — worst deviation
 **0 ft**, so both generator inputs are provably the KML's own data. Each
@@ -420,11 +421,11 @@ JAVA_HOME=/opt/homebrew/Cellar/openjdk@21/21.0.11/libexec/openjdk.jdk/Contents/H
 
 | File | What it is |
 |---|---|
-| `CrossTowner Schedules.xlsx` | Scott's skeleton timetables (source of truth for scenario service) |
+
 | `build_gtfs_from_skeletons.py` | xlsx → GTFS generator, incl. ALIASES and sanity checks |
 | `crosstowner_xroutes_gtfs/`, `crosstowner-xroutes-gtfs.zip` | the scheduled scenario feed (X1-X6) |
 | `deprecated/crosstowner_crcl_gtfs/`, `deprecated/crosstowner-crcl-gtfs.zip` | superseded v1 shuttle feed (produced the Scenario A numbers) |
-| `../data/CrossTowner Regional Rail - System Diagram.kml` | Scott's Google My Maps export — source of truth for geometry |
+| `../private/` (untracked) | Scott's xlsx timetable and Google My Maps KML — the source files, shared privately and available on request |
 | `kml_to_inputs.py` | KML -> generator inputs; verifies station extract against the KML |
 | `station_match_report.csv` | audit trail: every skeleton name -> stop match, method, distance to alignment |
 | `data/ct_stations.tsv` | 294 CrossTowner station coordinates (verified 1:1 against the KML) |
