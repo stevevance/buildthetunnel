@@ -1,0 +1,4 @@
+option,departure_time,total_duration,segment,mode,route,segment_duration,wait
+1,08:02:02,68,1,WALK,"",0.5,0
+1,08:02:02,68,2,RAIL,X6,66,1.5
+1,08:02:02,68,3,WALK,"",0.1,0

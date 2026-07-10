@@ -219,6 +219,7 @@ departure_datetime = 2026-07-07 08:00 America/Chicago
 time_window = 30          # departures sampled 8:00-8:30
 cutoffs = c(30, 45, 60)   # minutes
 max_walk_time = 15        # minutes each for access and egress
+walk_speed = 4.43         # km/h = 2.75 mph (see 5.1)
 percentile: r5r default (p50, the median across the departure window)
 ```
 
@@ -230,8 +231,35 @@ supplies walk or transfer durations: CTA's `transfers.txt` (153 rows) only
 declares recommended transfer stop-pairs with no `min_transfer_time` column,
 and Metra, Pace, and the scenario feed have no `transfers.txt` or
 `pathways.txt` at all. Every walking leg and transfer time in this analysis
-is therefore computed by R5 over the OpenStreetMap street network at r5r's
-default walking speed (3.6 km/h).
+is therefore computed by R5 over the OpenStreetMap street network.
+
+### 5.1 Walking speed
+
+We route at **2.75 mph (4.43 km/h)**, overriding r5r's slower default of
+3.6 km/h (2.24 mph). The choice is grounded in the empirical literature on
+adult walking speed:
+
+| Reference | Speed |
+|---|---|
+| Bohannon 1997 (*Age and Ageing*), comfortable pace by age/sex | 2.84–3.27 mph |
+| Murtagh et al. 2021 meta-analysis (13,609 participants), usual pace | 2.93 mph |
+| MUTCD / FHWA pedestrian signal design speed | 2.68 mph (4.0 ft/s) |
+| FHWA 15th-percentile (older adults) | 2.06 mph |
+| r5r default (not used here) | 2.24 mph |
+
+2.75 mph sits deliberately between the conservative traffic-engineering
+design speed (which protects the slow tail of the population) and the
+empirical usual-pace mean (~2.9 mph). It is a defensible "effective" speed
+for a diverse public making real door-to-door trips: faster than r5r's
+overly-slow default, but still below the healthy-adult gait mean, leaving
+headroom for the real-world friction that gait-speed studies exclude
+(waiting at crossing signals, stairs, concourses, wayfinding, crowding).
+Earlier versions of these maps used r5r's 3.6 km/h default; all trip pages
+were re-routed at 2.75 mph. Because today's itineraries contain more walking
+than the CrossTowner's (out-of-station transfers vs. one-seat rides and
+same-station changes), the faster speed slightly favors the status-quo
+column — so the CrossTowner's advantages shown here are, if anything,
+conservative.
 
 ## 6. Jobs data
 
