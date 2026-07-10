@@ -1,0 +1,26 @@
+to_id,from_id,min_today,min_future,saved,from_name,to_name,from_geo,to_geo
+crosstownerstation-79th-auburn-park,crosstownerstation-berkeley,165,59,106,Berkeley,79th (Auburn Park),west suburban,south side of Chicago
+metra-lavergne,crosstownerstation-119th-rlx,173,81,92,119th (RLX),LaVergne,south side of Chicago,west suburban
+crosstownerstation-123rd-street,crosstownerstation-des-plaines-river-rd,176,88,88,Des Plaines River Rd,123rd,west suburban,south suburban
+crosstownerstation-congress-park,crosstownerstation-91st-street-60,165,80,85,91st (Chesterfield),Congress Park,south side of Chicago,west suburban
+crosstownerstation-gladstone-park,crosstownerstation-state-street,176,91,85,State St,Gladstone Park,south side of Chicago,north side of Chicago
+crosstownerstation-arlington-park,crosstownerstation-elmwood-park-conti-circle,179,96,83,Elmwood Park - Conti Cir,Arlington Park,west suburban,north suburban
+crosstownerstation-highlands,metra-147th-up,179,97,82,147th (Sibley Blvd),Highlands,south suburban,west suburban
+crosstownerstation-schiller-park-irving-park-rd,crosstownerstation-hubbard-woods,172,93,79,Hubbard Woods,Schiller Park - Irving Park Rd,north suburban,west suburban
+crosstownerstation-burr-oak,crosstownerstation-maywood,166,90,76,Maywood,Burr Oak,west suburban,south suburban
+crosstownerstation-arlington-heights,crosstownerstation-western-logan,115,40,75,Western/Logan,Arlington Heights,north side of Chicago,north suburban
+crosstownerstation-130th-indiana,crosstownerstation-berwyn-harlem-ave,160,86,74,Berwyn - Harlem Ave,130th/Indiana,west suburban,south side of Chicago
+crosstownerstation-des-plaines,metra-ivanhoe,162,88,74,Ivanhoe,Des Plaines,south suburban,north suburban
+crosstownerstation-franklin-park-belmont-ave,crosstownerstation-ravinia,171,99,72,Ravinia,Franklin Park - Belmont Ave,north suburban,west suburban
+crosstownerstation-mount-prospect,crosstownerstation-harvey,175,103,72,Harvey,Mount Prospect,south suburban,north suburban
+crosstownerstation-elmhurst,crosstownerstation-67th,147,77,70,67th,Elmhurst,south side of Chicago,west suburban
+crosstownerstation-palatine,crosstownerstation-chicago-halsted-bally-s,128,60,68,Chicago/Halsted (Bally's),Palatine,downtown Chicago,north suburban
+crosstownerstation-west-hinsdale,crosstownerstation-18th-soldier-field,134,66,68,18th (Soldier Field),West Hinsdale,downtown Chicago,west suburban
+crosstownerstation-lagrange-stone-ave,metra-raviniapk,178,112,66,Ravinia Park,LaGrange - Stone Ave,north suburban,west suburban
+crosstownerstation-bellwood,crosstownerstation-braeside,167,102,65,Braeside,Bellwood,north suburban,west suburban
+crosstownerstation-119th-street,crosstownerstation-dee-road,154,90,64,Dee Road,119th,north suburban,south suburban
+crosstownerstation-wilmette,metra-ashland,162,98,64,Ashland,Wilmette,south suburban,north suburban
+metra-cumberland,crosstownerstation-west-pullman,167,103,64,West Pullman,Cumberland,south side of Chicago,north suburban
+crosstownerstation-o-hare-transfer,crosstownerstation-95th-chicago-state-university,158,95,63,95th-Chicago State,O'Hare Transfer,south side of Chicago,north side of Chicago
+crosstownerstation-edison-park,crosstownerstation-stewart-ridge,159,98,61,Stewart Ridge,Edison Park,south side of Chicago,north side of Chicago
+crosstownerstation-melrose-park,metra-racine,160,100,60,Racine,Melrose Park,south side of Chicago,west suburban
