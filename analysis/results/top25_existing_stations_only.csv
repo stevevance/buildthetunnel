@@ -1,0 +1,26 @@
+to_id,from_id,min_today,min_future,saved,from_name,to_name,from_geo,to_geo,from_station_exists_today,to_station_exists_today
+crosstownerstation-123rd-street,crosstownerstation-berkeley,179,82,97,Berkeley,123rd,west suburban,south suburban,true,true
+crosstownerstation-congress-park,crosstownerstation-91st-street-60,165,80,85,91st (Chesterfield),Congress Park,south side of Chicago,west suburban,true,true
+crosstownerstation-gladstone-park,crosstownerstation-state-street,176,91,85,State St,Gladstone Park,south side of Chicago,north side of Chicago,true,true
+crosstownerstation-highlands,metra-147th-up,179,97,82,147th (Sibley Blvd),Highlands,south suburban,west suburban,true,true
+crosstownerstation-burr-oak,crosstownerstation-maywood,166,90,76,Maywood,Burr Oak,west suburban,south suburban,true,true
+crosstownerstation-arlington-park,metra-ivanhoe,176,101,75,Ivanhoe,Arlington Park,south suburban,north suburban,true,true
+crosstownerstation-des-plaines,crosstownerstation-harvey,170,97,73,Harvey,Des Plaines,south suburban,north suburban,true,true
+crosstownerstation-franklin-park-belmont-ave,crosstownerstation-ravinia,171,99,72,Ravinia,Franklin Park - Belmont Ave,north suburban,west suburban,true,true
+metra-lavergne,metra-ashland,167,95,72,Ashland,LaVergne,south suburban,west suburban,true,true
+crosstownerstation-arlington-heights,crosstownerstation-18th-soldier-field,126,58,68,18th (Soldier Field),Arlington Heights,downtown Chicago,north suburban,true,true
+crosstownerstation-elmhurst,crosstownerstation-95th-chicago-state-university,162,94,68,95th-Chicago State,Elmhurst,south side of Chicago,west suburban,true,true
+crosstownerstation-lagrange-stone-ave,metra-raviniapk,178,112,66,Ravinia Park,LaGrange - Stone Ave,north suburban,west suburban,true,true
+crosstownerstation-mount-prospect,crosstownerstation-mccormick-place,121,55,66,McCormick Place,Mount Prospect,south side of Chicago,north suburban,true,true
+crosstownerstation-bellwood,crosstownerstation-braeside,167,102,65,Braeside,Bellwood,north suburban,west suburban,true,true
+crosstownerstation-119th-street,crosstownerstation-dee-road,154,90,64,Dee Road,119th,north suburban,south suburban,true,true
+metra-cumberland,crosstownerstation-west-pullman,167,103,64,West Pullman,Cumberland,south side of Chicago,north suburban,true,true
+crosstownerstation-west-hinsdale,crosstownerstation-27th-street,134,71,63,27th,West Hinsdale,south side of Chicago,west suburban,true,true
+crosstownerstation-westmont,crosstownerstation-palatine,177,115,62,Palatine,Westmont,north suburban,west suburban,true,true
+crosstownerstation-edison-park,crosstownerstation-stewart-ridge,159,98,61,Stewart Ridge,Edison Park,south side of Chicago,north side of Chicago,true,true
+crosstownerstation-melrose-park,metra-racine,160,100,60,Racine,Melrose Park,south side of Chicago,west suburban,true,true
+metra-riverdale,crosstownerstation-park-ridge,151,91,60,Park Ridge,Riverdale,west suburban,south suburban,true,true
+crosstownerstation-oak-park-ave-mars,crosstownerstation-o-hare-transfer,92,35,57,O'Hare Transfer,Oak Park Ave (Mars),north side of Chicago,north side of Chicago,true,true
+crosstownerstation-downers-grove-main-street,crosstownerstation-hubbard-woods,176,123,53,Hubbard Woods,Downers Grove - Main St,north suburban,west suburban,true,true
+crosstownerstation-wilmette,crosstownerstation-63rd-street,111,59,52,63rd,Wilmette,south side of Chicago,north suburban,true,true
+crosstownerstation-highland-park,crosstownerstation-47th-kenwood,131,80,51,47th (Kenwood),Highland Park,south side of Chicago,north suburban,true,true
