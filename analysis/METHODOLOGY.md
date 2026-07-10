@@ -261,6 +261,36 @@ same-station changes), the faster speed slightly favors the status-quo
 column — so the CrossTowner's advantages shown here are, if anything,
 conservative.
 
+### 5.2 Per-origin jobs accessibility (the "jobs reachable in 60 minutes" line on each map)
+
+Each trip page carries a cumulative-opportunity figure: the number of jobs
+reachable from the trip's origin within a 60-minute transit-and-walk trip,
+today vs. the CrossTowner scenario. Computed with `r5r::accessibility()`
+(step decay, 60-minute cutoff, 30-minute departure window, 2.75 mph walk)
+over LODES 2023 block-level employment (section 6) as opportunities. Script:
+`r5r_jobs_access.R`; results: `results/jobs_access_by_origin.csv`. The figures
+track each trip's story tightly — Arlington Heights +312%, Berkeley 25-fold,
+while the two honest-null trips (Naperville, Tinley Park) show ~0% job-access
+gain, independent confirmation that those corridors lie beyond the tunnel's
+reach.
+
+### 5.3 Red Line Extension (supplementary feed)
+
+A frequency-based GTFS feed for the under-construction CTA Red Line Extension
+(95th-130th) is provided for exploration: `build_rle_gtfs.py` →
+`redline-extension-gtfs.zip`. Five stations and the 5.5-mile alignment come
+from the BuildTheTunnel flythrough dataset (`../lines.js`), itself from CTA
+plans; the 95th/Dan Ryan station is pinned to the existing terminal so R5
+treats it as a same-station transfer onto today's Red Line. Service is
+modeled as 10-minute headways 07:00-22:00 and 15-minute overnight,
+materialized into explicit stop_times (r5r cannot route a raw frequencies
+table). A Roseland (107th/Michigan) -> Rosemont test found no time saving,
+because that origin sits ~0.6 mi east of the RLE alignment (which runs west
+of Michigan Ave), the #34 bus reaches 95th just as fast, and the trip is
+dominated by the unchanged Red+Blue subway legs; a rider boarding at an RLE
+station (verified from 130th) does use it. Results:
+`results/rle_exploration/`.
+
 ## 6. Jobs data
 
 - LEHD LODES Workplace Area Characteristics (WAC), Illinois, 2023,

@@ -1,0 +1,2 @@
+feed_publisher_name,feed_publisher_url,feed_lang,feed_start_date,feed_end_date,feed_version,feed_contact_url
+"Chicago Cityscape (CTA Red Line Extension, frequency model)",https://www.transitchicago.com/rle/,en,20260101,20261231,rle-freq-2026-07-10,https://www.transitchicago.com/rle/

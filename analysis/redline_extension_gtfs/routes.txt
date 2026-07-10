@@ -1,0 +1,2 @@
+route_id,agency_id,route_short_name,route_long_name,route_type,route_color,route_text_color
+RLE,CTA-RLE,Red,Red Line Extension (95th-130th),1,C60C30,FFFFFF

@@ -1,0 +1,129 @@
+id,opportunity,percentile,cutoff,accessibility,net
+Arlington Heights,jobs,50,45,34473,today
+Arlington Heights,jobs,50,60,119527,today
+Arlington Heights,low,50,45,7669,today
+Arlington Heights,low,50,60,22178,today
+Arlington Heights,mid,50,45,8982,today
+Arlington Heights,mid,50,60,32164,today
+Arlington Heights,high,50,45,17822,today
+Arlington Heights,high,50,60,65185,today
+Evanston (Main St),jobs,50,45,429431,today
+Evanston (Main St),jobs,50,60,1209129,today
+Evanston (Main St),low,50,45,62857,today
+Evanston (Main St),low,50,60,152466,today
+Evanston (Main St),mid,50,45,92272,today
+Evanston (Main St),mid,50,60,221649,today
+Evanston (Main St),high,50,45,274302,today
+Evanston (Main St),high,50,60,835014,today
+Beverly (95th),jobs,50,45,87527,today
+Beverly (95th),jobs,50,60,959490,today
+Beverly (95th),low,50,45,18329,today
+Beverly (95th),low,50,60,108807,today
+Beverly (95th),mid,50,45,26395,today
+Beverly (95th),mid,50,60,167056,today
+Beverly (95th),high,50,45,42803,today
+Beverly (95th),high,50,60,683627,today
+Downers Grove,jobs,50,45,42535,today
+Downers Grove,jobs,50,60,495127,today
+Downers Grove,low,50,45,7426,today
+Downers Grove,low,50,60,48872,today
+Downers Grove,mid,50,45,10099,today
+Downers Grove,mid,50,60,74532,today
+Downers Grove,high,50,45,25010,today
+Downers Grove,high,50,60,371723,today
+Naperville,jobs,50,45,71064,today
+Naperville,jobs,50,60,133720,today
+Naperville,low,50,45,9222,today
+Naperville,low,50,60,21539,today
+Naperville,mid,50,45,12536,today
+Naperville,mid,50,60,27748,today
+Naperville,high,50,45,49306,today
+Naperville,high,50,60,84433,today
+Berkeley,jobs,50,45,5677,today
+Berkeley,jobs,50,60,30684,today
+Berkeley,low,50,45,1051,today
+Berkeley,low,50,60,6063,today
+Berkeley,mid,50,45,1559,today
+Berkeley,mid,50,60,9146,today
+Berkeley,high,50,45,3067,today
+Berkeley,high,50,60,15475,today
+Evanston (Davis St),jobs,50,45,427788,today
+Evanston (Davis St),jobs,50,60,1246478,today
+Evanston (Davis St),low,50,45,58367,today
+Evanston (Davis St),low,50,60,158871,today
+Evanston (Davis St),mid,50,45,87786,today
+Evanston (Davis St),mid,50,60,231401,today
+Evanston (Davis St),high,50,45,281635,today
+Evanston (Davis St),high,50,60,856206,today
+Tinley Park,jobs,50,45,23730,today
+Tinley Park,jobs,50,60,88138,today
+Tinley Park,low,50,45,5555,today
+Tinley Park,low,50,60,20987,today
+Tinley Park,mid,50,45,7548,today
+Tinley Park,mid,50,60,27834,today
+Tinley Park,high,50,45,10627,today
+Tinley Park,high,50,60,39317,today
+Arlington Heights,jobs,50,45,75852,scenario
+Arlington Heights,jobs,50,60,492195,scenario
+Arlington Heights,low,50,45,14594,scenario
+Arlington Heights,low,50,60,64898,scenario
+Arlington Heights,mid,50,45,19732,scenario
+Arlington Heights,mid,50,60,104263,scenario
+Arlington Heights,high,50,45,41526,scenario
+Arlington Heights,high,50,60,323034,scenario
+Evanston (Main St),jobs,50,45,855418,scenario
+Evanston (Main St),jobs,50,60,1322917,scenario
+Evanston (Main St),low,50,45,105681,scenario
+Evanston (Main St),low,50,60,171733,scenario
+Evanston (Main St),mid,50,45,158912,scenario
+Evanston (Main St),mid,50,60,255005,scenario
+Evanston (Main St),high,50,45,590825,scenario
+Evanston (Main St),high,50,60,896179,scenario
+Beverly (95th),jobs,50,45,282466,scenario
+Beverly (95th),jobs,50,60,1084653,scenario
+Beverly (95th),low,50,45,37784,scenario
+Beverly (95th),low,50,60,128414,scenario
+Beverly (95th),mid,50,45,53077,scenario
+Beverly (95th),mid,50,60,191734,scenario
+Beverly (95th),high,50,45,191605,scenario
+Beverly (95th),high,50,60,764505,scenario
+Downers Grove,jobs,50,45,59179,scenario
+Downers Grove,jobs,50,60,516361,scenario
+Downers Grove,low,50,45,10645,scenario
+Downers Grove,low,50,60,54102,scenario
+Downers Grove,mid,50,45,14545,scenario
+Downers Grove,mid,50,60,81485,scenario
+Downers Grove,high,50,45,33989,scenario
+Downers Grove,high,50,60,380774,scenario
+Naperville,jobs,50,45,71064,scenario
+Naperville,jobs,50,60,133720,scenario
+Naperville,low,50,45,9222,scenario
+Naperville,low,50,60,21539,scenario
+Naperville,mid,50,45,12536,scenario
+Naperville,mid,50,60,27748,scenario
+Naperville,high,50,45,49306,scenario
+Naperville,high,50,60,84433,scenario
+Berkeley,jobs,50,45,50710,scenario
+Berkeley,jobs,50,60,766519,scenario
+Berkeley,low,50,45,10274,scenario
+Berkeley,low,50,60,85452,scenario
+Berkeley,mid,50,45,15024,scenario
+Berkeley,mid,50,60,127184,scenario
+Berkeley,high,50,45,25412,scenario
+Berkeley,high,50,60,553883,scenario
+Evanston (Davis St),jobs,50,45,787705,scenario
+Evanston (Davis St),jobs,50,60,1358628,scenario
+Evanston (Davis St),low,50,45,101335,scenario
+Evanston (Davis St),low,50,60,176968,scenario
+Evanston (Davis St),mid,50,45,150144,scenario
+Evanston (Davis St),mid,50,60,263433,scenario
+Evanston (Davis St),high,50,45,536226,scenario
+Evanston (Davis St),high,50,60,918227,scenario
+Tinley Park,jobs,50,45,23730,scenario
+Tinley Park,jobs,50,60,88527,scenario
+Tinley Park,low,50,45,5555,scenario
+Tinley Park,low,50,60,21087,scenario
+Tinley Park,mid,50,45,7548,scenario
+Tinley Park,mid,50,60,27968,scenario
+Tinley Park,high,50,45,10627,scenario
+Tinley Park,high,50,60,39472,scenario

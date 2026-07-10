@@ -1,0 +1,6 @@
+stop_id,stop_name,stop_lat,stop_lon
+rle-95th-dan-ryan,95th/Dan Ryan (RLE),41.722377,-87.624342
+rle-103rd,103rd Street,41.70657,-87.633151
+rle-111th,111th Street,41.69239,-87.632732
+rle-michigan,Michigan (116th),41.683017,-87.620805
+rle-130th,130th Street,41.6585,-87.5918
