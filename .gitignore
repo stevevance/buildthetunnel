@@ -8,3 +8,6 @@
 
 # Privately shared source files (Scott/Star:Line) — not for publication
 private/
+
+# Assembled r5r routing networks (derived from analysis/r5r_network_inputs via assemble_networks.sh)
+analysis/networks/

@@ -209,6 +209,24 @@ An earlier scenario feed (`deprecated/crosstowner_crcl_gtfs/`,
 frequency-based 6-stop tunnel shuttle at 450 s headways) predates Scott's
 timetable and is retained for comparison; the X-routes feed supersedes it.
 
+### Reproducing the routing networks
+
+r5r routes over per-scenario folders, each holding the relevant GTFS zips plus
+the clipped street network. The canonical inputs are committed in
+`r5r_network_inputs/`; the assembled network folders are derived and
+gitignored. To (re)build them — after a fresh checkout or if a temp cleanup
+wipes them — run:
+
+```bash
+bash analysis/assemble_networks.sh
+```
+
+This creates `analysis/networks/{today, scenario, rle, scenario_rle}/`, each
+ready for `build_network()`. The 54 MB street pbf is symlinked (shared across
+the four), the small GTFS zips copied. Point routing scripts at
+`analysis/networks/<name>/`; do not rely on session-temp folders, which are
+cleaned between runs.
+
 ## 5. Routing parameters (r5r)
 
 Identical for baseline and scenario:
