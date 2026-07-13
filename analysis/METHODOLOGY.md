@@ -469,6 +469,24 @@ Raw outputs: `xroutes_jobs_comparison.csv`,
    xlsx "Assumptions" sheet: e.g. current-schedule runtimes on existing
    lines, 2-minute spacing on new segments).
 7. **Walk access capped at 15 minutes** each end; no bike/drive access.
+8. **Only claim what the feeds encode.** Describe a station's service level
+   *only* from the GTFS itself (count of `stop_times` rows, their clock times
+   by direction) or a cited external source — never from assumption. In
+   particular, **do not describe any stop as a "flag stop" / "conditional
+   stop."** The Metra feed's `stop_times.txt` carries no `pickup_type` or
+   `drop_off_type` column, so it encodes no flag-stop information whatsoever;
+   the CTA and Pace feeds are the same. A stop's ridership, size, or location
+   is not evidence of its stop type. If flag-stop status is ever relevant,
+   cite Metra's published timetable (its footnote symbols), not the GTFS and
+   not intuition.
+   - *Correction (2026-07-12):* an earlier draft of the South Shore -> Botanic
+     Garden map called Braeside a "flag stop half the trains skip." That was
+     fabricated. The GTFS shows Braeside served by **50 UP-N trains** (26
+     inbound / 24 outbound), matching Metra's and Wikipedia's published counts
+     — a full-time stop. No source (Metra, Wikipedia, chicagorailfan.com)
+     records it ever being a flag stop. The map now states only the verified
+     facts: a one-seat ride replacing three vehicles, and a midday frequency
+     step-up from roughly hourly to every 30 minutes.
 
 ## 10. Reproduction
 
