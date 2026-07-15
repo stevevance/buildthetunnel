@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How the CrossTowner Trip Planner works</title>
+<meta name="description" content="How the CrossTowner Trip Planner computes today-vs-tunnel rail trips: precomputed Conveyal R5 routing, walking estimates, data sources, and limitations.">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+<style>
+  :root{ --crcl:#0B7285; }
+  body{ padding-bottom:3rem; }
+  .bg-crcl{ background:var(--crcl)!important; }
+  header h1{ letter-spacing:-.01em; }
+  main{ max-width:760px; }
+  h2{ color:var(--crcl); font-size:1.25rem; margin-top:2rem; }
+  .lead-sm{ font-size:1.02rem; }
+  code{ color:#095c6c; }
+  .box{ background:#f4f6f7; border:1px solid #d7dee2; border-radius:8px; padding:1rem 1.15rem; }
+</style>
+</head>
+<body>
+<header class="bg-crcl text-white px-3 py-3">
+  <div class="mx-auto" style="max-width:760px">
+    <h1 class="h4 mb-0">How the CrossTowner Trip Planner works</h1>
+    <div class="small opacity-75"><a href="index.html" class="text-white">&larr; Back to the planner</a></div>
+  </div>
+</header>
+
+<main class="mx-auto px-3 mt-4">
+
+  <p class="lead-sm">The planner compares any Chicago-area rail trip <b>as it is today</b> against
+  <b>how it would work with the proposed CrossTowner tunnel</b> (plus the CTA Red Line Extension,
+  which is under construction). Type or pick a start and end, choose a departure time, and it shows
+  both trips side by side.</p>
+
+  <h2>Where the numbers come from</h2>
+  <p>Every trip is computed in advance with <a href="https://github.com/ipeaGIT/r5r" target="_blank" rel="noopener">r5r</a>,
+  the R interface to <a href="https://github.com/conveyal/r5" target="_blank" rel="noopener">Conveyal R5</a> —
+  an open-source transit routing engine used by transportation planners. Because the set of rail stations
+  is fixed, we precompute the travel time between <b>every pair of stations</b> ahead of time and ship the
+  results as static data. That's why the site is instant: your browser is looking up a precomputed answer,
+  not routing live.</p>
+
+  <div class="box">
+    <b>Two networks are compared:</b>
+    <ul class="mb-0">
+      <li><b>Today</b> — present-day CTA trains and buses, Metra, and Pace, from the agencies' published schedules (GTFS).</li>
+      <li><b>With CrossTowner + Red Line Extension</b> — the same present-day service, <i>plus</i> the proposed
+      CrossTowner X-routes (X1–X6) and the under-construction Red Line Extension, on their proposed schedules.</li>
+    </ul>
+  </div>
+
+  <h2>How we handle walking to and from stations</h2>
+  <p>A trip is more than the train ride — you have to walk to the first station and from the last one. Here's how
+  that's estimated:</p>
+  <ol>
+    <li>Your typed address (or a picked example) is turned into a point on the map.</li>
+    <li>We find the <b>nearest rail stations</b> to each end of your trip (up to a few candidates).</li>
+    <li>The walk to each station is estimated from the straight-line distance, multiplied by <b>1.3</b> to
+    approximate real streets (you rarely walk in a perfectly straight line), then divided by a walking speed
+    of <b>2.75 mph</b> (4.43 km/h).</li>
+    <li>If the nearest station is more than a <b>20-minute walk</b> away, that end is considered out of reach
+    and the trip isn't shown.</li>
+    <li>The total is <code>walk to station + train time + walk from station</code>, and the planner keeps the
+    fastest combination.</li>
+  </ol>
+  <p class="text-secondary">The 2.75 mph figure is a deliberately unhurried pace grounded in US walking-speed
+  studies, so estimates aren't rosy. The train time itself (station to station) also includes any transfers and
+  waiting, computed by R5 from the actual schedules.</p>
+
+  <h2>Which route it shows in the future scenario</h2>
+  <p>In the future scenario, when more than one reasonable trip exists, the planner <b>prefers the CrossTowner
+  route</b> even if it's a little slower. Specifically: among all the options that are within <b>12 minutes</b>
+  of the fastest, it picks the one that spends the most time on a CrossTowner X-route. If no near-fastest option
+  uses an X-route, it simply shows the fastest trip.</p>
+  <p class="text-secondary">This reflects a real rider's likely choice — most people will take a direct
+  CrossTowner train over a marginally quicker trip that adds a transfer to a bus — and it keeps the future card
+  focused on what the tunnel changes. The travel <i>time</i> shown is always the time of the trip actually
+  displayed, so the number and the route always match.</p>
+
+  <h2>Departure times</h2>
+  <p>Trips are precomputed for three weekday departure times — <b>8 AM, 12 PM, and 6 PM</b> — because transit
+  frequency changes a lot across the day. Each time is a median over a 30-minute departure window, so a single
+  lucky (or unlucky) connection doesn't skew the result.</p>
+
+  <h2>Where you can travel</h2>
+  <p>Trips must start and end within the six <b>Metra-service counties</b>: Cook, DuPage, Lake, Kane, McHenry,
+  and Will. Addresses outside that area are declined.</p>
+
+  <h2>Data sources</h2>
+  <ul>
+    <li><b>Transit schedules:</b> published GTFS feeds from CTA, Metra, and Pace.</li>
+    <li><b>Streets and walking:</b> OpenStreetMap.</li>
+    <li><b>Station locations & rail lines:</b> Chicago Cityscape's place database.</li>
+    <li><b>CrossTowner service:</b> a synthetic GTFS feed built from Star:Line Chicago's published CrossTowner
+    map and schedule assumptions. The Red Line Extension is modeled on its planned stations and frequencies.</li>
+  </ul>
+
+  <h2>What to keep in mind</h2>
+  <ul>
+    <li>The CrossTowner and Red Line Extension services are <b>proposals</b> (or under construction), modeled on
+    published plans — not operating service.</li>
+    <li>The future scenario is <b>additive</b>: it adds the new lines on top of today's service without
+    restructuring existing routes.</li>
+    <li>Times reflect ordinary weekday service. Game-day and special-event buses (which the transit agencies
+    don't publish in their schedule data) are not included.</li>
+    <li>No fares, crowding, or reliability are modeled.</li>
+  </ul>
+
+  <h2>Your privacy</h2>
+  <p>Your use of this planner is <b>not logged</b>. Trips are computed in your browser from precomputed data, and
+  the addresses you search are not stored anywhere. If you choose to enter your email, it's saved only so Build
+  the Tunnel can reach you.</p>
+
+  <h2>Credit</h2>
+  <p class="text-secondary">Made by Steven Vance, using the Star:Line Chicago CrossTowner map and synthetic
+  schedule as input to Conveyal R5 trip-planning software. This tool is otherwise unaffiliated with Star:Line
+  Chicago. Fuller technical documentation lives in the project's <code>analysis/METHODOLOGY.md</code>.</p>
+
+  <p class="mt-4"><a href="index.html" class="btn btn-crcl" style="background:var(--crcl);color:#fff">&larr; Back to the planner</a></p>
+</main>
+</body>
+</html>

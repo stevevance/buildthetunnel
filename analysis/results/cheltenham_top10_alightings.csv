@@ -1,0 +1,11 @@
+station,today_min,scen_min,over60_today,under60_scen
+Aurora,156,156,YES,no
+Route 59,144,144,YES,no
+Elmhurst,141,86,YES,no
+Naperville,140,140,YES,no
+Palatine,134,97,YES,no
+Downers Grove Main St,128,109,YES,no
+Arlington Heights,126,91,YES,no
+80th Ave (Tinley Park),92,90,YES,no
+Davis St (Evanston),92,74,YES,no
+Ravenswood,87,64,YES,no

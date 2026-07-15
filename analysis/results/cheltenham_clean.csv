@@ -1,0 +1,13 @@
+Station,Line,2018 alightings,Today (min),With CrossTowner (min),Time saved (min),Transfers today,Transfers with CrossTowner
+Clybourn,UP-N,1766,73,51,-22,2,0
+Ravenswood,UP-N,2545,87,64,-23,2,0
+Davis St (Evanston),UP-N,1980,92,74,-18,2,0
+Wilmette,UP-N,1560,109,79,-30,2,0
+Elmhurst,UP-W,2347,141,86,-55,2,1
+Mount Prospect,UP-NW,1782,121,87,-34,1,0
+LaGrange Road,UP-W,1532,109,89,-20,1,1
+Arlington Heights,UP-NW,2537,126,91,-35,1,0
+Arlington Park,UP-NW,1661,130,94,-36,1,0
+Palatine,UP-NW,2367,134,97,-37,1,0
+Downers Grove Main St,BNSF,2562,128,109,-19,1,1
+Average,,1866,113,85,-29.9,1.5,0.3

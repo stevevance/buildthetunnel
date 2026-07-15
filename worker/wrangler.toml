@@ -1,0 +1,25 @@
+# Cloudflare Worker for the CrossTowner trip planner.
+#
+# Two jobs a static GitHub Pages site can't do itself:
+#   POST /email    -> store a voluntarily-provided email in D1 (advocacy list)
+#   GET  /geocode  -> proxy Geocode.earth so the API key stays server-side
+#
+# Setup:
+#   wrangler d1 create planner_emails         # paste database_id below
+#   wrangler d1 execute planner_emails --file=schema.sql
+#   wrangler secret put GEOCODE_EARTH_KEY     # paste the Geocode.earth key
+#   wrangler deploy
+# Then set workerBase in planner/config.js to the deployed URL.
+
+name = "buildthetunnel-planner"
+main = "src/index.js"
+compatibility_date = "2026-07-13"
+
+# Origins allowed to call this Worker (the GitHub Pages site + local preview).
+[vars]
+ALLOWED_ORIGINS = "https://stevevance.github.io,http://localhost:8000,http://127.0.0.1:8000"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "planner_emails"
+database_id = "8a9445d9-a4af-4afa-b3f1-51168e1762ff"

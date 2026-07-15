@@ -1,0 +1,126 @@
+cluster,members,max_m
+9,metra:Elmhurst | crosstowner:Elmhurst,4
+10,metra:Berkeley | crosstowner:Berkeley,7
+11,metra:Bellwood | crosstowner:Bellwood,117
+12,metra:Melrose Park | crosstowner:Melrose Park,10
+13,metra:Maywood | crosstowner:Maywood,5
+14,metra:River Forest | crosstowner:River Forest,1
+15,metra:Oak Park | crosstowner:Oak Park - Harlem/Lake,89
+16,metra:Kedzie | crosstowner:Kedzie,37
+22,metra:Downers Grove | crosstowner:Downers Grove - Main St,5
+23,metra:Fairview Ave. | crosstowner:Fairview Ave,0
+24,metra:Westmont | crosstowner:Westmont,13
+25,metra:Clarendon Hills | crosstowner:Clarendon Hills,15
+26,metra:West Hinsdale | crosstowner:West Hinsdale,24
+27,metra:Hinsdale | crosstowner:Hinsdale,3
+28,metra:Highlands | crosstowner:Highlands,4
+29,metra:Western Springs | crosstowner:Western Springs,8
+30,metra:Stone Ave. | crosstowner:LaGrange - Stone Ave,3
+31,metra:LaGrange Road | crosstowner:LaGrange Road,13
+32,metra:Congress Park | crosstowner:Congress Park,17
+34,metra:Hollywood | crosstowner:Hollywood,7
+35,metra:Riverside | crosstowner:Riverside,11
+36,metra:Harlem Ave. | crosstowner:Berwyn - Harlem Ave,7
+37,metra:Berwyn | crosstowner:Berwyn - Oak Park Ave,7
+38,metra:Lavergne | crosstowner:LaVergne,0
+39,metra:Cicero | crosstowner:Cicero,6
+40,metra:Western Avenue | crosstowner:Western/18th,43
+41,metra:Halsted Street | crosstowner:Halsted/16th,22
+56,metra:Clybourn | crosstowner:Clybourn,19
+57,metra:Ravenswood | crosstowner:Ravenswood,54
+58,metra:Rogers Park | crosstowner:Rogers Park,50
+59,metra:Main St. | cta_rail:Main | crosstowner:Main St (Evanston),41
+60,metra:Evanston (Davis St.) | cta_rail:Davis | crosstowner:Davis St (Evanston),105
+61,metra:Central St. | crosstowner:Central/Green Bay (Evanston),22
+62,metra:Wilmette | crosstowner:Wilmette,9
+63,metra:Kenilworth | crosstowner:Kenilworth,2
+64,metra:Winnetka | crosstowner:Winnetka,9
+65,metra:Hubbard Woods | crosstowner:Hubbard Woods,12
+66,metra:Glencoe | crosstowner:Glencoe,17
+67,metra:Braeside | crosstowner:Braeside,9
+68,metra:Ravinia | crosstowner:Ravinia,17
+69,metra:Highland Park | crosstowner:Highland Park,9
+98,metra:Western Ave | crosstowner:Western/Hubbard,21
+99,metra:Ravinia Park | crosstowner:Ravinia Park,0
+100,metra:Indian Hill | crosstowner:Indian Hill,9
+109,metra:Palatine | crosstowner:Palatine,7
+110,metra:Arlington Park | crosstowner:Arlington Park,5
+111,metra:Arlington Heights | crosstowner:Arlington Heights,16
+112,metra:Mt. Prospect | crosstowner:Mount Prospect,5
+113,metra:Cumberland | crosstowner:Cumberland,0
+114,metra:Des Plaines | crosstowner:Des Plaines,18
+115,metra:Dee Road | crosstowner:Dee Road,8
+116,metra:Park Ridge | crosstowner:Park Ridge,4
+117,metra:Irving Park | cta_rail:Irving Park (Blue) | crosstowner:Irving Park/Keeler,62
+131,metra:Mars | crosstowner:Oak Park Ave (Mars),10
+132,metra:Galewood | crosstowner:Narragansett Ave (Galewood),3
+133,metra:Hanson Park | crosstowner:Central Ave (Hanson Park),10
+134,metra:Grand/Cicero | crosstowner:Grand/Cicero,2
+135,metra:O'Hare Transfer | crosstowner:O'Hare Transfer,9
+154,metra:Kensington | crosstowner:Kensington,0
+155,metra:59th St. (U. of Chicago) | crosstowner:59th (University of Chicago),2
+164,metra:Edison Park | crosstowner:Edison Park,56
+165,metra:Norwood Park | crosstowner:Norwood Park,9
+166,metra:Gladstone Park | crosstowner:Gladstone Park,7
+167,metra:Jefferson Park | crosstowner:Jefferson Park,39
+169,metra:47th St. (Kenwood) | crosstowner:47th (Kenwood),5
+170,metra:51st/53rd St. (Hyde Park) | crosstowner:51st/53rd,13
+171,metra:55th - 56th - 57th St. | crosstowner:55th-56th-57th,12
+172,metra:63rd St. | crosstowner:63rd,8
+174,metra:River Grove | crosstowner:River Grove,14
+176,metra:Riverdale | crosstowner:Riverdale,0
+177,metra:Ivanhoe | crosstowner:Ivanhoe,0
+178,metra:147th St. | crosstowner:147th (Sibley Blvd),0
+184,metra:18th St. | crosstowner:18th (Soldier Field),22
+185,metra:McCormick Place | crosstowner:McCormick Place,17
+186,metra:27th St. | crosstowner:27th,10
+187,metra:75th St. (Grand Crossing) | crosstowner:75th (Grand Crossing),8
+188,metra:79th St. (Chatham) | crosstowner:79th (Chatham),3
+189,metra:83rd St. (Avalon Park) | crosstowner:83rd (Avalon Park),13
+190,metra:87th St. (Woodruff) | crosstowner:87th (Woodruff),27
+191,metra:91st St. | crosstowner:91st (Chesterfield),17
+192,metra:95th St. | crosstowner:95th-Chicago State,51
+193,metra:103rd St. (Rosemoor) | crosstowner:103rd (Rosemoor),6
+194,metra:107th St. | crosstowner:107th,6
+195,metra:111th St. (Pullman) | crosstowner:111th (Pullman),7
+196,metra:Stony Island | crosstowner:Stony Island,6
+197,metra:Bryn Mawr | crosstowner:Bryn Mawr,0
+198,metra:South Shore | crosstowner:South Shore,26
+199,metra:Windsor Park | crosstowner:Windsor Park,0
+200,metra:Cheltenham (79th St.) | crosstowner:79th (Cheltenham),3
+201,metra:83rd St. | crosstowner:83rd,41
+202,metra:87th St. | crosstowner:87th,2
+203,metra:South Chicago (93rd) | crosstowner:93rd/South Chicago,2
+204,metra:LaSalle Street | cta_rail:LaSalle/Van Buren | cta_rail:LaSalle,100
+205,metra:Gresham | crosstowner:Gresham,5
+206,metra:Blue Island-Vermont | crosstowner:Blue Island,139
+209,metra:Brainerd | crosstowner:Brainerd,4
+210,metra:91st St. - Beverly Hills | crosstowner:91st (Beverly Hills),0
+211,metra:Prairie St. | crosstowner:Prairie St,5
+212,metra:123rd St. | crosstowner:123rd,3
+213,metra:119th St. | crosstowner:119th,3
+214,metra:115th St. - Morgan Park | crosstowner:115th (Morgan Park),0
+215,metra:111th St. - Morgan Park | crosstowner:111th (Morgan Park),0
+216,metra:107th St. - Beverly Hills | crosstowner:107th (Beverly Hills),0
+217,metra:103rd St. - Beverly Hills | crosstowner:103rd (Beverly Hills),0
+218,metra:99th St. - Beverly Hills | crosstowner:99th (Beverly Hills),0
+219,metra:95th St. - Beverly Hills | crosstowner:95th (Beverly Hills),0
+221,metra:Burr Oak | crosstowner:Burr Oak,10
+222,metra:Ashland | crosstowner:Ashland,0
+223,metra:Racine | crosstowner:Racine,0
+224,metra:West Pullman | crosstowner:West Pullman,10
+225,metra:Stewart Ridge | crosstowner:Stewart Ridge,4
+226,metra:State St. | crosstowner:State St,3
+230,metra:Chicago Union Station | crosstowner:Union Station,26
+235,metra:Rosemont | crosstowner:Rosemont - Balmoral Ave,15
+236,metra:Franklin Pk | crosstowner:Franklin Park - Belmont Ave,10
+239,"metra:35th St. - Lou Jones | cta_rail:Sox-35th | crosstowner:35th (""""Lou"""" Jones)",124
+241,metra:Peterson/Ridge | crosstowner:Peterson/Ridge,42
+247,cta_rail:Jackson (Blue) | cta_rail:Jackson (Red),141
+278,cta_rail:95th/Dan Ryan | rle:95th/Dan Ryan (RLE),0
+281,cta_rail:Cicero (Green) | crosstowner:Cicero/Lake,148
+307,cta_rail:Monroe (Blue) | cta_rail:Monroe (Red),139
+339,cta_rail:Clinton (Green/Pink) | crosstowner:Randolph/Clinton (Ogilvie),145
+356,cta_rail:Montrose (Blue) | crosstowner:Montrose (Mayfair),127
+360,cta_rail:Roosevelt | crosstowner:Roosevelt,37
+364,cta_rail:Addison (Brown) | crosstowner:Addison/Lincoln,75

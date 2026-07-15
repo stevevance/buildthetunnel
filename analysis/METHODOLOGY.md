@@ -325,6 +325,89 @@ station (verified from 130th) does use it. Results:
   (IL-only table), which understates 60-minute totals slightly toward the
   southeast; jobs are 2023 counts applied to a future network.
 
+### 6.1 Metra station ridership (boardings & alightings)
+
+- Source: RTAMS (Regional Transportation Asset Management System),
+  <https://rtams.org/ridership/metra/stations> — Metra's periodic
+  Boarding & Alighting Survey, average-weekday counts per station.
+- Survey years available on the page: **2018, 2016, 2014, 2002**. Analyses
+  here use the most recent year, 2018.
+- The page offers no CSV export; the two on-page DataTables (`edit-boardings`,
+  `edit-alightings`, 257 stations each) were parsed directly from the HTML
+  into `results/rtams_metra_boardings.csv`, `results/rtams_metra_alightings.csv`,
+  and a merged `results/rtams_metra_boarding_alighting.csv`.
+- Used to rank destination stations by demand (alightings) when selecting
+  origin-destination pairs to route — not an input to travel-time or jobs
+  calculations. Counts are average-weekday survey figures, not a full census.
+
+### 6.2 Trip planner (precomputed station matrix)
+
+The public trip planner (`/planner/`) is a static site backed by a precomputed
+station-to-station travel-time matrix, not live routing. Build scripts and a
+full README are in `analysis/planner/`.
+
+- **Stations.** A unified list of Metra (242), CTA rail "L" (the 143
+  `location_type=1` parent stations), and CrossTowner (142 X-served) stops,
+  deduped where they physically coincide. Dedup clusters stops within **150 m**
+  **by distance only, never by name** — parallel South Side branches have
+  distinct stations with identical numbered-street names (e.g. two "79th"
+  stations), and a name merge would wrongly collapse them (the same failure
+  mode as section 4.2). Result: ~397 canonical stations; every merge is logged
+  to `station_dedup_report.csv`. CrossTowner-only infill stations carry
+  `exists_today=false` and are not boardable on the "today" network.
+- **Two networks, one time slice.** `today` and `scenario` (where **scenario =
+  today + CrossTowner X-routes + the under-construction Red Line Extension**, so
+  its four new stations are routable), for a single **weekday 8:00 AM**
+  departure — "the best trip if you leave at 8:00." **Directional** (A→B ≠ B→A),
+  sharded per origin station as static JSON. A cell is
+  `{m, r, x, legs:[{mode, line, from, to, ride, freq}]}`.
+- **Time = 30-minute-window median** (`expanded_travel_time_matrix`,
+  `analysis/precompute_expanded.R` then `merge_median_into_legs.R`). Sampling one
+  departure instant is fragile: you can "just miss" the 8:00 train at your local
+  station (long wait) while an adjacent station catches that same train two
+  minutes later — and combined with the access walk that made the planner
+  recommend boarding a station 14 min away. The median over the window ≈ half the
+  headway at every station, which is robust to that and correctly favours the
+  nearer station.
+- **Route + legs from `detailed_itineraries`** at the 8:00 departure
+  (`analysis/precompute_legs_8am.R`). Each transit leg's board/alight **station**
+  is the nearest station to that segment's geometry endpoints; `ride` is the
+  in-vehicle minutes. Per-leg *wait* is intentionally not shown (the median time
+  already folds in typical waiting; a single departure's wait would mislead).
+- **CrossTowner-route preference (scenario only).** Among the Pareto options at
+  8:00, if one using a CrossTowner **X-route** is within **12 minutes** of the
+  fastest, it is preferred — a rider's likely choice of a direct CrossTowner
+  train over a marginally quicker bus trip. `today` gets no preference.
+- **Service frequency per leg** (`analysis/add_leg_frequency.py`). `freq` is the
+  mean headway (minutes) around 8:00 counting every trip that serves the leg
+  (board→alight) across that network's feeds. This is what makes the CrossTowner
+  benefit visible when the route looks identical: e.g. Clarendon Hills→LaGrange
+  Road is BNSF "every ~20 min" today, but "every ~12 min" in the scenario once
+  the X5 (which shares the BNSF corridor) is added — that added frequency, not a
+  faster route, is why the trip is ~13 min quicker.
+- **Route geometry on the map** (`planner/data/lines.json`, ~56 KB, loaded once).
+  Line shapes come from Cityscape `view_places` (CTA + Metra) and the synthetic
+  GTFS `shapes.txt` (X-routes + RLE); the browser clips each line between a leg's
+  board and alight stations, so the map traces real alignments (straight only
+  where the track is actually straight). Buses and walks fall back to
+  straight/dashed segments.
+- **Stations include the RLE.** The RLE's four new stations (103rd, 111th,
+  Michigan/116th, 130th) are not in CTA's published GTFS, so they come from the
+  synthetic `redline-extension-gtfs.zip`; they carry `on_rle=true`,
+  `exists_today=false`.
+- **Walk cap.** The planner uses a **20-minute** walk cap for access, egress,
+  and transfers — stricter than the **30-minute** cap on the published trip
+  maps above. This excludes long inter-terminal walks (e.g. the ~24-minute
+  Millennium↔Ogilvie gap) from counting as a transfer, matching reality. Read
+  the planner's numbers as a stricter-walk variant of the map numbers.
+- **Door-to-door.** The frontend geocodes typed addresses (Geocode.earth, via
+  a Cloudflare Worker proxy), snaps each end to the nearest stations within the
+  20-minute cap (straight-line × 1.3 detour ÷ 2.75 mph), adds that walk to the
+  matrix time, and reports the best total per network. Trips are limited to the
+  six Metra-service counties (Cook, DuPage, Lake, Kane, McHenry, Will).
+- **Cross-check.** Cheltenham→Clybourn at 08:00 reads 73 min today / 51 min
+  scenario in the matrix, matching the standalone `detailed_itineraries` runs.
+
 ## 7. Validation and cross-checks performed
 
 1. **Feed service-date check** (section 3.3) — guards against the classic

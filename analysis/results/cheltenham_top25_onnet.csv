@@ -1,0 +1,12 @@
+station,today_min,scen_min,alightings_2018,delta,over60_today,under60_scen
+Main Street (Downers Grove),128,109,2562,-19,YES,no
+Ravenswood,87,64,2545,-23,YES,no
+Arlington Heights,126,91,2537,-35,YES,no
+Palatine,134,97,2367,-37,YES,no
+Elmhurst,141,86,2347,-55,YES,no
+Davis Street (Evanston),92,74,1980,-18,YES,no
+Mount Prospect,121,87,1782,-34,YES,no
+Clybourn,73,51,1766,-22,YES,YES
+Arlington Park,130,94,1661,-36,YES,no
+Wilmette,109,79,1560,-30,YES,no
+LaGrange Road,109,89,1532,-20,YES,no

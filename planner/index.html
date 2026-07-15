@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CrossTowner Trip Planner — Build the Tunnel</title>
+<meta name="description" content="Plan any Chicago-area rail trip and compare it today versus with the proposed CrossTowner regional-rail tunnel.">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<style>
+  :root{ --crcl:#0B7285; }
+  html,body{height:100%}
+  body{overflow:hidden}
+  .bg-crcl{background:var(--crcl)!important}
+  .text-crcl{color:var(--crcl)!important}
+  .btn-crcl{background:var(--crcl);color:#fff}
+  .btn-crcl:hover,.btn-crcl:focus{background:#095c6c;color:#fff}
+  .panel{width:440px;flex:0 0 440px;overflow-y:auto}
+  #map{flex:1 1 auto;min-height:45vh}
+  /* autocomplete dropdown */
+  .ac-wrap{position:relative}
+  .aclist{position:absolute;top:100%;left:0;right:0;z-index:1000;margin:.1rem 0 0;max-height:14rem;overflow:auto}
+  .aclist:empty{display:none}
+  @media(max-width:767.98px){
+    body{overflow:auto}
+    .panel{width:auto;flex:none}
+    #map{min-height:60vh}
+  }
+</style>
+</head>
+<body class="d-flex flex-column">
+
+<header class="bg-crcl text-white px-3 py-2 flex-shrink-0">
+  <h1 class="h5 mb-0">CrossTowner Trip Planner</h1>
+  <div class="small opacity-75">Plan a Chicago-area rail trip and see it today vs. with the proposed CrossTowner tunnel.</div>
+</header>
+
+<div class="app flex-grow-1 d-flex flex-column flex-md-row" style="min-height:0">
+  <aside class="panel p-3 border-end">
+    
+    <h2 class="h5 fw-bold mb-2">Option A: Choose a predefined trip</h2>
+    <div id="predefined-trips" class="d-flex flex-column gap-2 mb-4">
+      <!-- populated from CFG.predefined_trips by app.js -->
+    </div>
+
+    <h2 class="h5 fw-bold mb-2">Option B: Choose your own trip</h2>
+    <div class="ac-wrap mb-2">
+      <h3 class="h6 fw-semibold mb-1">B1. Choose a starting location</h3>
+      <label for="from" class="form-label small fw-semibold text-uppercase text-secondary mb-1">From (address)</label>
+      <input id="from" type="text" class="form-control" autocomplete="off" placeholder="e.g. 71st &amp; Exchange, Chicago">
+    </div>
+
+    <div class="ac-wrap mb-2">
+      <h3 class="h6 fw-semibold mb-1">B2. Choose a destination</h3>
+      <label for="to" class="form-label small fw-semibold text-uppercase text-secondary mb-1">To (address)</label>
+      <input id="to" type="text" class="form-control" autocomplete="off" placeholder="e.g. Chicago Botanic Garden">
+    </div>
+
+    <div class="d-flex justify-content-end mb-3">
+      <button id="swap" class="btn btn-sm btn-outline-secondary" title="Swap origin and destination">&#8646; Swap</button>
+    </div>
+
+    <div class="row g-2 align-items-end mb-3">
+      <div class="col">
+        <label for="slice" class="form-label small fw-semibold text-uppercase text-secondary mb-1">Depart</label>
+        <select id="slice" class="form-select"></select>
+      </div>
+      <div class="col-auto">
+        <button id="plan" class="btn btn-crcl">Plan trip</button>
+      </div>
+    </div>
+    
+    <div class="row" id="next_steps">
+      <div class="col-auto">
+        <p>The trip planner will find the nearest rail station (existing, under construction, and proposed new CrossTowner) at your selected origin and destination and route a trip between them. These trips have been precomputed to ensure this website is super fast.</p>
+      </div>
+    </div>
+
+    <div id="results" class="d-flex flex-column gap-2"></div>
+
+    <footer class="text-secondary small mt-4 pt-3 border-top">
+      Made by Steven Vance, using the Star:Line Chicago CrossTowner map and synthetic
+      schedule as input to Conveyal R5 trip-planning software. This tool is otherwise
+      unaffiliated with Star:Line Chicago.
+      <p class="mt-2 mb-0">Your use of this planner is not logged: trips are computed in your
+      browser from precomputed data, and the addresses you search are not stored. If you enter
+      your email, it is saved only so Build the Tunnel can reach you.
+      <a href="methodology.html">How this works &rarr;</a></p>
+    </footer>
+  </aside>
+
+  <div id="map"></div>
+</div>
+
+<!-- Email wall -->
+<div class="modal fade" id="emailwall" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-body p-4">
+        <h2 class="h5">See your CrossTowner trip</h2>
+        <p class="text-secondary small">Enter your email to use the planner and get occasional Build the Tunnel updates. We won't share it.</p>
+        <form id="emailform">
+          <input class="d-none" id="hp" tabindex="-1" autocomplete="off">
+          <input id="email" type="email" class="form-control mb-2" required placeholder="you@example.com">
+          <button type="submit" class="btn btn-crcl w-100">Start planning</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "generated_at": "2026-07-14T00:57:26-0500",
+  "networks": ["today", "scenario"],
+  "scenario_note": "scenario = today + CrossTowner X-routes + Red Line Extension",
+  "slices": "0800",
+  "slice_times": "2026-07-07 08:00:00",
+  "station_count": 401,
+  "walk_speed_kmh": 4.43,
+  "max_walk_min": 20,
+  "detail": "median-time + routes + legs (8am, 30-min window)"
+}

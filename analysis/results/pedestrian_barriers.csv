@@ -1,0 +1,7 @@
+from,to,crow_m,walk_min,detour_ratio,mid_lat,mid_lon,osm_edit
+123rd St.,Ashland,1082,38,2.6,41.6697,-87.6671,https://www.openstreetmap.org/edit#map=18/41.66970/-87.66710
+Chicago (Brown/Purple),Chicago/Halsted (Bally's),958,31,2.4,41.8963,-87.64165,https://www.openstreetmap.org/edit#map=18/41.89630/-87.64165
+18th St.,VENUE:Soldier Field,460,14,2.2,41.8603,-87.6174,https://www.openstreetmap.org/edit#map=18/41.86030/-87.61740
+Galewood,Mars,777,22,2.1,41.9178,-87.7901,https://www.openstreetmap.org/edit#map=18/41.91780/-87.79010
+Roosevelt,VENUE:Soldier Field,1024,29,2.1,41.86485,-87.62185,https://www.openstreetmap.org/edit#map=18/41.86485/-87.62185
+Museum Campus/11th St.,VENUE:Soldier Field,801,22,2,41.86545,-87.61905,https://www.openstreetmap.org/edit#map=18/41.86545/-87.61905
