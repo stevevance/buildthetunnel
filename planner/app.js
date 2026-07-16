@@ -301,28 +301,116 @@
     if (/^\d/.test(code)) return "#8B979E";        // bus number -> grey
     return "#2b6cb0";                               // Metra lines -> blue
   }
-  // Nearest vertex index of a path ([[lon,lat],...]) to a lat/lon.
-  function nearestIdx(path, lat, lon) {
-    var best = 0, bd = Infinity;
+  /*
+   * A rail line's geometry arrives as one or more disconnected parts
+   * ([[lon,lat],...] each) -- e.g. a downtown Loop stub separate from the branch
+   * out to the terminus. Stitch parts that share an endpoint into maximal
+   * continuous chains so a slice can span what used to be a part boundary
+   * (the Rock Island LaSalle->Blue Island gap was exactly this). Greedy: start a
+   * chain from an unused part, then keep gluing on any part whose end touches
+   * either tip (within ~40 m), reversing it as needed.
+   */
+  /*
+   * Collapse consecutive (near-)duplicate vertices. Some CTA lines carry
+   * zero-length Loop stubs (a 2-point part whose ends are identical); turf's
+   * nearestPointOnLine divides by segment length and yields NaN on those,
+   * which then makes lineSlice throw "coordinates must contain numbers". Drop
+   * them here so every segment has real length.
+   */
+  function dedupePath(path) {
+    var EPS = 1e-7, out = [];
     for (var i = 0; i < path.length; i++) {
-      var dy = path[i][1] - lat, dx = path[i][0] - lon, d = dx * dx + dy * dy;
-      if (d < bd) { bd = d; best = i; }
+      var p = path[i], q = out[out.length - 1];
+      if (!q || Math.abs(p[0] - q[0]) > EPS || Math.abs(p[1] - q[1]) > EPS) out.push(p);
     }
-    return { idx: best, d: bd };
+    return out;
   }
-  // Clip a line (list of paths) between two stations -> [[lat,lon],...] board->alight.
+
+  function stitchChains(parts) {
+    var TOL = 4e-4;                                   // ~40 m in degrees
+    function near(a, b) { return Math.abs(a[0] - b[0]) < TOL && Math.abs(a[1] - b[1]) < TOL; }
+    // Clean each part first, then drop any that collapsed below 2 points.
+    var segs = parts.map(dedupePath).filter(function (p) { return p.length >= 2; });
+    var used = segs.map(function () { return false; });
+    var chains = [];
+    for (var i = 0; i < segs.length; i++) {
+      if (used[i]) continue;
+      used[i] = true;
+      var chain = segs[i].slice();
+      var grew = true;
+      while (grew) {
+        grew = false;
+        for (var j = 0; j < segs.length; j++) {
+          if (used[j]) continue;
+          var s = segs[j], head = chain[0], tail = chain[chain.length - 1];
+          var sh = s[0], stail = s[s.length - 1];
+          if (near(tail, sh)) { chain = chain.concat(s.slice(1)); }
+          else if (near(tail, stail)) { chain = chain.concat(s.slice().reverse().slice(1)); }
+          else if (near(head, stail)) { chain = s.slice().concat(chain.slice(1)); }
+          else if (near(head, sh)) { chain = s.slice().reverse().concat(chain.slice(1)); }
+          else continue;
+          used[j] = true; grew = true;
+        }
+      }
+      chains.push(dedupePath(chain));                 // dedupe again after stitching
+    }
+    return chains.filter(function (c) { return c.length >= 2; });
+  }
+
+  // Per-line cache of stitched chains as turf LineStrings (built once, lazily).
+  var chainCache = {};
+  function lineChains(code) {
+    if (chainCache[code]) return chainCache[code];
+    var parts = LINES && LINES[code];
+    if (!parts) return (chainCache[code] = null);
+    var chains = stitchChains(parts).filter(function (c) { return c.length >= 2; });
+    chainCache[code] = window.turf
+      ? chains.map(function (c) { return turf.lineString(c); })
+      : chains;                                       // raw fallback if turf absent
+    return chainCache[code];
+  }
+
+  /*
+   * Clip a line between two stations -> [[lat,lon],...] board->alight. Picks the
+   * stitched chain closest to both endpoints, then uses turf.lineSlice to cut the
+   * piece between them (turf handles endpoint order). Falls back to a simple
+   * vertex-index slice if turf did not load.
+   */
   function clipLine(code, aLat, aLon, bLat, bLon) {
-    var paths = LINES && LINES[code];
-    if (!paths) return null;
-    var bestPath = null, bestScore = Infinity, ai = 0, bi = 0;
-    paths.forEach(function (p) {
-      var na = nearestIdx(p, aLat, aLon), nb = nearestIdx(p, bLat, bLon);
-      if (na.d + nb.d < bestScore) { bestScore = na.d + nb.d; bestPath = p; ai = na.idx; bi = nb.idx; }
+    var chains = lineChains(code);
+    if (!chains || !chains.length) return null;
+
+    if (window.turf) {
+      var A = turf.point([aLon, aLat]), B = turf.point([bLon, bLat]);
+      var best = null, bestScore = Infinity;
+      chains.forEach(function (ls) {
+        var na = turf.nearestPointOnLine(ls, A), nb = turf.nearestPointOnLine(ls, B);
+        var score = na.properties.dist + nb.properties.dist;   // km
+        if (score < bestScore) { bestScore = score; best = { ls: ls, na: na, nb: nb }; }
+      });
+      if (!best) return null;
+      var sliced = turf.lineSlice(best.na, best.nb, best.ls);
+      return sliced.geometry.coordinates.map(function (c) { return [c[1], c[0]]; });
+    }
+
+    // Fallback (no turf): nearest-vertex slice on the best raw chain.
+    function nIdx(path, lat, lon) {
+      var bi = 0, bd = Infinity;
+      for (var i = 0; i < path.length; i++) {
+        var dx = path[i][0] - lon, dy = path[i][1] - lat, d = dx * dx + dy * dy;
+        if (d < bd) { bd = d; bi = i; }
+      }
+      return { idx: bi, d: bd };
+    }
+    var bestPath = null, bScore = Infinity, ai = 0, bi2 = 0;
+    chains.forEach(function (p) {
+      var na = nIdx(p, aLat, aLon), nb = nIdx(p, bLat, bLon);
+      if (na.d + nb.d < bScore) { bScore = na.d + nb.d; bestPath = p; ai = na.idx; bi2 = nb.idx; }
     });
     if (!bestPath) return null;
-    var lo = Math.min(ai, bi), hi = Math.max(ai, bi);
+    var lo = Math.min(ai, bi2), hi = Math.max(ai, bi2);
     var seg = bestPath.slice(lo, hi + 1).map(function (c) { return [c[1], c[0]]; });
-    if (ai > bi) seg.reverse();
+    if (ai > bi2) seg.reverse();
     return seg;
   }
   function stCoord(name) { var s = stationByName[name]; return s ? [s.lat, s.lon] : null; }
@@ -383,9 +471,9 @@
     CFG.predefined_trips.forEach(function (trip) {
       var b = document.createElement("button");
       b.type = "button";
-      b.className = "btn btn-outline-secondary text-start w-100";
+      b.className = "btn trip-btn text-start w-100";
       b.innerHTML = '<span class="fw-semibold d-block">' + trip.title + '</span>' +
-        (trip.blurb ? '<span class="small text-secondary">' + trip.blurb + '</span>' : "");
+        (trip.blurb ? '<span class="small blurb">' + trip.blurb + '</span>' : "");
       b.addEventListener("click", function () {
         setEndpoint("from", { lat: trip.from.lat, lon: trip.from.lon, label: trip.from.label });
         setEndpoint("to",   { lat: trip.to.lat,   lon: trip.to.lon,   label: trip.to.label });
@@ -631,6 +719,9 @@
     document.getElementById("plan").addEventListener("click", onPlan);
     document.getElementById("swap").addEventListener("click", onSwap);
     document.getElementById("reset").addEventListener("click", onReset);
+    // Live geocode autocomplete for the Option B address fields.
+    wireAutocomplete("from", "from-list", "from");
+    wireAutocomplete("to", "to-list", "to");
     Promise.all([
       loadJSON(CFG.dataBase + "/stations.json"),
       loadJSON(CFG.dataBase + "/metra_counties.geojson"),

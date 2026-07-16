@@ -19,6 +19,11 @@
   .btn-crcl:hover,.btn-crcl:focus{background:#095c6c;color:#fff}
   .panel{width:440px;flex:0 0 440px;overflow-y:auto}
   #map{flex:1 1 auto;min-height:45vh}
+  /* predefined-trip buttons: light hover so the title + blurb stay readable
+     (the default btn-outline-secondary hover fills dark and hid the grey blurb) */
+  .trip-btn{background:#fff;border:1px solid #ced4da;color:inherit}
+  .trip-btn:hover,.trip-btn:focus{background:#eef5f6;border-color:var(--crcl);color:inherit}
+  .trip-btn .blurb{color:#5b6770}
   /* autocomplete dropdown */
   .ac-wrap{position:relative}
   .aclist{position:absolute;top:100%;left:0;right:0;z-index:1000;margin:.1rem 0 0;max-height:14rem;overflow:auto}
@@ -50,12 +55,14 @@
       <h3 class="h6 fw-semibold mb-1">B1. Choose a starting location</h3>
       <label for="from" class="form-label small fw-semibold text-uppercase text-secondary mb-1">From (address)</label>
       <input id="from" type="text" class="form-control" autocomplete="off" placeholder="e.g. 71st &amp; Exchange, Chicago">
+      <ul id="from-list" class="aclist list-group shadow-sm"></ul>
     </div>
 
     <div class="ac-wrap mb-2">
       <h3 class="h6 fw-semibold mb-1">B2. Choose a destination</h3>
       <label for="to" class="form-label small fw-semibold text-uppercase text-secondary mb-1">To (address)</label>
       <input id="to" type="text" class="form-control" autocomplete="off" placeholder="e.g. Chicago Botanic Garden">
+      <ul id="to-list" class="aclist list-group shadow-sm"></ul>
     </div>
 
     <div class="d-flex justify-content-end mb-3">
@@ -74,15 +81,15 @@
         <button id="reset" class="btn btn-outline-secondary" title="Clear the trip, map, and address bar">Reset</button>
       </div>
     </div>
-    
+
+    <div id="results" class="d-flex flex-column gap-2"></div>
+
     <div class="row" id="next_steps">
       <div class="col-auto">
         <p>The trip planner will find the nearest rail station (existing, under construction, and proposed new CrossTowner) at your selected origin and destination and route a trip between them. These trips have been precomputed to ensure this website is super fast.</p>
       </div>
     </div>
-
-    <div id="results" class="d-flex flex-column gap-2"></div>
-
+    
     <footer class="text-secondary small mt-4 pt-3 border-top">
       Made by Steven Vance, using the Star:Line Chicago CrossTowner map and synthetic
       schedule as input to Conveyal R5 trip-planning software. This tool is otherwise
@@ -147,6 +154,8 @@
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+<!-- turf.js: slices each rail line between the board and alight points for the map -->
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@7.2.0/turf.min.js"></script>
 <script src="config.js"></script>
 <script src="app.js"></script>
 <!-- Cloudflare Web Analytics -->
