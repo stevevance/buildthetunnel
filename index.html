@@ -403,4 +403,7 @@ map.on('click','ctx-st',e=>stationClick({name:e.features[0].properties.name, lon
 
 document.getElementById('play').onclick=startFly;   // Replay -> restart from the beginning
 document.getElementById('pause').onclick=()=>{ if(raf) pauseFly(); else resumeFly(); };
-</script></body></html>
+</script><!-- Cloudflare Web Analytics -->
+<script type="module" src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "998e0617479743128964a1b458776630"}'></script>
+<!-- End Cloudflare Web Analytics -->
+</body></html>
