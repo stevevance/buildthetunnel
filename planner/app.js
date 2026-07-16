@@ -540,6 +540,32 @@
     if (endpoints.from && endpoints.to) onPlan();
   }
 
+  /* ---- reset ------------------------------------------------------------ */
+  /*
+   * Return the planner to its blank first-load state: forget both endpoints,
+   * empty the address inputs and their autocomplete lists, clear the results,
+   * strip every drawn object (route lines + origin/destination markers) off the
+   * map and recenter it, and rewrite the address bar back to the bare planner
+   * URL (dropping the shareable ?trip params).
+   */
+  function onReset() {
+    endpoints = { from: null, to: null };
+    ["from", "to"].forEach(function (which) {
+      var inp = document.getElementById(which);
+      if (inp) inp.value = "";
+      var list = document.getElementById(which + "-list");   // Option B has none
+      if (list) list.innerHTML = "";
+    });
+    document.getElementById("results").innerHTML = "";
+    // Wipe the map: route polylines live in routeLayer; the two markers don't.
+    if (routeLayer) routeLayer.clearLayers();
+    if (fromMarker) { map.removeLayer(fromMarker); fromMarker = null; }
+    if (toMarker) { map.removeLayer(toMarker); toMarker = null; }
+    if (map) map.setView([41.85, -87.72], 10);
+    // Drop the ?trip query so the URL is the clean, unshared planner address.
+    history.replaceState(null, "", location.pathname);
+  }
+
   /* ---- email wall ------------------------------------------------------- */
   function initEmailWall() {
     var KEY = "btt_planner_email_ok";
@@ -604,6 +630,7 @@
     });
     document.getElementById("plan").addEventListener("click", onPlan);
     document.getElementById("swap").addEventListener("click", onSwap);
+    document.getElementById("reset").addEventListener("click", onReset);
     Promise.all([
       loadJSON(CFG.dataBase + "/stations.json"),
       loadJSON(CFG.dataBase + "/metra_counties.geojson"),
