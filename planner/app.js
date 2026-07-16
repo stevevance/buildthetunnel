@@ -563,10 +563,39 @@
     });
   }
 
+  /* ---- feedback --------------------------------------------------------- */
+  function initFeedback() {
+    var modal = new bootstrap.Modal(document.getElementById("feedbackmodal"));
+    document.getElementById("feedback-btn").addEventListener("click", function () { modal.show(); });
+    document.getElementById("feedbackform").addEventListener("submit", function (e) {
+      e.preventDefault();
+      if (document.getElementById("fb-hp").value) return;       // honeypot
+      var message = document.getElementById("fb-message").value.trim();
+      if (!message) return;
+      var status = document.getElementById("fb-status");
+      status.textContent = "Sending…";
+      fetch(CFG.workerBase + "/feedback", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: message,
+          email: document.getElementById("fb-email").value.trim(),
+          trip: location.search                                  // the trip they were viewing
+        })
+      }).then(function (r) {
+        if (!r.ok) throw new Error();
+        status.textContent = "Thanks — sent!";
+        document.getElementById("fb-message").value = "";
+        document.getElementById("fb-email").value = "";
+        setTimeout(function () { modal.hide(); status.textContent = ""; }, 1200);
+      }).catch(function () { status.textContent = "Couldn't send — please try again."; });
+    });
+  }
+
   /* ---- boot ------------------------------------------------------------- */
   function boot() {
     initMap();
     initEmailWall();
+    initFeedback();
     // Populate the slice selector.
     var sel = document.getElementById("slice");
     CFG.slices.forEach(function (s) {

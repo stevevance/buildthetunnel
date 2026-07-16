@@ -36,6 +36,9 @@ export default {
       if (url.pathname === "/email" && request.method === "POST") {
         return await handleEmail(request, env, cors);
       }
+      if (url.pathname === "/feedback" && request.method === "POST") {
+        return await handleFeedback(request, env, cors);
+      }
       if (url.pathname === "/s" && request.method === "GET") {
         return handleShare(url);       // social crawlers + human redirect
       }
@@ -110,6 +113,22 @@ async function handleEmail(request, env, cors) {
     "INSERT OR IGNORE INTO emails (email, created_at, source, user_agent) VALUES (?, ?, ?, ?)"
   ).bind(email, new Date().toISOString(), source, ua).run();
 
+  return json({ ok: true }, 200, cors);
+}
+
+/* ---- /feedback ---------------------------------------------------------- */
+async function handleFeedback(request, env, cors) {
+  let body;
+  try { body = await request.json(); } catch { return json({ error: "bad json" }, 400, cors); }
+  if (body.hp) return json({ ok: true }, 200, cors);          // honeypot: silently accept bots
+  const message = String(body.message || "").trim();
+  if (!message || message.length > 5000) return json({ error: "invalid message" }, 400, cors);
+  const email = String(body.email || "").trim().toLowerCase().slice(0, 254) || null;
+  const trip  = String(body.trip || "").slice(0, 1000) || null;
+  const ua    = (request.headers.get("User-Agent") || "").slice(0, 300);
+  await env.DB.prepare(
+    "INSERT INTO feedback (created_at, message, email, trip, user_agent) VALUES (?, ?, ?, ?, ?)"
+  ).bind(new Date().toISOString(), message, email, trip, ua).run();
   return json({ ok: true }, 200, cors);
 }
 

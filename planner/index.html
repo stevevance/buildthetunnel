@@ -94,6 +94,34 @@
   <div id="map"></div>
 </div>
 
+<!-- Floating feedback button -->
+<button id="feedback-btn" type="button" class="btn btn-crcl shadow"
+        style="position:fixed;right:1rem;bottom:2.5rem;z-index:1030;border-radius:2rem;padding:.5rem 1rem">
+  &#128172; Feedback
+</button>
+
+<!-- Feedback modal -->
+<div class="modal fade" id="feedbackmodal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-body p-4">
+        <h2 class="h5">Send feedback</h2>
+        <p class="text-secondary small">Found a wrong trip, a bug, or have an idea? Tell us. Leave your email only if you'd like a reply.</p>
+        <form id="feedbackform">
+          <input class="d-none" id="fb-hp" tabindex="-1" autocomplete="off">
+          <textarea id="fb-message" class="form-control mb-2" rows="4" required placeholder="Your feedback&hellip;"></textarea>
+          <input id="fb-email" type="email" class="form-control mb-2" placeholder="Email (optional)">
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-crcl flex-grow-1">Send</button>
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          </div>
+          <div id="fb-status" class="small text-secondary mt-2"></div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Email wall -->
 <div class="modal fade" id="emailwall" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
