@@ -42,9 +42,9 @@ window.PLANNER_CONFIG = {
       to:   { label: "67th Street",        lat: 41.773259, lon: -87.592035 }
     },
     {
-      title: "Clarendon Hills to O'Hare Transfer",
+      title: "Berwyn to O'Hare Transfer",
       blurb: "West suburbs to the airport on the X5, no downtown backtrack.",
-      from: { label: "Clarendon Hills",    lat: 41.797065, lon: -87.954405 },
+      from: { label: "Berwyn - Harlem Ave", lat: 41.8314, lon: -87.8019 },
       to:   { label: "O'Hare Transfer",    lat: 41.995212, lon: -87.880317 }
     },
     {
