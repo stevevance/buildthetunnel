@@ -31,7 +31,7 @@
 
   <p class="lead-sm">The planner compares any Chicago-area rail trip <b>as it is today</b> against
   <b>how it would work with the proposed CrossTowner tunnel</b> (plus the CTA Red Line Extension,
-  which is under construction). Type or pick a start and end, choose a departure time, and it shows
+  which is under construction). Type or pick a start and end, and it shows
   both trips side by side.</p>
 
   <h2>Where the numbers come from</h2>
@@ -79,10 +79,9 @@
   focused on what the tunnel changes. The travel <i>time</i> shown is always the time of the trip actually
   displayed, so the number and the route always match.</p>
 
-  <h2>Departure times</h2>
-  <p>Trips are precomputed for three weekday departure times — <b>8 AM, 12 PM, and 6 PM</b> — because transit
-  frequency changes a lot across the day. Each time is a median over a 30-minute departure window, so a single
-  lucky (or unlucky) connection doesn't skew the result.</p>
+  <h2>Departure time</h2>
+  <p>Trips are precomputed for a single weekday departure — <b>8 AM</b>. The result is a median over a
+  30-minute departure window, so a single lucky (or unlucky) connection doesn't skew it.</p>
 
   <h2>Where you can travel</h2>
   <p>Trips must start and end within the six <b>Metra-service counties</b>: Cook, DuPage, Lake, Kane, McHenry,
@@ -92,19 +91,16 @@
   <ul>
     <li><b>Transit schedules:</b> published GTFS feeds from CTA, Metra, and Pace.</li>
     <li><b>Streets and walking:</b> OpenStreetMap.</li>
-    <li><b>Station locations & rail lines:</b> Chicago Cityscape's place database.</li>
+    <li><b>Station locations & rail lines:</b> <a href="https://www.chicagocityscape.com/" target="_blank" rel="noopener">Chicago Cityscape</a>'s place database, which includes data from <a href="https://www.transitexplorer.com/" target="_blank" rel="noopener">Transit Explorer</a>.</li>
     <li><b>CrossTowner service:</b> a synthetic GTFS feed built from Star:Line Chicago's published CrossTowner
     map and schedule assumptions. The Red Line Extension is modeled on its planned stations and frequencies.</li>
   </ul>
 
   <h2>What to keep in mind</h2>
   <ul>
-    <li>The CrossTowner and Red Line Extension services are <b>proposals</b> (or under construction), modeled on
-    published plans — not operating service.</li>
-    <li>The future scenario is <b>additive</b>: it adds the new lines on top of today's service without
-    restructuring existing routes.</li>
-    <li>Times reflect ordinary weekday service. Game-day and special-event buses (which the transit agencies
-    don't publish in their schedule data) are not included.</li>
+    <li>The CrossTowner lines are proposals with schedules provided by Star:Line Chicago. The Red Line Extension is under construction, but no schedule has been published, so we assume a frequency (10-minute headways from 7 AM to 10 PM and 15-minute headways at other times).</li>
+    <li>The future scenario is <b>additive</b>: it adds the new lines on top of some of today's service without restructuring existing routes.</li>
+    <li>Times reflect ordinary weekday service. Game-day and special-event buses (which the transit agencies don't always publish in their schedule data) are not included.</li>
     <li>No fares, crowding, or reliability are modeled.</li>
   </ul>
 
