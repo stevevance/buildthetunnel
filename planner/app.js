@@ -223,8 +223,8 @@
       card("Today", "#3A4750", today, "today") +
       card("With CrossTowner + Red Line Extension", "var(--crcl)", scen, "scenario") +
       delta +
-      '<p class="text-secondary small mb-0">Precomputed median travel time, weekday ' +
-        sliceLabel(slice) + ', 2.75 mph walk, 20-minute walk cap. The line you board ' +
+      '<p class="text-secondary small mb-0">Precomputed median travel time in a 30-minute period ' +
+        sliceLabel(slice) + ', assuming 2.75 mph walk speed and a 20-minute maximum walk. The line you board ' +
         'reflects a representative departure at this time.</p>';
     drawRoute(today, scen);
   }
