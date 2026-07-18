@@ -1,4 +1,38 @@
-# Transit line 3D flythrough
+# Build the Tunnel
+
+Two web tools about proposed and under-construction transit, centered on the
+**CrossTowner** regional-rail tunnel — a Chicago-area proposal from
+[Star:Line Chicago](https://buildthetunnelchicago.org):
+
+1. **[3D flythrough viewer](https://stevevance.github.io/buildthetunnel/)** — a
+   cinematic camera that flies along a transit line over real 3D buildings
+   (described below).
+2. **[CrossTowner Trip Planner](https://stevevance.github.io/buildthetunnel/planner/)** —
+   plan any Chicago-area rail trip and compare it today versus with the tunnel built
+   (see [Trip planner](#trip-planner)).
+
+Both run as static pages on GitHub Pages at
+<https://stevevance.github.io/buildthetunnel/>.
+
+## Trip planner
+
+The [CrossTowner Trip Planner](https://stevevance.github.io/buildthetunnel/planner/)
+lets you enter any origin and destination in the Chicago area and compares the rail
+trip **as it is today** against the **CrossTowner + Red Line Extension** future
+scenario — travel time, the route taken, and the walk to and from stations.
+
+Every trip is precomputed with [r5r](https://ipeagit.github.io/r5r/) (the R interface
+to **Conveyal R5**) over present-day GTFS from CTA, Metra, and Pace, plus a synthetic
+GTFS feed for the proposed CrossTowner service. The full method — data sources,
+walk-time model, which future route is shown, and caveats — is documented on the
+planner's methodology page:
+
+**→ [How the CrossTowner Trip Planner works](https://stevevance.github.io/buildthetunnel/planner/methodology.html)**
+
+The planner lives in `planner/` (`index.html`, `app.js`, `config.js`, precomputed
+results under `planner/data/`, and `methodology.html`).
+
+## 3D flythrough viewer
 
 A [MapLibre GL JS](https://maplibre.org/) viewer that flies a pitched 3D camera
 along a transit line over real extruded buildings. It opens by framing the whole
@@ -152,9 +186,10 @@ OpenStreetMap."**
 
 | File | Purpose |
 |------|---------|
-| `index.html` | The viewer — map, camera engine, UI, and per-line theming. |
+| `index.html` | The flythrough viewer — map, camera engine, UI, and per-line theming. |
 | `lines.js` | The line datasets and the `TRANSIT_LINES` config registry. |
 | `crcl_geo.json` | The finalized CRCL geometry (camera `path`, drawn `line`, `stations`). |
+| `planner/` | The CrossTowner Trip Planner — `index.html`, `app.js`, `config.js`, precomputed results in `data/`, and `methodology.html`. |
 
 Rendered video files (`*.mp4`, `*.mov`) are gitignored — they exceed GitHub's
 file-size limits and the live viewer reproduces the flythrough.
