@@ -17,3 +17,16 @@ CREATE TABLE IF NOT EXISTS feedback (
   trip       TEXT,
   user_agent TEXT
 );
+
+-- Planned-trip log, for ranking the most-searched trips. Stores only the
+-- boarding/alighting *station* names (not the address the user typed) plus the
+-- two travel times, so no exact location is retained.
+CREATE TABLE IF NOT EXISTS trips (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  created_at   TEXT NOT NULL,
+  origin       TEXT,      -- boarding station name
+  destination  TEXT,      -- alighting station name
+  slice        TEXT,      -- departure slice id (e.g. "0800")
+  today_min    INTEGER,   -- "today" total travel time, minutes
+  scenario_min INTEGER    -- "with CrossTowner" total travel time, minutes
+);

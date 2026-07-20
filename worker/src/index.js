@@ -2,6 +2,7 @@
  * Cloudflare Worker for the CrossTowner trip planner.
  *
  *   POST /email    { email, source } -> insert-or-ignore into D1 (advocacy list)
+ *   POST /track    { origin, ... }   -> log a planned trip's stations + times (D1)
  *   GET  /geocode?text=...           -> Geocode.earth autocomplete proxy
  *   GET  /s?...trip params           -> share page with per-trip og: tags,
  *                                        redirecting a human to the planner
@@ -38,6 +39,9 @@ export default {
       }
       if (url.pathname === "/feedback" && request.method === "POST") {
         return await handleFeedback(request, env, cors);
+      }
+      if (url.pathname === "/track" && request.method === "POST") {
+        return await handleTrack(request, env, cors);
       }
       if (url.pathname === "/s" && request.method === "GET") {
         return handleShare(url);       // social crawlers + human redirect
@@ -129,6 +133,24 @@ async function handleFeedback(request, env, cors) {
   await env.DB.prepare(
     "INSERT INTO feedback (created_at, message, email, trip, user_agent) VALUES (?, ?, ?, ?, ?)"
   ).bind(new Date().toISOString(), message, email, trip, ua).run();
+  return json({ ok: true }, 200, cors);
+}
+
+/* ---- /track ------------------------------------------------------------ */
+// Logs a planned trip for ranking popular corridors. Deliberately stores only
+// the boarding/alighting station names (never the typed address or coordinates)
+// plus the two travel times.
+async function handleTrack(request, env, cors) {
+  let body;
+  try { body = await request.json(); } catch { return json({ error: "bad json" }, 400, cors); }
+  const origin = String(body.origin || "").slice(0, 120) || null;
+  const dest   = String(body.destination || "").slice(0, 120) || null;
+  if (!origin && !dest) return json({ error: "empty" }, 400, cors);
+  const slice  = String(body.slice || "").slice(0, 20) || null;
+  const toInt  = (v) => (v == null || v === "" || !isFinite(+v)) ? null : Math.round(+v);
+  await env.DB.prepare(
+    "INSERT INTO trips (created_at, origin, destination, slice, today_min, scenario_min) VALUES (?, ?, ?, ?, ?, ?)"
+  ).bind(new Date().toISOString(), origin, dest, slice, toInt(body.today_min), toInt(body.scenario_min)).run();
   return json({ ok: true }, 200, cors);
 }
 
