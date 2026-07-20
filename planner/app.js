@@ -505,6 +505,20 @@
     history.replaceState(null, "", location.pathname + "?" + p.toString());
     return CFG.workerBase + "/s?" + p.toString();
   }
+  // A stable, anonymous per-browser id (random UUID in localStorage) so we can
+  // estimate distinct visitors and trips-per-person. Not PII and not shared
+  // across sites; absent in private mode or where storage/crypto is unavailable.
+  function clientId() {
+    try {
+      var id = localStorage.getItem("btt_cid");
+      if (!id && window.crypto && crypto.randomUUID) {
+        id = crypto.randomUUID();
+        localStorage.setItem("btt_cid", id);
+      }
+      return id || null;
+    } catch (e) { return null; }
+  }
+
   // Fire-and-forget log of the planned trip (boarding/alighting stations + the
   // two travel times) so we can rank popular corridors. We log the *stations*,
   // not the address the user typed — see the methodology's privacy note. Prefer
@@ -522,7 +536,8 @@
           destination: r.alight.name,
           slice: slice,
           today_min: today ? Math.round(today.total) : null,
-          scenario_min: scen ? Math.round(scen.total) : null
+          scenario_min: scen ? Math.round(scen.total) : null,
+          cid: clientId()
         })
       }).catch(function () { /* analytics must never disrupt planning */ });
     } catch (e) { /* ditto */ }

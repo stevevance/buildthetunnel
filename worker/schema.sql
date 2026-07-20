@@ -28,5 +28,7 @@ CREATE TABLE IF NOT EXISTS trips (
   destination  TEXT,      -- alighting station name
   slice        TEXT,      -- departure slice id (e.g. "0800")
   today_min    INTEGER,   -- "today" total travel time, minutes
-  scenario_min INTEGER    -- "with CrossTowner" total travel time, minutes
+  scenario_min INTEGER,   -- "with CrossTowner" total travel time, minutes
+  cid          TEXT       -- anonymous random client id (localStorage UUID),
+                          -- to estimate distinct visitors and trips-per-person
 );

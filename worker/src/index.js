@@ -147,10 +147,11 @@ async function handleTrack(request, env, cors) {
   const dest   = String(body.destination || "").slice(0, 120) || null;
   if (!origin && !dest) return json({ error: "empty" }, 400, cors);
   const slice  = String(body.slice || "").slice(0, 20) || null;
+  const cid    = String(body.cid || "").slice(0, 64) || null;   // anonymous client id
   const toInt  = (v) => (v == null || v === "" || !isFinite(+v)) ? null : Math.round(+v);
   await env.DB.prepare(
-    "INSERT INTO trips (created_at, origin, destination, slice, today_min, scenario_min) VALUES (?, ?, ?, ?, ?, ?)"
-  ).bind(new Date().toISOString(), origin, dest, slice, toInt(body.today_min), toInt(body.scenario_min)).run();
+    "INSERT INTO trips (created_at, origin, destination, slice, today_min, scenario_min, cid) VALUES (?, ?, ?, ?, ?, ?, ?)"
+  ).bind(new Date().toISOString(), origin, dest, slice, toInt(body.today_min), toInt(body.scenario_min), cid).run();
   return json({ ok: true }, 200, cors);
 }
 
