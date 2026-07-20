@@ -505,6 +505,29 @@
     history.replaceState(null, "", location.pathname + "?" + p.toString());
     return CFG.workerBase + "/s?" + p.toString();
   }
+  // Fire-and-forget log of the planned trip (boarding/alighting stations + the
+  // two travel times) so we can rank popular corridors. We log the *stations*,
+  // not the address the user typed — see the methodology's privacy note. Prefer
+  // the scenario trip's stations; fall back to today's. Never let it throw.
+  function trackTrip(slice, today, scen) {
+    var r = scen || today;
+    if (!r || !r.board || !r.alight) return;
+    try {
+      fetch(CFG.workerBase + "/track", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        keepalive: true,
+        body: JSON.stringify({
+          origin: r.board.name,
+          destination: r.alight.name,
+          slice: slice,
+          today_min: today ? Math.round(today.total) : null,
+          scenario_min: scen ? Math.round(scen.total) : null
+        })
+      }).catch(function () { /* analytics must never disrupt planning */ });
+    } catch (e) { /* ditto */ }
+  }
+
   // On load, if the URL already describes a trip, restore and run it.
   function applyPermalink() {
     var p = new URLSearchParams(location.search);
@@ -599,6 +622,7 @@
           renderResults(slice, r[0], r[1]);
           var shareUrl = updatePermalink(slice, r[0], r[1]);
           addShareButton(shareUrl);
+          trackTrip(slice, r[0], r[1]);
         });
     });
   }
