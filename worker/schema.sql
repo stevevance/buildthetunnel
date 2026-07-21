@@ -10,12 +10,14 @@ CREATE TABLE IF NOT EXISTS emails (
 -- Feedback submissions. `trip` captures the trip the user was viewing (its share
 -- params) so a comment has context; `email` is optional for follow-up.
 CREATE TABLE IF NOT EXISTS feedback (
-  id         INTEGER PRIMARY KEY AUTOINCREMENT,
-  created_at TEXT NOT NULL,
-  message    TEXT NOT NULL,
-  email      TEXT,
-  trip       TEXT,
-  user_agent TEXT
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  created_at   TEXT NOT NULL,
+  message      TEXT NOT NULL,
+  email        TEXT,
+  trip         TEXT,
+  user_agent   TEXT,
+  addressed_at TEXT,   -- when the feedback was acted on (NULL = still open)
+  resolution   TEXT    -- how it was addressed (commit / note)
 );
 
 -- Planned-trip log, for ranking the most-searched trips. Stores only the
