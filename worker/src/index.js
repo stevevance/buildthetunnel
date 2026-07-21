@@ -143,15 +143,39 @@ async function handleFeedback(request, env, cors) {
 async function handleTrack(request, env, cors) {
   let body;
   try { body = await request.json(); } catch { return json({ error: "bad json" }, 400, cors); }
+
+  // Share event: flag a previously-logged trip (matched by its client token) as
+  // shared. No new row.
+  if (body.shared && body.ttoken) {
+    await env.DB.prepare("UPDATE trips SET shared = 1 WHERE ttoken = ?")
+      .bind(String(body.ttoken).slice(0, 64)).run();
+    return json({ ok: true }, 200, cors);
+  }
+
+  const result = String(body.result || "ok").slice(0, 20);       // ok | no_route | out_of_county | geocode_*
   const origin = String(body.origin || "").slice(0, 120) || null;
   const dest   = String(body.destination || "").slice(0, 120) || null;
-  if (!origin && !dest) return json({ error: "empty" }, 400, cors);
+  // A successful trip must name its stations; failures carry none (unmet demand).
+  if (result === "ok" && !origin && !dest) return json({ error: "empty" }, 400, cors);
   const slice  = String(body.slice || "").slice(0, 20) || null;
   const cid    = String(body.cid || "").slice(0, 64) || null;   // anonymous client id
+  const source = String(body.source || "").slice(0, 20) || null; // predefined | permalink | search
+  const xroute = String(body.x_route || "").slice(0, 40) || null; // CrossTowner routes used, e.g. "X1,X5"
+  const ttoken = String(body.ttoken || "").slice(0, 64) || null;  // per-trip token for share matching
+  const device = String(body.device || "").slice(0, 12) || null;  // mobile | tablet | desktop
+  const refHost = String(body.ref_host || "").slice(0, 100) || null;      // referring host or direct/internal
+  const utmSrc  = String(body.utm_source || "").slice(0, 60) || null;
+  const utmMed  = String(body.utm_medium || "").slice(0, 60) || null;
+  const utmCamp = String(body.utm_campaign || "").slice(0, 80) || null;
   const toInt  = (v) => (v == null || v === "" || !isFinite(+v)) ? null : Math.round(+v);
   await env.DB.prepare(
-    "INSERT INTO trips (created_at, origin, destination, slice, today_min, scenario_min, cid) VALUES (?, ?, ?, ?, ?, ?, ?)"
-  ).bind(new Date().toISOString(), origin, dest, slice, toInt(body.today_min), toInt(body.scenario_min), cid).run();
+    "INSERT INTO trips (created_at, origin, destination, slice, today_min, scenario_min, cid, source, result, transfers_today, transfers_scenario, x_route, ttoken, device, ref_host, utm_source, utm_medium, utm_campaign) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+  ).bind(
+    new Date().toISOString(), origin, dest, slice,
+    toInt(body.today_min), toInt(body.scenario_min), cid, source, result,
+    toInt(body.transfers_today), toInt(body.transfers_scenario), xroute,
+    ttoken, device, refHost, utmSrc, utmMed, utmCamp
+  ).run();
   return json({ ok: true }, 200, cors);
 }
 
