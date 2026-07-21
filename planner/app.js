@@ -70,6 +70,7 @@
   var shardCache = {};        // "net/slice/oid" -> {destId: minutes}
   var LINES = null;           // { "Red": [[[lon,lat],...]], ... } rail-line geometry
   var stationByName = {};     // station name -> {lat,lon} (for leg endpoints)
+  var stationById = {};       // station id -> station (for airport egress lookup)
   var endpoints = { from: null, to: null };  // {lat,lon,label}
   var map, fromMarker, toMarker, routeLayer;
 
@@ -87,13 +88,12 @@
     return loadJSON(url);
   }
 
-  // Some geocoder results land far from any usable station (e.g. an airport
-  // resolves to a terminal/centroid beyond the walk cap). Snap known ones onto
-  // the station that actually serves them, so the trip routes. Matched on the
-  // result label; returns a possibly-rewritten {lat,lon,label}.
-  var GEOCODE_SNAP = [
-    { test: /o[\W_]?hare/i, lat: 41.995212, lon: -87.880317, label: "O'Hare Transfer" }
-  ];
+  // Some geocoder results land far from any usable station (e.g. a large campus
+  // resolves to a centroid beyond the walk cap). Snap known ones onto the
+  // station that actually serves them, so the trip routes. Matched on the result
+  // label; returns a possibly-rewritten {lat,lon,label}. O'Hare is handled
+  // separately (see OHARE below) — it needs a per-terminal choice, not a snap.
+  var GEOCODE_SNAP = [];
   function snapGeocode(ep) {
     if (!ep || !ep.label) return ep;
     for (var i = 0; i < GEOCODE_SNAP.length; i++) {
@@ -102,6 +102,66 @@
       }
     }
     return ep;
+  }
+
+  /* ---- O'Hare terminals -------------------------------------------------- */
+  // O'Hare's terminals aren't rail stations. Two rail nodes serve them: the Blue
+  // Line "O'Hare" (in the terminal core) and Metra/CrossTowner "O'Hare Transfer"
+  // (at the Multi-Modal Facility, one end of the ATS people mover). When a rider
+  // picks a terminal we route to BOTH stations and add a fixed *egress* time to
+  // reach the chosen terminal, letting each network use whichever station it can
+  // reach — Blue Line today, CrossTowner in the scenario. That's a fairer
+  // comparison than snapping every airport trip onto one station.
+  //
+  // Egress minutes = ATS wait (~half the 3-5 min headway) + ride (~2.5 min per
+  // hop over the T1-T2-T3-T5-MMF line; 10 min end-to-end per the CDA) + platform
+  // walk. Terminal-core walks are manual estimates (T2 = 5 min, others scaled).
+  // These are debatable — see methodology.html — and easy to tune here.
+  var OHARE_STATIONS = { blue: "o-hare-1b3d", transfer: "o-hare-transfer-1b71" };
+  var OHARE_DEFAULT = "t1";
+  var OHARE = {
+    order: ["t1", "t2", "t3", "t5", "mmf"],
+    terminals: {
+      t1:  { short: "Terminal 1",           label: "O'Hare — Terminal 1",
+             lat: 41.97897, lon: -87.90366, egress: { blue: 9,  transfer: 13 } },
+      t2:  { short: "Terminal 2",           label: "O'Hare — Terminal 2",
+             lat: 41.97766, lon: -87.90422, egress: { blue: 5,  transfer: 11 } },
+      t3:  { short: "Terminal 3",           label: "O'Hare — Terminal 3",
+             lat: 41.97730, lon: -87.90480, egress: { blue: 8,  transfer: 9  } },
+      t5:  { short: "Terminal 5",           label: "O'Hare — Terminal 5",
+             lat: 41.97690, lon: -87.91460, egress: { blue: 12, transfer: 6  } },
+      mmf: { short: "MMF / O'Hare Transfer", label: "O'Hare — MMF / Transfer",
+             lat: 41.99340, lon: -87.88260, egress: { blue: 14, transfer: 3  } }
+    }
+  };
+  function isOhare(label) { return !!label && /o[\W_]?hare/i.test(label); }
+
+  // Turn an endpoint into an O'Hare-terminal endpoint and (re)draw its picker.
+  function setOhareEndpoint(which, key) {
+    if (!OHARE.terminals[key]) key = OHARE_DEFAULT;
+    var t = OHARE.terminals[key];
+    setEndpoint(which, { lat: t.lat, lon: t.lon, label: t.label, airport: key });
+    renderTerminalPicker(which);
+  }
+
+  // Render the "which O'Hare destination?" dropdown next to a field, or clear it
+  // when the endpoint isn't an airport one.
+  function renderTerminalPicker(which) {
+    var box = document.getElementById(which + "-terminal");
+    if (!box) return;
+    var ep = endpoints[which];
+    if (!ep || !ep.airport) { box.innerHTML = ""; return; }
+    var opts = OHARE.order.map(function (k) {
+      return '<option value="' + k + '"' + (k === ep.airport ? " selected" : "") + '>' +
+        OHARE.terminals[k].short + "</option>";
+    }).join("");
+    box.innerHTML = '<label class="form-label small fw-semibold text-uppercase text-secondary mb-1">' +
+      "Which O'Hare destination?</label>" +
+      '<select class="form-select form-select-sm">' + opts + "</select>";
+    box.querySelector("select").addEventListener("change", function () {
+      setOhareEndpoint(which, this.value);
+      if (endpoints.from && endpoints.to) onPlan();
+    });
   }
 
   /* ---- nearest stations within the walk cap ----------------------------- */
@@ -142,10 +202,28 @@
       .catch(function () { shardCache[key] = {}; return {}; }); // unreachable origin
   }
 
+  // Boarding/alighting candidates for one endpoint: an airport endpoint uses its
+  // two O'Hare rail stations with fixed ATS/walk egress (see OHARE); everything
+  // else uses the nearest walkable stations.
+  function candidateStations(ep, network) {
+    if (ep && ep.airport && OHARE.terminals[ep.airport]) {
+      var eg = OHARE.terminals[ep.airport].egress;
+      var out = [];
+      [["blue", eg.blue], ["transfer", eg.transfer]].forEach(function (pair) {
+        var s = stationById[OHARE_STATIONS[pair[0]]];
+        if (!s) return;
+        if (network === "today" && !s.exists_today) return;   // both exist today
+        out.push({ station: s, walk: pair[1] });
+      });
+      return out;
+    }
+    return nearestStations(ep.lat, ep.lon, network);
+  }
+
   /* ---- the core lookup: best door-to-door total for one network --------- */
   function bestTotal(network, slice) {
-    var origins = nearestStations(endpoints.from.lat, endpoints.from.lon, network);
-    var dests   = nearestStations(endpoints.to.lat,   endpoints.to.lon,   network);
+    var origins = candidateStations(endpoints.from, network);
+    var dests   = candidateStations(endpoints.to,   network);
     if (!origins.length || !dests.length) return Promise.resolve(null);
 
     // Fetch the origin shards we need, then combine with every candidate dest.
@@ -511,6 +589,9 @@
     if (inp) inp.value = ep.label;
     var list = document.getElementById(which + "-list");   // may be absent (Option B has no dropdown)
     if (list) list.innerHTML = "";
+    // A plain (non-airport) endpoint has no terminal picker.
+    var tbox = document.getElementById(which + "-terminal");
+    if (tbox && !ep.airport) tbox.innerHTML = "";
   }
 
   /* ---- Option A: predefined trips --------------------------------------- */
@@ -543,6 +624,8 @@
     p.set("dl", endpoints.to.label);
     p.set("dlat", endpoints.to.lat.toFixed(5));
     p.set("dlon", endpoints.to.lon.toFixed(5));
+    if (endpoints.from.airport) p.set("oa", endpoints.from.airport);   // O'Hare terminal
+    if (endpoints.to.airport)   p.set("da", endpoints.to.airport);
     p.set("sl", slice);
     if (today) p.set("td", Math.round(today.total));
     if (scen) p.set("xd", Math.round(scen.total));
@@ -683,8 +766,10 @@
   function applyPermalink() {
     var p = new URLSearchParams(location.search);
     if (!p.get("olat") || !p.get("dlat")) return;
-    setEndpoint("from", { lat: +p.get("olat"), lon: +p.get("olon"), label: p.get("ol") || "Origin" });
-    setEndpoint("to", { lat: +p.get("dlat"), lon: +p.get("dlon"), label: p.get("dl") || "Destination" });
+    if (p.get("oa") && OHARE.terminals[p.get("oa")]) setOhareEndpoint("from", p.get("oa"));
+    else setEndpoint("from", { lat: +p.get("olat"), lon: +p.get("olon"), label: p.get("ol") || "Origin" });
+    if (p.get("da") && OHARE.terminals[p.get("da")]) setOhareEndpoint("to", p.get("da"));
+    else setEndpoint("to", { lat: +p.get("dlat"), lon: +p.get("dlon"), label: p.get("dl") || "Destination" });
     if (p.get("sl")) document.getElementById("slice").value = p.get("sl");
     onPlan("permalink");
   }
@@ -696,6 +781,8 @@
     var timer = null;
     input.addEventListener("input", function () {
       endpoints[which] = null;
+      var tbox = document.getElementById(which + "-terminal");
+      if (tbox) tbox.innerHTML = "";
       clearTimeout(timer);
       var text = input.value.trim();
       if (text.length < 4) { list.innerHTML = ""; return; }
@@ -710,6 +797,11 @@
             li.style.cursor = "pointer";
             li.textContent = label;
             li.addEventListener("click", function () {
+              if (isOhare(label)) {   // let the rider pick a terminal instead of snapping
+                setOhareEndpoint(which, OHARE_DEFAULT);
+                if (endpoints.from && endpoints.to) onPlan();
+                return;
+              }
               var ep = snapGeocode({ lat: lat, lon: lon, label: label });
               if (!pointInCounties(ep.lon, ep.lat, counties)) {
                 list.innerHTML = '<li class="list-group-item text-danger small">Trips must ' +
@@ -742,7 +834,12 @@
       var f = (fc.features || [])[0];
       if (!f) return { error: "notfound", which: which };
       var lon = f.geometry.coordinates[0], lat = f.geometry.coordinates[1];
-      var ep = snapGeocode({ lat: lat, lon: lon, label: f.properties.label || f.properties.name });
+      var label = f.properties.label || f.properties.name;
+      if (isOhare(label)) {   // typed "O'Hare" + Plan: default a terminal, show the picker
+        setOhareEndpoint(which, OHARE_DEFAULT);
+        return endpoints[which];
+      }
+      var ep = snapGeocode({ lat: lat, lon: lon, label: label });
       if (!pointInCounties(ep.lon, ep.lat, counties)) return { error: "county", which: which };
       setEndpoint(which, ep);
       return ep;
@@ -814,6 +911,7 @@
     var tmp = endpoints.from; endpoints.from = endpoints.to; endpoints.to = tmp;
     var fi = document.getElementById("from"), ti = document.getElementById("to");
     var t = fi.value; fi.value = ti.value; ti.value = t;
+    renderTerminalPicker("from"); renderTerminalPicker("to");   // pickers follow their endpoint
     if (endpoints.from && endpoints.to) onPlan();
   }
 
@@ -832,6 +930,8 @@
       if (inp) inp.value = "";
       var list = document.getElementById(which + "-list");   // Option B has none
       if (list) list.innerHTML = "";
+      var tbox = document.getElementById(which + "-terminal");
+      if (tbox) tbox.innerHTML = "";
     });
     document.getElementById("results").innerHTML = "";
     // Wipe the map: route polylines live in routeLayer; the two markers don't.
@@ -918,7 +1018,10 @@
       loadJSON(CFG.dataBase + "/lines.json").catch(function () { return null; })
     ]).then(function (r) {
       stations = r[0]; counties = r[1]; LINES = r[2];
-      stations.forEach(function (s) { if (!(s.name in stationByName)) stationByName[s.name] = s; });
+      stations.forEach(function (s) {
+        if (!(s.name in stationByName)) stationByName[s.name] = s;
+        stationById[s.id] = s;
+      });
       renderPredefinedTrips();   // Option A one-click trips
       applyPermalink();          // if the URL already describes a trip, run it
     });

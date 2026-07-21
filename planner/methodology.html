@@ -79,6 +79,40 @@
   focused on what the tunnel changes. The travel <i>time</i> shown is always the time of the trip actually
   displayed, so the number and the route always match.</p>
 
+  <h2>Getting to O'Hare's terminals</h2>
+  <p>O'Hare is a special case. Its terminals aren't rail stations, and two very different rail nodes serve them:
+  the <b>CTA Blue Line "O'Hare"</b> station, right in the terminal core, and <b>"O'Hare Transfer"</b> (Metra and
+  the proposed CrossTowner) out at the <b>Multi-Modal Facility (MMF)</b> — one end of the airport's
+  <a href="https://www.flychicago.com/ohare/serviceamenities/services/pages/ats.aspx" target="_blank" rel="noopener">Airport
+  Transit System (ATS)</a> people mover. Where you end up depends on which you take, so instead of forcing every
+  airport trip onto one station, the planner lets you <b>pick your terminal (1, 2, 3, 5, or the MMF)</b> and then
+  routes to <i>both</i> stations, adding the time it takes to reach your terminal from each. Each network uses
+  whichever station serves it — the Blue Line today, the CrossTowner in the future scenario — which is a fairer
+  head-to-head than the older behavior of snapping every O'Hare trip to a single station.</p>
+
+  <p>The ATS isn't in our schedule data, so we model the trip from each station to each terminal as a <b>fixed
+  number of minutes</b>: the ATS wait (about half of its 3&ndash;5&nbsp;minute headway), the ride (~2.5&nbsp;min
+  per hop along the T1&ndash;T2&ndash;T3&ndash;T5&ndash;MMF line, which the CDA times end-to-end at
+  10&nbsp;minutes), and a short platform walk. The terminal-core walk times from the Blue Line are hand estimates,
+  not street-routed. <b>These assumptions are debatable — that's the point of publishing them here.</b></p>
+
+  <div class="box">
+    <b>Minutes added to reach each terminal:</b>
+    <table class="table table-sm mb-1 mt-2">
+      <thead><tr><th>Destination</th><th>from Blue Line "O'Hare"<br><span class="fw-normal text-secondary">(terminal core)</span></th><th>from "O'Hare Transfer"<br><span class="fw-normal text-secondary">(MMF)</span></th></tr></thead>
+      <tbody>
+        <tr><td>Terminal 1</td><td>9 <span class="text-secondary">(walk)</span></td><td>13 <span class="text-secondary">(ATS)</span></td></tr>
+        <tr><td>Terminal 2</td><td>5 <span class="text-secondary">(walk)</span></td><td>11 <span class="text-secondary">(ATS)</span></td></tr>
+        <tr><td>Terminal 3</td><td>8 <span class="text-secondary">(walk)</span></td><td>9 <span class="text-secondary">(ATS)</span></td></tr>
+        <tr><td>Terminal 5</td><td>12 <span class="text-secondary">(walk + ATS)</span></td><td>6 <span class="text-secondary">(ATS)</span></td></tr>
+        <tr><td>MMF / O'Hare Transfer</td><td>14 <span class="text-secondary">(walk + ATS)</span></td><td>3 <span class="text-secondary">(walk)</span></td></tr>
+      </tbody>
+    </table>
+    <div class="small text-secondary">Because the Blue Line drops you in the terminal core, it wins for
+    Terminals&nbsp;1&ndash;3; because O'Hare Transfer sits at the MMF, it wins for Terminal&nbsp;5 and the MMF.
+    Think these are off? <a href="index.html">Send feedback</a> — the numbers are easy to change.</div>
+  </div>
+
   <h2>Departure time</h2>
   <p>Trips are precomputed for a single weekday departure — <b>8 AM</b>. The result is a median over a
   30-minute departure window, so a single lucky (or unlucky) connection doesn't skew it.</p>

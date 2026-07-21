@@ -405,6 +405,36 @@ full README are in `analysis/planner/`.
   20-minute cap (straight-line × 1.3 detour ÷ 2.75 mph), adds that walk to the
   matrix time, and reports the best total per network. Trips are limited to the
   six Metra-service counties (Cook, DuPage, Lake, Kane, McHenry, Will).
+- **O'Hare terminals (special-cased egress).** O'Hare's terminals are not rail
+  stations, and two very different rail nodes serve them: the CTA Blue Line
+  "O'Hare" (in the terminal core) and Metra/CrossTowner "O'Hare Transfer" (at the
+  Multi-Modal Facility, one end of the airport's ATS people mover). Rather than
+  snap every airport trip to one station (which hid the Blue Line on the `today`
+  network and gave an unfair comparison), the planner lets the rider pick a
+  destination — **Terminal 1, 2, 3, 5, or the MMF** — and routes to *both*
+  stations, adding a **fixed egress** (ATS wait ≈ half the 3–5 min headway + ride
+  at ~2.5 min/hop over the 10-min end-to-end T1–T2–T3–T5–MMF line + platform
+  walk) so each network uses whichever station it reaches (Blue Line today,
+  CrossTowner in the scenario). The ATS is **not in any GTFS feed**, so it is
+  modeled as this constant, not routed. Egress table lives in `OHARE` in
+  `planner/app.js` and is republished in the public `methodology.html` for
+  scrutiny.
+- **OSM walking study (2026-07-21, O'Hare egress).** The terminal-core walk
+  assumptions were spot-checked with a **walk-only r5r run** on the same
+  `chicago-streets.osm.pbf` (`travel_time_matrix`, WALK, 2.75 mph), routing each
+  rail station to each terminal point. Findings: pure street walk from the Blue
+  Line to T1/T2/T3 is **2–3 min**, but OSM has **no indoor terminal mapping** (no
+  vertical circulation to departures, no security-queue access), so the model
+  deliberately keeps higher core-walk buffers (T2 = 5 min, others scaled up ~2
+  min) — a judgment call, not an OSM figure. The ATS-only pairs (Blue Line↔T5/MMF,
+  Transfer↔T1/T2/T3) are **unreachable or unreasonable on foot** (e.g. Blue
+  Line→T5 = 16 min walk vs. ~12 via ATS), confirming they must be modeled as ATS
+  rides rather than walks. The study also caught a mis-placed MMF marker (~1 km
+  off, a 29-min phantom walk), corrected to the Pace MMF bus-bay coordinates
+  (Transfer→MMF then routes at 4 min, matching the assumed 3). **We keep the
+  established walking assumptions**; the OSM run is corroboration, not a
+  replacement, because it can't see inside the terminals.
+
 - **Cross-check.** Cheltenham→Clybourn at 08:00 reads 73 min today / 51 min
   scenario in the matrix, matching the standalone `detailed_itineraries` runs.
 
