@@ -87,6 +87,23 @@
     return loadJSON(url);
   }
 
+  // Some geocoder results land far from any usable station (e.g. an airport
+  // resolves to a terminal/centroid beyond the walk cap). Snap known ones onto
+  // the station that actually serves them, so the trip routes. Matched on the
+  // result label; returns a possibly-rewritten {lat,lon,label}.
+  var GEOCODE_SNAP = [
+    { test: /o[\W_]?hare/i, lat: 41.995212, lon: -87.880317, label: "O'Hare Transfer" }
+  ];
+  function snapGeocode(ep) {
+    if (!ep || !ep.label) return ep;
+    for (var i = 0; i < GEOCODE_SNAP.length; i++) {
+      if (GEOCODE_SNAP[i].test.test(ep.label)) {
+        return { lat: GEOCODE_SNAP[i].lat, lon: GEOCODE_SNAP[i].lon, label: GEOCODE_SNAP[i].label };
+      }
+    }
+    return ep;
+  }
+
   /* ---- nearest stations within the walk cap ----------------------------- */
   function nearestStations(lat, lon, network) {
     var cands = [];
@@ -101,6 +118,18 @@
     }
     cands.sort(function (a, b) { return a.walk - b.walk; });
     return cands.slice(0, CFG.nearestK);
+  }
+
+  // The single closest station to a point, ignoring the walk cap — used to
+  // explain *why* a trip found no route (usually: the nearest station is too
+  // far to walk).
+  function nearestAnyStation(lat, lon) {
+    var best = null, bestKm = Infinity;
+    for (var i = 0; i < stations.length; i++) {
+      var km = haversineKm(lat, lon, stations[i].lat, stations[i].lon);
+      if (km < bestKm) { bestKm = km; best = stations[i]; }
+    }
+    return best ? { station: best, km: bestKm, walk: walkMinutes(bestKm) } : null;
   }
 
   // Fetch (and cache) one origin shard: { destId: minutes }.
@@ -153,9 +182,7 @@
   function renderResults(slice, today, scen) {
     var el = document.getElementById("results");
     if (!today && !scen) {
-      el.innerHTML = '<p class="text-secondary small">No reasonable rail trip found for ' +
-        'this origin and destination within a ' + CFG.maxWalkMin +
-        '-minute walk of a station.</p>';
+      el.innerHTML = noRouteHtml();
       return;
     }
     function card(title, accent, r, net) {
@@ -227,6 +254,29 @@
         sliceLabel(slice) + ', assuming 2.75 mph walk speed and a 20-minute maximum walk. The line you board ' +
         'reflects a representative departure at this time.</p>';
     drawRoute(today, scen);
+  }
+
+  // A prominent, specific "no trip" explanation. Names the end(s) whose nearest
+  // station is beyond the walk cap and how far it is, so the user knows what to
+  // fix. Rendered as a warning alert (not easily-missed grey text).
+  function noRouteHtml() {
+    var cap = CFG.maxWalkMin;
+    var ends = [
+      { label: "starting point", n: nearestAnyStation(endpoints.from.lat, endpoints.from.lon) },
+      { label: "destination",    n: nearestAnyStation(endpoints.to.lat,   endpoints.to.lon) }
+    ];
+    var far = ends.filter(function (e) { return e.n && e.n.walk > cap; });
+    var why = far.length
+      ? '<p class="mb-2">' + far.map(function (e) {
+          var mi = (e.n.km * 0.621371).toFixed(1);
+          return "Your " + e.label + " is about a <b>" + Math.round(e.n.walk) +
+            "-minute walk</b> from the nearest station (" + e.n.station.name + ", " + mi + " mi away).";
+        }).join(" ") + '</p>'
+      : '<p class="mb-2">There\'s no rail connection between these two points in the network.</p>';
+    return '<div class="alert alert-warning" role="alert">' +
+      '<h2 class="h5 alert-heading mb-2">🚫 No rail trip found</h2>' + why +
+      '<p class="mb-0 small">A trip needs a train station within a ' + cap +
+      '-minute walk of <em>each</em> end. Try an address closer to a station.</p></div>';
   }
 
   function sliceLabel(id) {
@@ -477,7 +527,7 @@
       b.addEventListener("click", function () {
         setEndpoint("from", { lat: trip.from.lat, lon: trip.from.lon, label: trip.from.label });
         setEndpoint("to",   { lat: trip.to.lat,   lon: trip.to.lon,   label: trip.to.label });
-        onPlan();
+        onPlan("predefined");
       });
       box.appendChild(b);
     });
@@ -519,28 +569,114 @@
     } catch (e) { return null; }
   }
 
-  // Fire-and-forget log of the planned trip (boarding/alighting stations + the
-  // two travel times) so we can rank popular corridors. We log the *stations*,
-  // not the address the user typed — see the methodology's privacy note. Prefer
-  // the scenario trip's stations; fall back to today's. Never let it throw.
-  function trackTrip(slice, today, scen) {
-    var r = scen || today;
-    if (!r || !r.board || !r.alight) return;
+  // Transfer count for one network's result (0 = one-seat ride), or null.
+  function transfersOf(r, net) {
+    var rr = r ? parseRoutes(r.routes, net) : null;
+    return rr ? rr.transfers : null;
+  }
+  // The distinct CrossTowner tunnel routes (X1–X6) a scenario trip rides, as a
+  // comma-joined string ("X5" / "X1,X3"), or null if it uses none.
+  function xRoutesOf(scen) {
+    if (!scen || !scen.routes) return null;
+    var seen = {}, out = [];
+    scen.routes.split("|").forEach(function (t) {
+      t = t.replace(/[\[\]]/g, "");
+      if (/^X[1-6]$/.test(t) && !seen[t]) { seen[t] = 1; out.push(t); }
+    });
+    return out.length ? out.join(",") : null;
+  }
+
+  // Session context captured once on load (see captureContext): how the visitor
+  // arrived (referring host + campaign tags) and a coarse device class. Attached
+  // to every logged trip so we can gauge reach and channel performance.
+  var ATTR = { ref_host: null, utm_source: null, utm_medium: null, utm_campaign: null };
+  var DEVICE = null;
+  function captureContext() {
+    try {
+      var q = new URLSearchParams(location.search);
+      ATTR.utm_source   = (q.get("utm_source")   || "").slice(0, 60) || null;
+      ATTR.utm_medium   = (q.get("utm_medium")   || "").slice(0, 60) || null;
+      ATTR.utm_campaign = (q.get("utm_campaign") || "").slice(0, 80) || null;
+      var ref = document.referrer || "";
+      if (!ref) { ATTR.ref_host = "direct"; }
+      else {
+        var h = new URL(ref).hostname.replace(/^www\./, "");
+        ATTR.ref_host = (h === location.hostname.replace(/^www\./, "")) ? "internal" : h;
+      }
+    } catch (e) {}
+    try {
+      var coarse = window.matchMedia && matchMedia("(pointer: coarse)").matches;
+      var w = window.innerWidth || 0;
+      DEVICE = coarse ? (w && w < 768 ? "mobile" : "tablet") : "desktop";
+    } catch (e) { DEVICE = null; }
+  }
+
+  // A random per-trip token (echoed back with a later "shared" event so we can
+  // flag the exact trip row without racing on the server's row id).
+  function randomToken() {
+    try { if (window.crypto && crypto.randomUUID) return crypto.randomUUID(); } catch (e) {}
+    return "t" + Date.now() + "-" + Math.floor(Math.random() * 1e9);
+  }
+
+  // Fire-and-forget POST to /track. Never throws — analytics must never disrupt
+  // planning.
+  function postJSON(payload) {
     try {
       fetch(CFG.workerBase + "/track", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         keepalive: true,
-        body: JSON.stringify({
-          origin: r.board.name,
-          destination: r.alight.name,
-          slice: slice,
-          today_min: today ? Math.round(today.total) : null,
-          scenario_min: scen ? Math.round(scen.total) : null,
-          cid: clientId()
-        })
-      }).catch(function () { /* analytics must never disrupt planning */ });
-    } catch (e) { /* ditto */ }
+        body: JSON.stringify(payload)
+      }).catch(function () {});
+    } catch (e) {}
+  }
+  // Attach the anonymous id + session context to a logging payload and send it.
+  function logTrack(payload) {
+    payload.cid = clientId();
+    payload.device = DEVICE;
+    payload.ref_host = ATTR.ref_host;
+    payload.utm_source = ATTR.utm_source;
+    payload.utm_medium = ATTR.utm_medium;
+    payload.utm_campaign = ATTR.utm_campaign;
+    postJSON(payload);
+  }
+
+  // Log a completed trip: the *stations* (not the address typed — see the
+  // methodology's privacy note), the two travel times, transfer counts, and any
+  // CrossTowner X-route used. Prefer the scenario trip's stations; fall back to
+  // today's. "Trip made possible" is derivable: today_min IS NULL and
+  // scenario_min IS NOT NULL. `ttoken` lets a later share event flag this row.
+  function trackTrip(slice, today, scen, source, ttoken) {
+    var r = scen || today;
+    if (!r || !r.board || !r.alight) return;
+    logTrack({
+      result: "ok",
+      origin: r.board.name,
+      destination: r.alight.name,
+      slice: slice,
+      today_min: today ? Math.round(today.total) : null,
+      scenario_min: scen ? Math.round(scen.total) : null,
+      transfers_today: transfersOf(today, "today"),
+      transfers_scenario: transfersOf(scen, "scenario"),
+      x_route: xRoutesOf(scen),
+      source: source || "search",
+      ttoken: ttoken || null
+    });
+  }
+
+  // Log a search that produced no trip: no route found within the walk cap, an
+  // out-of-county endpoint, or a geocode miss. Captures unmet demand. No station
+  // or address is stored (there is none) — just the failure kind.
+  function logFailed(result, slice, source) {
+    logTrack({ result: result, slice: slice, source: source || "search" });
+  }
+
+  // Flag a trip's row as shared once, when the user copies its share link.
+  var sharedTokens = {};
+  function markShared(ttoken) {
+    if (!ttoken || sharedTokens[ttoken]) return;
+    sharedTokens[ttoken] = 1;
+    postJSON({ shared: true, ttoken: ttoken });
   }
 
   // On load, if the URL already describes a trip, restore and run it.
@@ -550,7 +686,7 @@
     setEndpoint("from", { lat: +p.get("olat"), lon: +p.get("olon"), label: p.get("ol") || "Origin" });
     setEndpoint("to", { lat: +p.get("dlat"), lon: +p.get("dlon"), label: p.get("dl") || "Destination" });
     if (p.get("sl")) document.getElementById("slice").value = p.get("sl");
-    onPlan();
+    onPlan("permalink");
   }
 
   /* ---- geocode autocomplete wiring -------------------------------------- */
@@ -574,13 +710,14 @@
             li.style.cursor = "pointer";
             li.textContent = label;
             li.addEventListener("click", function () {
-              if (!pointInCounties(lon, lat, counties)) {
+              var ep = snapGeocode({ lat: lat, lon: lon, label: label });
+              if (!pointInCounties(ep.lon, ep.lat, counties)) {
                 list.innerHTML = '<li class="list-group-item text-danger small">Trips must ' +
                   'start and end in a Metra-service county (Cook, DuPage, Lake, Kane, ' +
                   'McHenry, Will).</li>';
                 return;
               }
-              setEndpoint(which, { lat: lat, lon: lon, label: label });
+              setEndpoint(which, ep);
               if (endpoints.from && endpoints.to) onPlan();
             });
             list.appendChild(li);
@@ -605,15 +742,21 @@
       var f = (fc.features || [])[0];
       if (!f) return { error: "notfound", which: which };
       var lon = f.geometry.coordinates[0], lat = f.geometry.coordinates[1];
-      if (!pointInCounties(lon, lat, counties)) return { error: "county", which: which };
-      var ep = { lat: lat, lon: lon, label: f.properties.label || f.properties.name };
+      var ep = snapGeocode({ lat: lat, lon: lon, label: f.properties.label || f.properties.name });
+      if (!pointInCounties(ep.lon, ep.lat, counties)) return { error: "county", which: which };
       setEndpoint(which, ep);
       return ep;
     }).catch(function () { return { error: "geocoder", which: which }; });
   }
 
   /* ---- plan button ------------------------------------------------------ */
-  function onPlan() {
+  // `source` records how the trip was initiated, for the /track log. Only the
+  // predefined-button and permalink paths pass it explicitly; everything else
+  // (Plan button, autocomplete pick, swap) is a normal "search". The Plan
+  // button passes a click Event here, so anything unrecognized normalizes to
+  // "search".
+  function onPlan(source) {
+    var src = (source === "predefined" || source === "permalink") ? source : "search";
     var slice = document.getElementById("slice").value;
     var res = document.getElementById("results");
     res.innerHTML = '<p class="text-secondary small">Planning…</p>';
@@ -625,6 +768,9 @@
           : bad.error === "notfound" ? "Couldn't find that address — try adding a city."
           : "Address lookup is unavailable right now.";
         res.innerHTML = '<p class="text-danger small">' + msg + '</p>';
+        var kind = bad.error === "county" ? "out_of_county"
+                 : bad.error === "notfound" ? "geocode_notfound" : "geocode_error";
+        logFailed(kind, slice, src);
         return;
       }
       if (!endpoints.from || !endpoints.to) {
@@ -635,15 +781,18 @@
       Promise.all([bestTotal("today", slice), bestTotal("scenario", slice)])
         .then(function (r) {
           renderResults(slice, r[0], r[1]);
+          if (!r[0] && !r[1]) { logFailed("no_route", slice, src); return; }
           var shareUrl = updatePermalink(slice, r[0], r[1]);
-          addShareButton(shareUrl);
-          trackTrip(slice, r[0], r[1]);
+          var ttoken = randomToken();
+          addShareButton(shareUrl, ttoken);
+          trackTrip(slice, r[0], r[1], src, ttoken);
         });
     });
   }
 
   // Append a "Copy share link" button; the link carries a per-trip og: preview.
-  function addShareButton(shareUrl) {
+  // Copying flags this trip's row as shared (once), via its ttoken.
+  function addShareButton(shareUrl, ttoken) {
     var el = document.getElementById("results");
     var wrap = document.createElement("div");
     wrap.className = "mt-1";
@@ -651,6 +800,7 @@
     btn.className = "btn btn-sm btn-outline-secondary";
     btn.textContent = "Copy share link";
     btn.addEventListener("click", function () {
+      markShared(ttoken);
       navigator.clipboard.writeText(shareUrl).then(function () {
         btn.textContent = "Link copied!";
         setTimeout(function () { btn.textContent = "Copy share link"; }, 1500);
@@ -746,6 +896,7 @@
 
   /* ---- boot ------------------------------------------------------------- */
   function boot() {
+    captureContext();   // referrer/UTM/device — before applyPermalink rewrites the URL
     initMap();
     initEmailWall();
     initFeedback();
