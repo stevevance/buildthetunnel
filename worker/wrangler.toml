@@ -15,9 +15,10 @@ name = "buildthetunnel-planner"
 main = "src/index.js"
 compatibility_date = "2026-07-13"
 
-# Origins allowed to call this Worker (the GitHub Pages site + local preview).
+# Origins allowed to call this Worker: the live GitHub Pages site, the
+# buildthetunnel.ngrok.io testing tunnel (kept intentionally), and local preview.
 [vars]
-ALLOWED_ORIGINS = "https://stevevance.github.io,http://localhost:8000,http://127.0.0.1:8000"
+ALLOWED_ORIGINS = "https://stevevance.github.io,https://buildthetunnel.ngrok.io,http://localhost:8000,http://127.0.0.1:8000"
 
 [[d1_databases]]
 binding = "DB"
