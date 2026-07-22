@@ -699,6 +699,12 @@
   }
 
   /* ---- Option A: predefined trips --------------------------------------- */
+  // Set one end of a predefined trip: an O'Hare terminal (via `airport`) or a
+  // plain {lat,lon,label} point.
+  function setTripEnd(which, e) {
+    if (e && e.airport && OHARE.terminals[e.airport]) setOhareEndpoint(which, e.airport);
+    else setEndpoint(which, { lat: e.lat, lon: e.lon, label: e.label });
+  }
   function renderPredefinedTrips() {
     var box = document.getElementById("predefined-trips");
     if (!box || !Array.isArray(CFG.predefined_trips)) return;
@@ -710,8 +716,8 @@
       b.innerHTML = '<span class="fw-semibold d-block">' + trip.title + '</span>' +
         (trip.blurb ? '<span class="small blurb">' + trip.blurb + '</span>' : "");
       b.addEventListener("click", function () {
-        setEndpoint("from", { lat: trip.from.lat, lon: trip.from.lon, label: trip.from.label });
-        setEndpoint("to",   { lat: trip.to.lat,   lon: trip.to.lon,   label: trip.to.label });
+        setTripEnd("from", trip.from);
+        setTripEnd("to", trip.to);
         onPlan("predefined");
       });
       box.appendChild(b);

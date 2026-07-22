@@ -42,10 +42,10 @@ window.PLANNER_CONFIG = {
       to:   { label: "67th Street",        lat: 41.773259, lon: -87.592035 }
     },
     {
-      title: "Berwyn to O'Hare Transfer",
-      blurb: "West suburbs to the airport on the X5, no downtown backtrack.",
+      title: "Berwyn to O'Hare Terminal 3",
+      blurb: "West suburbs to the airport on the X5 — one train, no transfers.",
       from: { label: "Berwyn - Harlem Ave", lat: 41.8314, lon: -87.8019 },
-      to:   { label: "O'Hare Transfer",    lat: 41.995212, lon: -87.880317 }
+      to:   { airport: "t3" }
     },
     {
       title: "Davis Street to 55th-56th-57th",
