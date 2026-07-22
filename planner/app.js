@@ -69,6 +69,7 @@
   var counties = null;        // county FeatureCollection
   var shardCache = {};        // "net/slice/oid" -> {destId: minutes}
   var LINES = null;           // { "Red": [[[lon,lat],...]], ... } rail-line geometry
+  var MMF_WALK = null;        // [[lat,lon],...] sidewalk: O'Hare Transfer <-> MMF
   var stationByName = {};     // station name -> {lat,lon} (for leg endpoints)
   var stationById = {};       // station id -> station (for airport egress lookup)
   var endpoints = { from: null, to: null };  // {lat,lon,label}
@@ -121,17 +122,19 @@
   var OHARE_DEFAULT = "t1";
   var OHARE = {
     order: ["t1", "t2", "t3", "t5", "mmf"],
+    // lat/lon are the terminals' ATS-station coordinates (from OSM), so the map
+    // marker sits on the people-mover guideway. Egress minutes are estimates.
     terminals: {
       t1:  { short: "Terminal 1",           label: "O'Hare — Terminal 1",
-             lat: 41.97897, lon: -87.90366, egress: { blue: 9,  transfer: 13 } },
+             lat: 41.97927, lon: -87.90555, egress: { blue: 9,  transfer: 13 } },
       t2:  { short: "Terminal 2",           label: "O'Hare — Terminal 2",
-             lat: 41.97766, lon: -87.90422, egress: { blue: 5,  transfer: 11 } },
+             lat: 41.97732, lon: -87.90496, egress: { blue: 5,  transfer: 11 } },
       t3:  { short: "Terminal 3",           label: "O'Hare — Terminal 3",
-             lat: 41.97730, lon: -87.90480, egress: { blue: 8,  transfer: 9  } },
+             lat: 41.97712, lon: -87.90184, egress: { blue: 8,  transfer: 9  } },
       t5:  { short: "Terminal 5",           label: "O'Hare — Terminal 5",
-             lat: 41.97690, lon: -87.91460, egress: { blue: 12, transfer: 6  } },
+             lat: 41.97497, lon: -87.89024, egress: { blue: 12, transfer: 6  } },
       mmf: { short: "MMF / O'Hare Transfer", label: "O'Hare — MMF / Transfer",
-             lat: 41.99340, lon: -87.88260, egress: { blue: 14, transfer: 3  } }
+             lat: 41.99294, lon: -87.88234, egress: { blue: 14, transfer: 3  } }
     }
   };
   function isOhare(label) { return !!label && /o[\W_]?hare/i.test(label); }
@@ -610,11 +613,62 @@
       L.polyline(latlngs, { color: "#ffffff", weight: 6, opacity: 0.85 }).addTo(routeLayer);
       L.polyline(latlngs, { color: "#3A4750", weight: 3, opacity: 0.9, dashArray: "1 7", lineCap: "round" }).addTo(routeLayer);
     }
+    // The O'Hare ATS people mover: a distinct dashed connector (purple, longer
+    // dashes) so it doesn't read as a walking path.
+    function ats(latlngs) {
+      L.polyline(latlngs, { color: "#ffffff", weight: 7, opacity: 0.9 }).addTo(routeLayer);
+      L.polyline(latlngs, { color: "#7B2CBF", weight: 4, opacity: 1, dashArray: "10 6" }).addTo(routeLayer);
+    }
+    var d2 = function (p, lat, lon) { var dy = p[0] - lat, dx = p[1] - lon; return dy * dy + dx * dx; };
+    // Draw a walk and add its points to the fit set.
+    function drawWalk(latlngs) { walk(latlngs); latlngs.forEach(function (p) { allPts.push(p); }); }
+    // Draw the ATS guideway clipped between two points, oriented A->B (lineSlice
+    // returns it in native order, so flip it or A stitches to the far end and
+    // draws a straight backtrack). Falls back to a straight dash.
+    function drawGuideway(aLat, aLon, bLat, bLon) {
+      var g = clipLine("ATS", aLat, aLon, bLat, bLon);
+      var line;
+      if (g && g.length) {
+        if (d2(g[g.length - 1], aLat, aLon) < d2(g[0], aLat, aLon)) g = g.slice().reverse();
+        line = [[aLat, aLon]].concat(g, [[bLat, bLon]]);
+      } else {
+        line = [[aLat, aLon], [bLat, bLon]];
+      }
+      ats(line);
+      line.forEach(function (p) { allPts.push(p); });
+    }
+    // Connector between an O'Hare rail station and a terminal marker. From
+    // O'Hare Transfer it's a real sidewalk walk to the MMF (OSM geometry) plus,
+    // for ATS destinations, the guideway ride; the MMF itself is walk-only. From
+    // the Blue Line it's the guideway ride, or a short straight walk to T1/T2/T3.
+    function drawAirportHop(station, ep) {
+      var sk = ohareStationKey(station.id);
+      var atsRide = ohareHopMode(sk, ep.airport) === "ats";
+      var stLL = [station.lat, station.lon], termLL = [ep.lat, ep.lon];
+      if (sk === "transfer" && MMF_WALK && MMF_WALK.length) {
+        var w = d2(MMF_WALK[MMF_WALK.length - 1], stLL[0], stLL[1]) < d2(MMF_WALK[0], stLL[0], stLL[1])
+          ? MMF_WALK.slice().reverse() : MMF_WALK.slice();
+        drawWalk([stLL].concat(w));
+        var mmf = w[w.length - 1];
+        if (atsRide) drawGuideway(mmf[0], mmf[1], termLL[0], termLL[1]);
+        else drawWalk([mmf, termLL]);
+        return;
+      }
+      if (atsRide) drawGuideway(stLL[0], stLL[1], termLL[0], termLL[1]);
+      else drawWalk([stLL, termLL]);
+    }
     if (r && r.legs && r.legs.length) {
+      var fromAirport = endpoints.from.airport && ohareStationKey(r.board.id);
+      var toAirport   = endpoints.to.airport   && ohareStationKey(r.alight.id);
       var prevPt = [endpoints.from.lat, endpoints.from.lon];
-      r.legs.forEach(function (leg) {
+      r.legs.forEach(function (leg, i) {
         var from = stCoord(leg.from), to = stCoord(leg.to);
-        if (from) { walk([prevPt, from]); allPts.push(from); }        // access/transfer walk
+        // i===0 is the access hop (airport connector); i>0 are transfer walks.
+        if (from) {
+          if (i === 0 && fromAirport) drawAirportHop(r.board, endpoints.from);
+          else walk([prevPt, from]);
+          allPts.push(from);
+        }
         var geom = (from && to) ? clipLine(leg.line, from[0], from[1], to[0], to[1]) : null;
         if (geom && geom.length > 1) {
           ride(geom, lineColor(leg.line)); geom.forEach(function (p) { allPts.push(p); });
@@ -623,7 +677,8 @@
         }
         if (to) prevPt = to;
       });
-      walk([prevPt, [endpoints.to.lat, endpoints.to.lon]]);            // egress walk
+      if (toAirport) drawAirportHop(r.alight, endpoints.to);
+      else walk([prevPt, [endpoints.to.lat, endpoints.to.lon]]);
     } else if (r) {
       ride([[endpoints.from.lat, endpoints.from.lon], [r.board.lat, r.board.lon],
             [r.alight.lat, r.alight.lon], [endpoints.to.lat, endpoints.to.lon]], "#0B7285");
@@ -1066,9 +1121,16 @@
     Promise.all([
       loadJSON(CFG.dataBase + "/stations.json"),
       loadJSON(CFG.dataBase + "/metra_counties.geojson"),
-      loadJSON(CFG.dataBase + "/lines.json").catch(function () { return null; })
+      loadJSON(CFG.dataBase + "/lines.json").catch(function () { return null; }),
+      loadJSON(CFG.dataBase + "/ats.json").catch(function () { return null; })
     ]).then(function (r) {
-      stations = r[0]; counties = r[1]; LINES = r[2];
+      stations = r[0]; counties = r[1]; LINES = r[2] || {};
+      // Register the O'Hare ATS guideway as a clippable "line" so the map can
+      // trace it, and keep the Metra-Transfer<->MMF sidewalk for the walk hop.
+      if (r[3]) {
+        LINES.ATS = r[3].guideway;
+        MMF_WALK = (r[3].mmfWalk || []).map(function (c) { return [c[1], c[0]]; });  // [lon,lat] -> [lat,lon]
+      }
       stations.forEach(function (s) {
         if (!(s.name in stationByName)) stationByName[s.name] = s;
         stationById[s.id] = s;
