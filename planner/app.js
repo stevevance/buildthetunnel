@@ -136,6 +136,21 @@
   };
   function isOhare(label) { return !!label && /o[\W_]?hare/i.test(label); }
 
+  // How you cover an O'Hare egress/access hop: on foot or on the ATS people
+  // mover. The Blue Line drops you in the terminal core (walk to T1/T2/T3; ATS
+  // out to T5/MMF); O'Hare Transfer sits at the MMF (walk to the MMF; ATS in to
+  // the terminals). stationKey is "blue" or "transfer".
+  function ohareHopMode(stationKey, terminalKey) {
+    if (stationKey === "blue") return (terminalKey === "t5" || terminalKey === "mmf") ? "ats" : "walk";
+    return (terminalKey === "mmf") ? "walk" : "ats";
+  }
+  // "blue"/"transfer" for an O'Hare rail station id, else null.
+  function ohareStationKey(id) {
+    if (id === OHARE_STATIONS.blue) return "blue";
+    if (id === OHARE_STATIONS.transfer) return "transfer";
+    return null;
+  }
+
   // Turn an endpoint into an O'Hare-terminal endpoint and (re)draw its picker.
   function setOhareEndpoint(which, key) {
     if (!OHARE.terminals[key]) key = OHARE_DEFAULT;
@@ -243,9 +258,19 @@
           var legs   = (typeof cell === "object") ? cell.legs : null;
           if (ride == null) return;
           var total = entry.o.walk + ride + d.walk;
-          if (!best || total < best.total) {
+          // Number of vehicle legs (fewer = simpler, fewer transfers).
+          var nlegs = legs && legs.length ? legs.length
+                    : routes ? String(routes).split("|").length : 1;
+          var rt = Math.round(total);
+          // Prefer the lowest total; when two options display the same minute
+          // (e.g. a one-seat airport ride vs. a downtown backtrack that ties),
+          // prefer the simpler trip (fewer legs), then the truly faster one.
+          var better = !best || rt < best.rt ||
+            (rt === best.rt && nlegs < best.nlegs) ||
+            (rt === best.rt && nlegs === best.nlegs && total < best.total);
+          if (better) {
             best = {
-              total: total,
+              total: total, rt: rt, nlegs: nlegs,
               access: entry.o.walk, egress: d.walk, ride: ride, routes: routes, legs: legs,
               board: entry.o.station, alight: d.station
             };
@@ -254,6 +279,27 @@
       });
       return best;
     });
+  }
+
+  // One access ("from") or egress ("to") hop as an <li>. For an O'Hare terminal
+  // endpoint the hop is to/from a specific terminal, and is labeled as an ATS
+  // ride or a walk depending on which station served it — so we never call the
+  // people mover a "walk".
+  function hopLi(side, r, minutes, boardName) {
+    var ep = endpoints[side];
+    var station = (side === "from") ? r.board : r.alight;
+    var sk = ep && ep.airport && station ? ohareStationKey(station.id) : null;
+    if (sk) {
+      var ats = ohareHopMode(sk, ep.airport) === "ats";
+      var verb = ats ? "Take the ATS ~" + Math.round(minutes) + " min" : "Walk " + fmtMin(minutes);
+      var term = OHARE.terminals[ep.airport].short;
+      return side === "from"
+        ? "<li>" + verb + " from <b>" + term + "</b> to <b>" + boardName + "</b></li>"
+        : "<li>" + verb + " to <b>" + term + "</b></li>";
+    }
+    return side === "from"
+      ? "<li>Walk " + fmtMin(minutes) + " to <b>" + boardName + "</b></li>"
+      : "<li>Walk " + fmtMin(minutes) + " to your destination</li>";
   }
 
   /* ---- render ----------------------------------------------------------- */
@@ -277,7 +323,7 @@
         // Per-leg wait is intentionally not shown: the headline time is the
         // 30-minute-window median (typical waiting is folded into it), so a
         // single departure's wait would be both misleading and inconsistent.
-        steps = '<li>Walk ' + fmtMin(r.access) + ' to <b>' + r.legs[0].from + '</b></li>';
+        steps = hopLi("from", r, r.access, r.legs[0].from);
         r.legs.forEach(function (leg, i) {
           var label = routeLabel(leg.line, net) || leg.mode;
           // An out-of-station transfer: previous leg alighted at a different station.
@@ -287,15 +333,15 @@
           }
           // Service frequency makes the CrossTowner benefit visible: the same
           // corridor often runs more often in the scenario (added X-route trains).
-          var freqTxt = leg.freq ? ' &middot; a train every ~' + leg.freq + ' min' : '';
-          steps += '<li>Board the <b>' + label + '</b> at ' + leg.from +
-            '<div class="text-secondary">' + leg.ride + ' min &rarr; alight ' + leg.to +
-            freqTxt + '</div></li>';
+          var freqTxt = leg.freq ? '<div class="text-secondary">a train every ~' + leg.freq + ' min</div>' : '';
+          steps += '<li>Board the <b>' + label + '</b> at ' + leg.from + freqTxt + '</li>';
+          // Alighting is its own step so it's obvious where to get off.
+          steps += '<li>Ride ' + leg.ride + ' min &rarr; alight at <b>' + leg.to + '</b></li>';
         });
-        steps += '<li>Walk ' + fmtMin(r.egress) + ' to your destination</li>';
+        steps += hopLi("to", r, r.egress, null);
       } else {
         // Fallback: route sequence only (no station-level detail).
-        steps = '<li>Walk ' + fmtMin(r.access) + ' to ' + r.board.name + '</li>';
+        steps = hopLi("from", r, r.access, r.board.name);
         if (rr && rr.labels.length) {
           rr.labels.forEach(function (lbl, i) {
             steps += '<li>' + (i === 0 ? 'Board the <b>' : 'Transfer to the <b>') + lbl + '</b></li>';
@@ -303,7 +349,7 @@
         } else {
           steps += '<li>Ride ' + r.board.name + ' &rarr; ' + r.alight.name + '</li>';
         }
-        steps += '<li>Walk ' + fmtMin(r.egress) + ' to your destination</li>';
+        steps += hopLi("to", r, r.egress, null);
       }
       var sub = '<div class="text-secondary small mb-1">' + fmtMin(r.ride) +
         ' station-to-station &middot; ' + (xfers === 0 ? "one seat" :
@@ -327,10 +373,13 @@
     el.innerHTML =
       card("Today", "#3A4750", today, "today") +
       card("With CrossTowner + Red Line Extension", "var(--crcl)", scen, "scenario") +
-      delta +
-      '<p class="text-secondary small mb-0">Precomputed median travel time in a 30-minute period ' +
-        sliceLabel(slice) + ', assuming 2.75 mph walk speed and a 20-minute maximum walk. The line you board ' +
-        'reflects a representative departure at this time.</p>';
+      delta;
+    // The methodology note lives in the footer, below the divider — set it here
+    // because the slice label is dynamic.
+    var note = document.getElementById("method-note");
+    if (note) note.innerHTML = 'Precomputed median travel time in a 30-minute period ' +
+      sliceLabel(slice) + ', assuming 2.75 mph walk speed and a 20-minute maximum walk. The line you board ' +
+      'reflects a representative departure at this time.';
     drawRoute(today, scen);
   }
 
@@ -934,6 +983,8 @@
       if (tbox) tbox.innerHTML = "";
     });
     document.getElementById("results").innerHTML = "";
+    var note = document.getElementById("method-note");
+    if (note) note.innerHTML = "";
     // Wipe the map: route polylines live in routeLayer; the two markers don't.
     if (routeLayer) routeLayer.clearLayers();
     if (fromMarker) { map.removeLayer(fromMarker); fromMarker = null; }

@@ -85,16 +85,15 @@
     </div>
 
     <div id="results" class="d-flex flex-column gap-2"></div>
-
-    <div class="row" id="next_steps">
-      <div class="col-auto">
-        <p>The trip planner will find the nearest rail station (existing, under construction, and proposed new CrossTowner) at your selected origin and destination and route a trip between them. These trips have been precomputed to ensure this website is super fast.</p>
-      </div>
-    </div>
     
     <footer class="text-secondary small mt-4 pt-3 border-top">
-      <p>Made by Steven Vance, using the <a href="https://buildthetunnelchicago.org/" target="_blank">Star:Line Chicago CrossTowner</a> map and synthetic schedule as input to Conveyal R5 trip-planning software. This tool is otherwise unaffiliated with Star:Line Chicago.</p>
-      <p>Your trips are computed in your browser from precomputed data. To understand usage, we log each trip's stations and timing with an anonymous ID, plus how you arrived at this website and your device type. We also count aggregate visits with Cloudflare Web Analytics. Your email is not associated with your use of the planner, but if you provide feedback then your email is associated with the most recent planned trip. <a href="methodology.html">How this works &rarr;</a></p>
+      <p id="method-note" class="mb-2"><!-- per-trip methodology note, set by app.js after a plan --></p>
+      <p>The trip planner will find the nearest rail station (existing, under construction, and proposed new CrossTowner) at your selected origin and destination and route a trip between them. These trips have been precomputed to ensure this website is super fast.</p>
+      <p>Made by Steven Vance, using the <a href="https://buildthetunnelchicago.org/" target="_blank">Star:Line Chicago CrossTowner</a> map and synthetic schedule as input to Conveyal R5 trip-planning software. This tool is otherwise unaffiliated with Star:Line Chicago. <a href="methodology.html">How this works &rarr;</a></p>
+      <details>
+        <summary>Privacy</summary>
+        <p>Your trips are computed in your browser from precomputed data. To understand usage, we log each trip's stations and timing with an anonymous ID, plus how you arrived at this website and your device type. We also count aggregate visits with Cloudflare Web Analytics. Your email is not associated with your use of the planner, but if you provide feedback then your email is associated with the most recent planned trip.</p>
+      </details>
     </footer>
   </aside>
 
