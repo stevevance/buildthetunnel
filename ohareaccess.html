@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CrossTowner and O'Hare's workforce</title>
+<meta name="description" content="O'Hare has ~50,000 workers spread across the whole region. CrossTowner would put ~48,500 more workers within a 60-minute transit commute of the airport — a bigger labor market for O'Hare employers. An open letter to the Chicago Department of Aviation.">
+<meta property="og:title" content="CrossTowner and O'Hare's workforce">
+<meta property="og:description" content="A regional-rail line would widen the labor market O'Hare employers can hire from by ~48,500 workers. The data, mapped.">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+<style>
+  :root{ --crcl:#0B7285; --gain:#f4a300; }
+  body{ padding-bottom:3rem; color:#1c2427; }
+  .bg-crcl{ background:var(--crcl)!important; }
+  header h1{ letter-spacing:-.01em; }
+  main{ max-width:780px; }
+  h2{ color:var(--crcl); font-size:1.3rem; margin-top:2.4rem; }
+  h3{ font-size:1.05rem; margin-top:1.6rem; font-weight:600; }
+  .lead-sm{ font-size:1.06rem; }
+  code{ color:#095c6c; }
+  .box{ background:#f4f6f7; border:1px solid #d7dee2; border-radius:8px; padding:1rem 1.15rem; }
+  figure{ margin:1.6rem 0; }
+  figure img{ width:100%; height:auto; border:1px solid #dbe2e5; border-radius:8px; }
+  figcaption{ font-size:.85rem; color:#5b6770; margin-top:.5rem; }
+  /* stat cards */
+  .stats{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:.9rem; margin:1.5rem 0; }
+  .stat{ background:#fff; border:1px solid #d7dee2; border-radius:10px; padding:.9rem 1rem; }
+  .stat .n{ font-size:1.8rem; font-weight:800; color:var(--crcl); line-height:1.05; }
+  .stat .n.gain{ color:var(--gain); }
+  .stat .l{ font-size:.82rem; color:#5b6770; margin-top:.25rem; }
+  /* CSS bar charts */
+  .chart{ margin:1.2rem 0 .4rem; }
+  .chart .row{ display:grid; grid-template-columns:64px 1fr; align-items:center; gap:.6rem; margin:.35rem 0; }
+  .chart .cat{ font-size:.85rem; color:#424a4d; text-align:right; }
+  .bars{ position:relative; }
+  .bar{ height:19px; border-radius:3px; display:flex; align-items:center; }
+  .bar.today{ background:var(--crcl); }
+  .bar.scen{ background:#8fb8c2; margin-top:3px; position:relative; }
+  .bar .v{ font-size:.72rem; color:#fff; font-weight:600; padding:0 6px; white-space:nowrap; }
+  .bar.scen .v{ color:#243; }
+  .bar .add{ background:var(--gain); height:100%; position:absolute; right:0; top:0; border-radius:0 3px 3px 0; display:flex; align-items:center; justify-content:flex-end; }
+  .bar .add .v{ color:#3a2c00; }
+  .legend{ font-size:.8rem; color:#5b6770; display:flex; gap:1.2rem; flex-wrap:wrap; margin:.4rem 0 0 64px; }
+  .legend span{ display:inline-flex; align-items:center; gap:.35rem; }
+  .sw{ width:13px; height:13px; border-radius:3px; display:inline-block; }
+  /* region split stacked bar */
+  .split{ display:flex; height:34px; border-radius:6px; overflow:hidden; margin:1rem 0 .4rem; border:1px solid #cfd7da; }
+  .split div{ display:flex; align-items:center; justify-content:center; color:#fff; font-size:.78rem; font-weight:600; }
+  .split-key{ font-size:.82rem; color:#424a4d; display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:.2rem .9rem; }
+  .split-key span{ display:inline-flex; align-items:center; gap:.4rem; }
+  blockquote.pull{ border-left:4px solid var(--crcl); margin:1.6rem 0; padding:.4rem 0 .4rem 1.1rem; font-size:1.12rem; color:#243; font-weight:500; }
+  .sign{ margin-top:2rem; }
+  a{ color:#095c6c; }
+  sup.fn{ font-weight:700; }
+  sup.fn a{ text-decoration:none; padding:0 1px; }
+  ol.refs{ font-size:.85rem; color:#424a4d; }
+  ol.refs li{ margin-bottom:.5rem; }
+  ol.refs li:target{ background:#fff6e0; }
+</style>
+</head>
+<body>
+<header class="bg-crcl text-white px-3 py-3">
+  <div class="mx-auto" style="max-width:780px">
+    <h1 class="h4 mb-0">CrossTowner and O'Hare's workforce</h1>
+    <div class="small opacity-75">The rationale for CDA to support a new regional rail vision &middot;
+      <a href="planner/" class="text-white">Trip planner</a> &middot;
+      <a href="index.html" class="text-white">3D flythrough</a></div>
+  </div>
+</header>
+
+<main class="mx-auto px-3 mt-4">
+  <p class="lead-sm">O'Hare is one of the largest job sites in Illinois &mdash; <b>49,935 people</b>
+  work there (Census <a href="https://lehd.ces.census.gov/data/" target="_blank" rel="noopener">LEHD
+  LODES</a>, 2023) &mdash; and almost none of them live nearby. I mapped where they do live, then
+  modeled who could reach the airport by transit if the <a href="https://buildthetunnelchicago.org/"
+  target="_blank" rel="noopener">CrossTowner</a> regional-rail tunnel were built. The short version:
+  CrossTowner would put about <b>48,500 more workers within a 60-minute transit commute of
+  O'Hare</b> &mdash; an 8.4% bigger applicant pool &mdash; at no cost to the airlines,
+  concessionaires, and cargo handlers doing the hiring. That is the strongest reason the Department
+  of Aviation should back it.</p>
+
+  <div class="stats">
+    <div class="stat"><div class="n">49,935</div><div class="l">people employed at O'Hare (LODES 2023)</div></div>
+    <div class="stat"><div class="n">69%</div><div class="l">live outside the City of Chicago</div></div>
+    <div class="stat"><div class="n gain">+48,500</div><div class="l">workers added to the 60-min transit labor shed by CrossTowner</div></div>
+    <div class="stat"><div class="n">~4%</div><div class="l">of U.S. airport workers commute by transit today</div></div>
+  </div>
+
+  <h2>O'Hare's workforce lives everywhere but O'Hare</h2>
+  <p>The O'Hare community area has only about <b>14,400 residents</b>, yet the airport employs
+  roughly <b>50,000</b>. So the workforce is a regional one. Using the Census Bureau's
+  <a href="https://lehd.ces.census.gov/data/" target="_blank" rel="noopener">LEHD LODES</a> data
+  (2023), I mapped where every O'Hare worker actually lives, by home census tract:</p>
+
+  <figure>
+    <img src="img/ohare-worker-residences.png" alt="Choropleth map of the Chicago region showing where O'Hare's ~50,000 workers live by home census tract. The densest clusters ring the airport and run down Chicago's Northwest Side, thinning with distance across the suburbs.">
+    <figcaption><b>Where O'Hare's workforce lives.</b> Each shade is the number of O'Hare
+    workers whose home is in that census tract. The workforce fans out across the Northwest Side
+    and the suburbs &mdash; a <i>ring</i>, not a single corridor. Source: LEHD LODES 2023,
+    primary jobs; workplace = Chicago community area&nbsp;#76 (O'Hare).</figcaption>
+  </figure>
+
+  <p>Only <b>31%</b> of O'Hare's workers live in Chicago. More than half live in the suburbs and
+  collar counties, and one in eight commutes from out of state:</p>
+
+  <div class="split" aria-hidden="true">
+    <div style="width:30.8%;background:#0B7285">31% Chicago</div>
+    <div style="width:28.4%;background:#2f8fa3">28% Sub. Cook</div>
+    <div style="width:24.8%;background:#5aa9ba">25% Collar</div>
+    <div style="width:11.8%;background:#94c4cf;color:#243">12% Out of state</div>
+    <div style="width:4.1%;background:#c2dde3;color:#243">4%</div>
+  </div>
+  <div class="split-key">
+    <span><i class="sw" style="background:#0B7285"></i>Chicago &mdash; 15,389 (30.8%)</span>
+    <span><i class="sw" style="background:#2f8fa3"></i>Suburban Cook &mdash; 14,203 (28.4%)</span>
+    <span><i class="sw" style="background:#5aa9ba"></i>Collar counties &mdash; 12,364 (24.8%)</span>
+    <span><i class="sw" style="background:#94c4cf"></i>Out of state &mdash; 5,911 (11.8%)</span>
+    <span><i class="sw" style="background:#c2dde3"></i>Rest of Illinois &mdash; 2,068 (4.1%)</span>
+  </div>
+  <p class="text-secondary small mt-2">After Chicago, the top home towns are Des Plaines,
+  Schaumburg, Arlington Heights, Naperville, Mount Prospect, Elgin, Palatine, Aurora, and Park
+  Ridge &mdash; classic suburb-to-airport commutes, most with no fast, direct transit to O'Hare today.</p>
+
+  <h2>What "a bigger labor market" means, precisely</h2>
+  <p>An employer can only hire from the people who can actually get to the job. Transportation
+  researchers call this the <b>labor shed</b> &mdash; and it is small by transit: a
+  <a href="https://www.brookings.edu/wp-content/uploads/2016/06/0512_jobs_transit.pdf" target="_blank" rel="noopener">Brookings
+  study</a> found the typical American employer can reach only about <b>27% of its region's
+  workers within 90 minutes by transit</b>.<sup class="fn"><a href="#ref4">4</a></sup> Widen the
+  transit network and you mechanically widen the applicant pool.</p>
+
+  <p>I measured O'Hare's transit labor shed directly. Using the same
+  <a href="planner/methodology.html">Conveyal R5 routing engine that powers this site's trip
+  planner</a>, I computed how many <i>employed residents</i> can reach an O'Hare rail gateway
+  (the Blue Line terminal or O'Hare Transfer) within 45, 60, and 75 minutes &mdash; today, and
+  with CrossTowner plus the under-construction Red Line Extension added:</p>
+
+  <div class="chart">
+    <div class="row"><div class="cat">≤ 45 min</div><div class="bars">
+      <div class="bar today" style="width:18.1%"><span class="v">188k today</span></div>
+      <div class="bar scen" style="width:19.7%"><span class="v">205k</span><div class="add" style="width:8.2%"><span class="v">+17k</span></div></div>
+    </div></div>
+    <div class="row"><div class="cat">≤ 60 min</div><div class="bars">
+      <div class="bar today" style="width:55.4%"><span class="v">576k today</span></div>
+      <div class="bar scen" style="width:60.1%"><span class="v">625k</span><div class="add" style="width:7.8%"><span class="v">+49k</span></div></div>
+    </div></div>
+    <div class="row"><div class="cat">≤ 75 min</div><div class="bars">
+      <div class="bar today" style="width:94.4%"><span class="v">982k today</span></div>
+      <div class="bar scen" style="width:100%"><span class="v">1.04M</span><div class="add" style="width:5.6%"><span class="v">+58k</span></div></div>
+    </div></div>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--crcl)"></i>Employed residents in reach today</span>
+      <span><i class="sw" style="background:var(--gain)"></i>Added by CrossTowner + Red Line Extension</span>
+    </div>
+  </div>
+  <p class="text-secondary small">Weekday 8&nbsp;AM; 7-county region; weighting each neighborhood
+  by its number of employed residents (LODES). The 60-minute pool grows by <b>+48,544 workers
+  (+8.4%)</b>. Weighted by total population instead, the gain is <b>+126,518 people (+10.1%)</b>.</p>
+
+  <p>Mapped, the added reach lands on the West Side &mdash; Austin and Humboldt Park &mdash; and
+  the adjacent west and northwest suburbs: the cross-town neighborhoods the radial Blue Line was
+  never built to serve. (The frame is cropped to the 60-minute shed, so the Far South Side, still
+  beyond 60 minutes even with the Red Line Extension, sits off the map.)</p>
+
+  <figure>
+    <img src="img/ohare-labor-shed.png" alt="Map framed to the area within about 60 minutes of O'Hare by transit, with Chicago community-area outlines shown; the Far South Side, which stays beyond 60 minutes even with CrossTowner, is outside this frame. Blue block groups (reachable within 60 minutes today) form a large mass over Chicago's North and Northwest Sides, downtown, and the near-northwest and near-western suburbs. Orange block groups (added by CrossTowner and the Red Line Extension) concentrate on the West Side in Austin and Humboldt Park and the adjacent suburbs of Cicero and Berwyn, with scattered pockets in the western suburbs. Pale-grey 'beyond 60 minutes' areas include the central West Side — the Garfield Parks and Lawndale. O'Hare is a red diamond at center-left, where the airport shows as a grey notch.">
+    <figcaption><b>CrossTowner widens the shed.</b> Blue = within 60 minutes of an O'Hare gateway
+    by transit today. Orange = neighborhoods the CrossTowner X-routes bring within 60 minutes (the
+    Red Line Extension's gains fall on the Far South Side, still beyond 60). Routing: r5r/Conveyal
+    R5 over CTA, Metra, and Pace.</figcaption>
+  </figure>
+
+  <h2>An honest caveat &mdash; and why it's actually the point</h2>
+  <p>You might expect a new rail line to speed up the commute of everyone already working at
+  O'Hare. It doesn't, much: most of today's transit commuters ride the 24-hour Blue Line, which
+  CrossTowner doesn't change. Of the workers who commute by transit today, most see little time
+  savings; a few thousand near the new corridors get a 10&ndash;20% faster trip, and about
+  <b>600 gain a usable transit trip they simply don't have today</b>.</p>
+
+  <p>But "little change on the Blue Line" is not the same as little benefit. Across the South and
+  West Sides, CrossTowner cuts <b>5&ndash;15 minutes</b> off the trip to O'Hare for a broad band of
+  neighborhoods &mdash; <b>about 173,000 employed residents get a trip at least five minutes
+  faster</b>. Many of those trips simply start <i>above</i> 60 minutes, so the catchment map above
+  can't show them. This one can &mdash; it maps the minutes saved, with the 45-, 60-, and
+  75-minute scenario reach drawn as bands:</p>
+
+  <figure>
+    <img src="img/ohare-savings.png" alt="Map of the Chicago region shading each neighborhood by how many minutes CrossTowner and the Red Line Extension cut from the transit trip to O'Hare. Greens deepen with larger time savings across the South and West Sides; three nested outlines mark the 45-, 60-, and 75-minute scenario commute reach.">
+    <figcaption><b>Where CrossTowner speeds up the O'Hare trip.</b> Green = minutes saved on the
+    transit trip to an O'Hare gateway (deeper = larger savings). The nested rings show how far the
+    45-, 60-, and 75-minute scenario commute reaches. The savings run well beyond the 60-minute
+    line &mdash; much of the South and West Sides gets a faster trip, even where it stays a long one.
+    Projection: Illinois State Plane East (EPSG:3435). Routing: r5r / Conveyal R5.</figcaption>
+  </figure>
+
+  <blockquote class="pull">The workers who would benefit most from CrossTowner mostly don't work
+  at O'Hare <i>yet</i> &mdash; because today they can't get there. They are the applicant pool,
+  not the payroll.</blockquote>
+
+  <p>That is exactly the labor-market case. Today's O'Hare workforce is shaped by today's transit
+  map: people who can't reach the airport in a reasonable transit commute took a job somewhere
+  else. Roughly <b>57% of current O'Hare workers have no realistic transit trip to the airport at
+  all</b> &mdash; they drive because they must. CrossTowner's value isn't shaving minutes off the
+  Blue Line; it's turning tens of thousands of "can't get there" workers into "could work here."</p>
+
+  <h2>The evidence that this moves hiring</h2>
+  <ul>
+    <li><b>Transit share is low but responsive.</b> Only ~4% of U.S. airport employees commute by
+    transit &mdash; but at airports with strong, direct rail the share reaches
+    <b>17% (Denver) and 19% (Seattle&ndash;Tacoma)</b>.<sup class="fn"><a href="#ref1">1</a></sup>
+    Better rail visibly shifts how workers get to work.</li>
+    <li><b>Commute friction drives turnover.</b> Airport ground operations see turnover up to ~50% a
+    year.<sup class="fn"><a href="#ref2">2</a></sup> When airports have cut the friction and cost on
+    workers &mdash; the classic case being San Francisco's airport wage-and-standards program &mdash;
+    screener turnover fell from roughly <b>95% to about 20%</b>.<sup class="fn"><a href="#ref3">3</a></sup>
+    A commute that's finally possible by transit is that same kind of friction, removed.</li>
+    <li><b>Off-peak and cross-town trips are the gap.</b> O'Hare runs 24/7; cargo, catering, and
+    hotel shifts start before the first suburban train and end after the last. Late-shift workers
+    are markedly less likely to use transit where service spans don't cover their
+    hours.<sup class="fn"><a href="#ref1">1</a></sup> A circumferential regional line reaches the
+    suburb-to-airport and cross-town trips the single radial Blue Line was never built to serve.</li>
+  </ul>
+
+  <h2>What a cross-town tunnel did for Heathrow</h2>
+  <p>The Elizabeth line is the closest thing we have to a controlled experiment for what CrossTowner
+  would do. London spent £18.9&nbsp;billion boring 13 miles of new twin tunnel under the center of the
+  city and threading a cross-town railway through it &mdash; not an airport spur, but a regional line
+  that happens to reach Heathrow at its western end.<sup class="fn"><a href="#ref5">5</a></sup>
+  Through-service from Heathrow straight across central London opened on 6 November 2022, and within
+  about two and a half years the line had carried more than 500 million journeys and become the single
+  busiest railway service in the United Kingdom.<sup class="fn"><a href="#ref6">6</a></sup> That's the
+  traveler story, and it's the one that makes headlines.</p>
+
+  <p>The worker story is the one that matters here, and Heathrow measures it directly. The airport runs
+  an annual Colleague Travel Survey across its 80,000-plus "Team Heathrow" employees
+  (<i>Heathrow Travel Report 2024</i>, p.&nbsp;14).<sup class="fn"><a href="#ref7">7</a></sup> The
+  number moved: the share of airport workers driving to work alone fell from <b>62% in 2017 to 52% in
+  2024</b> &mdash; a ten-point drop that beat Heathrow's own 2026 target early (Fig.&nbsp;4.4,
+  p.&nbsp;14). Heathrow credits it to the full opening of the Elizabeth line <i>together with</i> its
+  low-emission zone and new bus services; the line by itself is only 3% of colleague trips
+  (Fig.&nbsp;4.5, p.&nbsp;15), so the tunnel is one lever among several, not the whole story. Even so,
+  ten points off a workforce that size is thousands of people who stopped driving to work.</p>
+
+  <p>What the Elizabeth line did clearly, and largely on its own, is enlarge the pool of people who can
+  reach the airport at all. Heathrow's figure: the population within a 1.5-hour public-transport trip
+  of the airport grew from <b>6.6 million in 2019 to 10.5 million &mdash; a 59% increase</b>
+  (Fig.&nbsp;4.8, p.&nbsp;17; calculated on spring-2025 timetable data). TfL's own job-accessibility
+  measure put a 6% uplift on the Heathrow branch alone.<sup class="fn"><a href="#ref6">6</a></sup> That
+  is the labor-shed argument, realized and measured: build the cross-town tunnel, and the number of
+  people who can plausibly commute to the airport jumps by more than half.</p>
+
+  <p>And travelers switched fast. Two years after opening, the Elizabeth line already carried
+  <b>13.9% of all trips to and from Heathrow</b> &mdash; nearly matching the long-established Piccadilly
+  line (14.4%) and roughly three times the premium Heathrow Express (4.8%) (Fig.&nbsp;4.3, p.&nbsp;14).
+  Public transport's overall share of Heathrow trips rose from <b>39.4% in 2019 to 45.2% in 2024</b>,
+  hitting the 2026 target two years early (Fig.&nbsp;4.2, p.&nbsp;13). People will take the train to the
+  airport &mdash; for work or for a flight &mdash; the moment it's fast, direct, and reasonably priced.
+  That last clause is where Sydney went wrong, but that's a separate letter.</p>
+
+  <h2>The pitch</h2>
+  <p>O'Hare's own workforce data makes the case: a cross-town line is not just a convenience for travelers,
+  it is <b>workforce infrastructure</b> for the region's biggest job center. The Chicago Department of Aviation, airlines, and O'Hare's employers should publicly support <a href="https://buildthetunnelchicago.org/" target="_blank" rel="noopener">this regional rail vision</a>. The airport already draws its workers from every corner of the region. Today most of them have to drive. A cross-town line is the best way to give people more affordable and reliable transportation options.</p>
+
+  <p>See what it would do for any specific trip in the <a href="planner/"><b>CrossTowner Trip Planner</b></a>, or read <a href="planner/methodology.html">how these numbers are computed</a>.</p>
+
+  <div class="box mt-4">
+    <b>How these numbers were made.</b>
+    <ul class="mb-0 small">
+      <li><b>Who works at O'Hare, and where they live:</b> U.S. Census
+      <a href="https://lehd.ces.census.gov/data/" target="_blank" rel="noopener">LEHD LODES v8.4 (2023)</a>
+      origin&ndash;destination files, primary jobs (one per worker). "Workplace" = the 143 census
+      blocks inside Chicago community area&nbsp;#76 (O'Hare). LODES's 49,935 corroborates the City's
+      "~46,000 on-airport" figure.</li>
+      <li><b>Labor shed &amp; travel times:</b> <a href="https://github.com/ipeaGIT/r5r" target="_blank" rel="noopener">r5r</a> /
+      <a href="https://github.com/conveyal/r5" target="_blank" rel="noopener">Conveyal R5</a> over present-day
+      CTA + Metra + Pace schedules ("today") and the same plus CrossTowner's proposed X-routes and the
+      Red Line Extension ("scenario"); weekday 8&nbsp;AM, transit + walking, employed-resident weights from LODES.</li>
+      <li><b>Airport people-mover:</b> deliberately excluded &mdash; these figures measure reaching an
+      O'Hare rail <i>gateway</i>, not the last leg to a specific terminal.</li>
+    </ul>
+    <div class="small mt-2 text-secondary">Key external sources: Brookings, <i>Missed Opportunity: Transit and Jobs</i> (2011);
+    U.S.&nbsp;GAO, <i>Accessing Airports</i> (2026); UC Berkeley Labor Center, SFO wage-standards studies.</div>
+  </div>
+
+  <h2>References</h2>
+  <ol class="refs">
+    <li id="ref1">U.S. Government Accountability Office, <i>Accessing Airports: Available Public
+      Transit Options and Efforts to Promote Their Use</i> (GAO-26-107817), January 2026 &mdash;
+      airport-employee transit mode shares (≈4% nationally; 17% Denver, 19% Seattle&ndash;Tacoma) and
+      the effect of service-span gaps on late-shift workers.
+      <a href="https://www.gao.gov/products/gao-26-107817" target="_blank" rel="noopener">gao.gov</a></li>
+    <li id="ref2">International Air Transport Association (IATA), ground-operations workforce
+      reporting, 2023 &mdash; annual turnover of up to ~50% in airport ground handling and reported
+      qualified-staff shortages (industry-reported figures).</li>
+    <li id="ref3">UC Berkeley Labor Center &mdash; M. Reich, P. Hall &amp; K. Jacobs, studies of the
+      San Francisco Airport living-wage / Quality Standards Program: security-screener turnover fell
+      from roughly 95% to about 20% following wage-and-standards reforms.
+      <a href="https://laborcenter.berkeley.edu/living-wages-and-airport-security/" target="_blank" rel="noopener">laborcenter.berkeley.edu</a></li>
+    <li id="ref4">Brookings Institution, A. Tomer et&nbsp;al., <i>Missed Opportunity: Transit and Jobs
+      in Metropolitan America</i>, 2011 &mdash; the typical metropolitan employer can reach ~27% of the
+      region's workers within 90 minutes by transit.
+      <a href="https://www.brookings.edu/wp-content/uploads/2016/06/0512_jobs_transit.pdf" target="_blank" rel="noopener">brookings.edu</a></li>
+    <li id="ref5">Elizabeth line (Crossrail): 13 miles of new twin-bore tunnel under central London,
+      10 new stations, final cost £18.9&nbsp;billion; central section opened 24 May 2022 and Heathrow
+      through-services to central London began 6 November 2022.
+      <a href="https://commonslibrary.parliament.uk/research-briefings/SN00876/" target="_blank" rel="noopener">House of Commons Library, briefing SN00876</a>;
+      <a href="https://en.wikipedia.org/wiki/Elizabeth_line" target="_blank" rel="noopener">Elizabeth line opening timeline</a>.</li>
+    <li id="ref6">Transport for London, "Transformational Elizabeth line reaches 500 million passenger
+      journeys," 10 January 2025 &mdash; more than 500&nbsp;million journeys in the line's first two and
+      a half years; "the single busiest railway service in the UK"; a 6% uplift in job accessibility on
+      the Heathrow terminals branch.
+      <a href="https://tfl.gov.uk/info-for/media/press-releases/2025/january/transformational-elizabeth-line-reaches-500-million-passenger-journeys" target="_blank" rel="noopener">tfl.gov.uk</a>
+      (reprinted verbatim at <a href="https://news.railbusinessdaily.com/the-elizabeth-line-reaches-500-million-passenger-journeys/" target="_blank" rel="noopener">RailBusinessDaily</a>).</li>
+    <li id="ref7">Heathrow Airport Ltd, <i>Heathrow Travel Report 2024</i> (Sustainable Travel Zone
+      Annual Report, Year Three). Figures cited above by number and page: passenger public-transport
+      mode share 39.4%&rarr;45.2% (Fig.&nbsp;4.2, p.&nbsp;13); 2024 passenger mode breakdown
+      &mdash; Elizabeth 13.92%, Piccadilly 14.36%, Heathrow Express 4.76% (Fig.&nbsp;4.3, p.&nbsp;14);
+      colleague single-occupancy-car 62%&rarr;52% and 80,000+ colleagues (Fig.&nbsp;4.4 and text,
+      p.&nbsp;14); colleague mode breakdown, Elizabeth line 3% (Fig.&nbsp;4.5, p.&nbsp;15); 1.5-hour
+      public-transport catchment 6.6m&rarr;10.5m, +59% (Fig.&nbsp;4.8, p.&nbsp;17).
+      <a href="https://www.heathrow.com/company/about-heathrow/heathrow-sustainability-strategy/reports-and-further-reading" target="_blank" rel="noopener">heathrow.com</a>
+      (<a href="https://www.heathrow.com/content/dam/heathrow/web/common/documents/company/heathrow-2-0-sustainability/futher-reading/STZ-2024-annual-report.pdf" target="_blank" rel="noopener">direct PDF</a>).</li>
+  </ol>
+
+  <p class="mt-4"><a href="planner/" class="btn btn-crcl" style="background:var(--crcl);color:#fff">Try the trip planner &rarr;</a></p>
+
+</main>
+
+<!-- Cloudflare Web Analytics -->
+<script type="module" src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "998e0617479743128964a1b458776630"}'></script>
+<!-- End Cloudflare Web Analytics -->
+</body>
+</html>
