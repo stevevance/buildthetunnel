@@ -4,7 +4,7 @@ suppressPackageStartupMessages({library(sf); library(data.table); library(ggplot
 SP  <- "/private/tmp/claude-502/-Users-stevevance-Sites-BuildTheTunnel/0dcac289-c6a5-450b-8cca-bd186b4c4593/scratchpad"
 OUT <- "/Users/stevevance/Sites/BuildTheTunnel/analysis/results"
 
-TOTAL_ALL <- 49935L   # incl. out-of-state (from extraction); tracts below map IL residents only
+TOTAL_ALL <- 48921L   # airport-only (on-airfield blocks); tracts below map IL residents only
 trk <- fread(file.path(OUT,"ohare_worker_homes_tract.csv"), colClasses=list(character="trctid"))
 CRS <- 3435   # NAD83 / Illinois East (ftUS) — the local Chicago standard
 tr  <- st_read(file.path(SP,"tl_2020_17_tract.shp"), quiet=TRUE)
@@ -45,8 +45,8 @@ p <- ggplot() +
   scale_fill_manual(values=pal, name="O'Hare workers\nliving in tract", drop=FALSE) +
   coord_sf(xlim=c(cb["xmin"],cb["xmax"]), ylim=c(cb["ymin"],cb["ymax"]), crs=CRS, expand=FALSE) +
   labs(title="Where O'Hare's workforce lives",
-       subtitle=sprintf("%s workers employed at O'Hare, by home census tract (LEHD LODES 2023, primary jobs).\n30.8%% live in Chicago, 53.2%% in the suburbs/collar counties, 11.8%% out of state (Illinois residents mapped).", format(TOTAL_ALL, big.mark=",")),
-       caption="Workplace = census blocks inside Chicago community area #76 (O'Hare). Home geography from LODES OD (JT01). 7-county CMAP region shown.") +
+       subtitle=sprintf("%s workers employed at O'Hare, by home census tract (LEHD LODES 2023, primary jobs).\n30.7%% live in Chicago, 53.2%% in the suburbs/collar counties, 12.0%% out of state (Illinois residents mapped).", format(TOTAL_ALL, big.mark=",")),
+       caption="Workplace = on-airfield (zero-resident) census blocks of Chicago community area #76 (O'Hare). Home geography from LODES OD (JT01). 7-county CMAP region shown.") +
   theme_void(base_size=12) +
   theme(legend.position=c(0.82,0.24),
         legend.background=element_rect(fill="white", color="grey80"),

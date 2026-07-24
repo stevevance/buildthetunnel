@@ -23,10 +23,13 @@ ohare <- st_transform(cca[cca$community=="OHARE", ], 4326)
 bb <- st_as_sfc(st_bbox(ohare))                     # push a spatial filter to the read
 blkzip <- file.path(SP, "tl_2020_17_tabblock20.shp")
 blk <- st_read(blkzip, wkt_filter = st_as_text(bb), quiet=TRUE)  # only blocks near O'Hare
-blk <- st_transform(blk[, c("GEOID20","geometry")], 4326)
+blk <- st_transform(blk[, c("GEOID20","POP20","geometry")], 4326)
 inside <- st_within(st_point_on_surface(blk), ohare, sparse=FALSE)[,1]
-wblocks <- blk$GEOID20[inside]
-cat(sprintf("O'Hare workplace blocks: %d (of %d in bbox)\n", length(wblocks), nrow(blk)))
+# Airport-only: on-airfield blocks = inside CCA #76 AND zero residents (POP20==0),
+# which drops the small adjacent residential pocket so "O'Hare workers" means people
+# working ON the airport, not local retail/hotel jobs in the residential sliver.
+wblocks <- blk$GEOID20[inside & as.integer(blk$POP20)==0]
+cat(sprintf("O'Hare airfield workplace blocks: %d (of %d in bbox)\n", length(wblocks), nrow(blk)))
 wset <- unique(wblocks)
 
 # --- 2. LODES OD: jobs whose WORK block is O'Hare, aggregated by HOME block ----
