@@ -53,10 +53,21 @@
      padding:7px 11px;border-radius:9px;box-shadow:0 3px 10px rgba(0,0,0,.35);white-space:nowrap;text-align:center}
  .note.maplibregl-popup-anchor-bottom .maplibregl-popup-tip{border-top-color:var(--note)}
  .note.maplibregl-popup-anchor-top .maplibregl-popup-tip{border-bottom-color:var(--note)}
+ /* site navigation, at the top of the info panel */
+ #sitenav{font-size:12px;margin-bottom:7px;padding-bottom:7px;border-bottom:1px solid rgba(0,0,0,.12);line-height:1.6}
+ #sitenav a{color:#0b7285;font-weight:600;text-decoration:none}
+ #sitenav a:hover{text-decoration:underline}
+ #sitenav .cur{color:#333;font-weight:700}
 </style></head><body>
 <div id="map"></div>
 <div id="announce"></div>
 <div id="ui">
+  <nav id="sitenav">
+    <a href="planner/">Trip planner</a> &middot;
+    <a href="ohareaccess.html">O'Hare&nbsp;workforce</a> &middot;
+    <a href="planner/methodology.html">Methodology</a> &middot;
+    <span class="cur">3D&nbsp;map</span>
+  </nav>
   <div><b id="ttl">Clinton&ndash;Roosevelt Connector Line</b></div>
   <div id="sub" style="margin-top:1px;font-size:12px;color:#555">Chicago &middot; 3D flythrough</div>
   <label>Line
