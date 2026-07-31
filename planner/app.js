@@ -896,7 +896,16 @@
       origin: oNear ? oNear.station.name : null,
       destination: dNear ? dNear.station.name : null,
       origin_walk_min: oNear ? Math.round(oNear.walk) : null,
-      dest_walk_min: dNear ? Math.round(dNear.walk) : null
+      dest_walk_min: dNear ? Math.round(dNear.walk) : null,
+      // For a failed search only, also keep what the user typed and the geocoded
+      // coordinates, so unmet demand shows the real places people wanted and can
+      // be mapped (a successful trip never stores either).
+      origin_typed: f && f.label ? f.label : null,
+      dest_typed: t && t.label ? t.label : null,
+      origin_lat: f && isFinite(f.lat) ? f.lat : null,
+      origin_lon: f && isFinite(f.lon) ? f.lon : null,
+      dest_lat: t && isFinite(t.lat) ? t.lat : null,
+      dest_lon: t && isFinite(t.lon) ? t.lon : null
     };
   }
 
@@ -912,6 +921,12 @@
       p.destination = extra.destination;
       p.origin_walk_min = extra.origin_walk_min;
       p.dest_walk_min = extra.dest_walk_min;
+      p.origin_typed = extra.origin_typed;
+      p.dest_typed = extra.dest_typed;
+      p.origin_lat = extra.origin_lat;
+      p.origin_lon = extra.origin_lon;
+      p.dest_lat = extra.dest_lat;
+      p.dest_lon = extra.dest_lon;
     }
     logTrack(p);
   }

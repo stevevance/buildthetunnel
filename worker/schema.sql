@@ -50,9 +50,18 @@ CREATE TABLE IF NOT EXISTS trips (
                           --   | route_data_missing (a station's precomputed times failed to load — a data/fetch bug)
                           --   | pair_unreachable (data loaded but no connecting path — rare)
   origin_walk_min INTEGER, -- walk minutes to the nearest station at the origin (may exceed the walk cap)
-  dest_walk_min   INTEGER  -- walk minutes to the nearest station at the destination
+  dest_walk_min   INTEGER, -- walk minutes to the nearest station at the destination
+  origin_typed TEXT,      -- the place the user typed at the origin — failed searches ONLY
+  dest_typed   TEXT,      -- the place the user typed at the destination — failed searches ONLY
+  origin_lat   REAL,      -- geocoded origin coordinates — failed searches ONLY
+  origin_lon   REAL,
+  dest_lat     REAL,      -- geocoded destination coordinates — failed searches ONLY
+  dest_lon     REAL
   -- On a no_route row, origin/destination hold the NEAREST station name to each
-  -- end (not a boarded station) so coverage gaps localize to real places.
+  -- end (not a boarded station) so coverage gaps localize to real places; the
+  -- *_typed and *_lat/*_lon columns keep the raw place and its coordinates so
+  -- unmet demand shows and maps where people wanted to go. A successful trip
+  -- stores none of these — stations only, never the typed place or coordinates.
   -- "Trip made possible" is derivable: result='ok' AND today_min IS NULL
   --   AND scenario_min IS NOT NULL.
 );
