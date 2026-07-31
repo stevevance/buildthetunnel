@@ -44,7 +44,15 @@ CREATE TABLE IF NOT EXISTS trips (
   ref_host     TEXT,      -- referring host on landing, or 'direct' / 'internal'
   utm_source   TEXT,      -- campaign tags from the landing URL (?utm_*)
   utm_medium   TEXT,
-  utm_campaign TEXT
+  utm_campaign TEXT,
+  -- Failure diagnostics (result='no_route' only), to map unmet demand:
+  fail_reason  TEXT,      -- origin_no_station | dest_no_station | both_no_station (coverage gaps)
+                          --   | route_data_missing (a station's precomputed times failed to load — a data/fetch bug)
+                          --   | pair_unreachable (data loaded but no connecting path — rare)
+  origin_walk_min INTEGER, -- walk minutes to the nearest station at the origin (may exceed the walk cap)
+  dest_walk_min   INTEGER  -- walk minutes to the nearest station at the destination
+  -- On a no_route row, origin/destination hold the NEAREST station name to each
+  -- end (not a boarded station) so coverage gaps localize to real places.
   -- "Trip made possible" is derivable: result='ok' AND today_min IS NULL
   --   AND scenario_min IS NOT NULL.
 );

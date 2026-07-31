@@ -167,14 +167,16 @@ async function handleTrack(request, env, cors) {
   const utmSrc  = String(body.utm_source || "").slice(0, 60) || null;
   const utmMed  = String(body.utm_medium || "").slice(0, 60) || null;
   const utmCamp = String(body.utm_campaign || "").slice(0, 80) || null;
+  const failReason = String(body.fail_reason || "").slice(0, 24) || null; // no_route diagnosis
   const toInt  = (v) => (v == null || v === "" || !isFinite(+v)) ? null : Math.round(+v);
   await env.DB.prepare(
-    "INSERT INTO trips (created_at, origin, destination, slice, today_min, scenario_min, cid, source, result, transfers_today, transfers_scenario, x_route, ttoken, device, ref_host, utm_source, utm_medium, utm_campaign) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    "INSERT INTO trips (created_at, origin, destination, slice, today_min, scenario_min, cid, source, result, transfers_today, transfers_scenario, x_route, ttoken, device, ref_host, utm_source, utm_medium, utm_campaign, fail_reason, origin_walk_min, dest_walk_min) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
   ).bind(
     new Date().toISOString(), origin, dest, slice,
     toInt(body.today_min), toInt(body.scenario_min), cid, source, result,
     toInt(body.transfers_today), toInt(body.transfers_scenario), xroute,
-    ttoken, device, refHost, utmSrc, utmMed, utmCamp
+    ttoken, device, refHost, utmSrc, utmMed, utmCamp,
+    failReason, toInt(body.origin_walk_min), toInt(body.dest_walk_min)
   ).run();
   return json({ ok: true }, 200, cors);
 }

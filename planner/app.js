@@ -857,11 +857,63 @@
     });
   }
 
+  // Diagnose *why* a search found no trip, so unmet demand is actionable. Uses
+  // the scenario network — the most permissive (it adds the infill, CrossTowner,
+  // and Red Line Extension stations); if even that can't reach an endpoint, no
+  // network can. Reports which end(s) lack a walkable station and the nearest
+  // station to each end. Stores the nearest *station* (name + walk minutes),
+  // never the typed address — same privacy model as a successful trip.
+  function diagnoseNoRoute(slice) {
+    var f = endpoints.from, t = endpoints.to;
+    var oCands = candidateStations(f, "scenario");
+    var dCands = candidateStations(t, "scenario");
+    var oReach = oCands.length > 0, dReach = dCands.length > 0;
+    // Nearest station to each non-airport end, ignoring the walk cap (airport
+    // ends always have a serving station, so skip them).
+    var oNear = f && !f.airport ? nearestAnyStation(f.lat, f.lon) : null;
+    var dNear = t && !t.airport ? nearestAnyStation(t.lat, t.lon) : null;
+
+    var reason;
+    if (!oReach && !dReach) reason = "both_no_station";
+    else if (!oReach)       reason = "origin_no_station";
+    else if (!dReach)       reason = "dest_no_station";
+    else {
+      // Both ends have a walkable station, yet no route was found. bestTotal has
+      // already fetched and cached these scenario origin shards, so inspect them:
+      // a real station's shard always reaches other stations, so an empty/missing
+      // one means getShard swallowed a fetch error (missing shard, 404, offline)
+      // — a data problem, not a genuine gap. Only when a shard actually loaded
+      // with entries but none reach the destination stations is the pair truly
+      // unreachable (rare on a connected network; usually a matrix/data hole).
+      var anyLoaded = oCands.some(function (o) {
+        var sh = shardCache["scenario/" + slice + "/" + o.station.id];
+        return sh && Object.keys(sh).length > 0;
+      });
+      reason = anyLoaded ? "pair_unreachable" : "route_data_missing";
+    }
+    return {
+      fail_reason: reason,
+      origin: oNear ? oNear.station.name : null,
+      destination: dNear ? dNear.station.name : null,
+      origin_walk_min: oNear ? Math.round(oNear.walk) : null,
+      dest_walk_min: dNear ? Math.round(dNear.walk) : null
+    };
+  }
+
   // Log a search that produced no trip: no route found within the walk cap, an
-  // out-of-county endpoint, or a geocode miss. Captures unmet demand. No station
-  // or address is stored (there is none) — just the failure kind.
-  function logFailed(result, slice, source) {
-    logTrack({ result: result, slice: slice, source: source || "search" });
+  // out-of-county endpoint, or a geocode miss. Captures unmet demand. `extra`
+  // (no_route only) carries the diagnosed reason and nearest stations; the other
+  // kinds are self-explaining from `result` and store no station/address.
+  function logFailed(result, slice, source, extra) {
+    var p = { result: result, slice: slice, source: source || "search" };
+    if (extra) {
+      p.fail_reason = extra.fail_reason;
+      p.origin = extra.origin;
+      p.destination = extra.destination;
+      p.origin_walk_min = extra.origin_walk_min;
+      p.dest_walk_min = extra.dest_walk_min;
+    }
+    logTrack(p);
   }
 
   // Flag a trip's row as shared once, when the user copies its share link.
@@ -988,7 +1040,7 @@
       Promise.all([bestTotal("today", slice), bestTotal("scenario", slice)])
         .then(function (r) {
           renderResults(slice, r[0], r[1]);
-          if (!r[0] && !r[1]) { logFailed("no_route", slice, src); return; }
+          if (!r[0] && !r[1]) { logFailed("no_route", slice, src, diagnoseNoRoute(slice)); return; }
           var shareUrl = updatePermalink(slice, r[0], r[1]);
           var ttoken = randomToken();
           addShareButton(shareUrl, ttoken);
