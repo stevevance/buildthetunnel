@@ -178,15 +178,19 @@ async function handleTrack(request, env, cors) {
   const dTyped = failOnly(String(body.dest_typed   || "").slice(0, 160) || null);
   const oLat = failOnly(toNum(body.origin_lat)), oLon = failOnly(toNum(body.origin_lon));
   const dLat = failOnly(toNum(body.dest_lat)),   dLon = failOnly(toNum(body.dest_lon));
+  // O'Hare terminal labels — safe to keep on any trip (they name a terminal, not
+  // a home address), so we can see which terminal riders choose.
+  const oTerm = String(body.origin_terminal || "").slice(0, 60) || null;
+  const dTerm = String(body.dest_terminal   || "").slice(0, 60) || null;
   await env.DB.prepare(
-    "INSERT INTO trips (created_at, origin, destination, slice, today_min, scenario_min, cid, source, result, transfers_today, transfers_scenario, x_route, ttoken, device, ref_host, utm_source, utm_medium, utm_campaign, fail_reason, origin_walk_min, dest_walk_min, origin_typed, dest_typed, origin_lat, origin_lon, dest_lat, dest_lon) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    "INSERT INTO trips (created_at, origin, destination, slice, today_min, scenario_min, cid, source, result, transfers_today, transfers_scenario, x_route, ttoken, device, ref_host, utm_source, utm_medium, utm_campaign, fail_reason, origin_walk_min, dest_walk_min, origin_typed, dest_typed, origin_lat, origin_lon, dest_lat, dest_lon, origin_terminal, dest_terminal) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
   ).bind(
     new Date().toISOString(), origin, dest, slice,
     toInt(body.today_min), toInt(body.scenario_min), cid, source, result,
     toInt(body.transfers_today), toInt(body.transfers_scenario), xroute,
     ttoken, device, refHost, utmSrc, utmMed, utmCamp,
     failReason, toInt(body.origin_walk_min), toInt(body.dest_walk_min),
-    oTyped, dTyped, oLat, oLon, dLat, dLon
+    oTyped, dTyped, oLat, oLon, dLat, dLon, oTerm, dTerm
   ).run();
   return json({ ok: true }, 200, cors);
 }

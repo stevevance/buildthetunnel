@@ -842,6 +842,12 @@
   function trackTrip(slice, today, scen, source, ttoken) {
     var r = scen || today;
     if (!r || !r.board || !r.alight) return;
+    // When an end is an O'Hare terminal, keep its full label (e.g. "O'Hare —
+    // Terminal 3") so we can see which terminal people pick — the station name
+    // alone can't tell T1 from T5. Only set for airport ends, so a normal trip
+    // still stores no typed address.
+    var oTerm = endpoints.from && endpoints.from.airport ? endpoints.from.label : null;
+    var dTerm = endpoints.to   && endpoints.to.airport   ? endpoints.to.label   : null;
     logTrack({
       result: "ok",
       origin: r.board.name,
@@ -853,7 +859,9 @@
       transfers_scenario: transfersOf(scen, "scenario"),
       x_route: xRoutesOf(scen),
       source: source || "search",
-      ttoken: ttoken || null
+      ttoken: ttoken || null,
+      origin_terminal: oTerm,
+      dest_terminal: dTerm
     });
   }
 

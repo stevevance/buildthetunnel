@@ -56,7 +56,9 @@ CREATE TABLE IF NOT EXISTS trips (
   origin_lat   REAL,      -- geocoded origin coordinates — failed searches ONLY
   origin_lon   REAL,
   dest_lat     REAL,      -- geocoded destination coordinates — failed searches ONLY
-  dest_lon     REAL
+  dest_lon     REAL,
+  origin_terminal TEXT,   -- O'Hare terminal label if the origin is a terminal (e.g. "O'Hare — Terminal 3")
+  dest_terminal   TEXT    -- O'Hare terminal label if the destination is a terminal — captures terminal choice
   -- On a no_route row, origin/destination hold the NEAREST station name to each
   -- end (not a boarded station) so coverage gaps localize to real places; the
   -- *_typed and *_lat/*_lon columns keep the raw place and its coordinates so
