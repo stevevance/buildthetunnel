@@ -54,10 +54,22 @@ window.PLANNER_CONFIG = {
       to:   { label: "55th-56th-57th Street",   lat: 41.792842, lon: -87.587498 }
     },
     {
+      title: "Evanston to South Bend",
+      blurb: "The historic Evanston–Hyde Park one-seat ride, extended into Indiana on the South Shore Line — transfer at 55-56-57 instead of backtracking downtown.",
+      from: { label: "Davis Street (Evanston)", lat: 42.048064, lon: -87.684822 },
+      to:   { ssl: "s19" }
+    },
+    {
       title: "Jefferson Park to McCormick Place",
       blurb: "Northwest Side to the convention center, a semi-airport trip.",
       from: { label: "Jefferson Park",     lat: 41.971506, lon: -87.763344 },
       to:   { label: "McCormick Place",    lat: 41.850942, lon: -87.616142 }
+    },
+    {
+      title: "Mayfair to South Hammond",
+      blurb: "North Side to Indiana on the X1 tunnel: the E Line downtown, X1 to 55-56-57, then the South Shore Line's new Monon branch.",
+      from: { label: "Mayfair",            lat: 41.95972, lon: -87.74583 },
+      to:   { ssl: "s20" }
     }
   ],
 

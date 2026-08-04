@@ -18,7 +18,26 @@
   .btn-crcl{background:var(--crcl);color:#fff}
   .btn-crcl:hover,.btn-crcl:focus{background:#095c6c;color:#fff}
   .panel{width:440px;flex:0 0 440px;overflow-y:auto}
+  .map-wrap{flex:1 1 auto;position:relative;display:flex;min-height:45vh}
   #map{flex:1 1 auto;min-height:45vh}
+  /* "Planning…" overlay: a little train gliding a dashed track, centered on the map */
+  .map-loading{position:absolute;inset:0;z-index:1200;display:none;
+    align-items:center;justify-content:center;pointer-events:none}
+  .map-loading.show{display:flex}
+  .map-loading-card{background:#fff;border-top:3px solid var(--crcl);border-radius:.9rem;
+    box-shadow:0 8px 28px rgba(0,0,0,.20);padding:.85rem 1.15rem .95rem;text-align:center}
+  .map-loading .track{position:relative;width:150px;height:26px;margin:.1rem auto .35rem;
+    border-bottom:3px dashed #9fc3cb;overflow:hidden}
+  .map-loading .train{position:absolute;bottom:3px;font-size:22px;line-height:1;
+    animation:trainGlide 1.5s linear infinite}
+  .map-loading-text{color:var(--crcl);font-weight:600;font-size:.9rem}
+  .map-loading-text::after{content:"";animation:planDots 1.4s steps(4,end) infinite}
+  @keyframes trainGlide{from{left:-18%}to{left:104%}}
+  @keyframes planDots{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}}
+  @media(prefers-reduced-motion:reduce){
+    .map-loading .train{animation:none;left:42%}
+    .map-loading-text::after{animation:none;content:""}
+  }
   /* predefined-trip buttons: light hover so the title + blurb stay readable
      (the default btn-outline-secondary hover fills dark and hid the grey blurb) */
   .trip-btn{background:#fff;border:1px solid #ced4da;color:inherit}
@@ -52,9 +71,15 @@
   <aside class="panel p-3 border-end">
     
     <h2 class="h5 fw-bold mb-2">Option A: Choose a predefined trip</h2>
-    <div id="predefined-trips" class="d-flex flex-column gap-2 mb-4">
-      <!-- populated from CFG.predefined_trips by app.js -->
+    <div id="predefined-trips" class="d-flex flex-column gap-2 mb-2">
+      <!-- first few trips, populated from CFG.predefined_trips by app.js -->
     </div>
+    <details id="predefined-more-wrap" class="mb-4" hidden>
+      <summary class="small text-crcl" style="cursor:pointer">See more predefined trip options</summary>
+      <div id="predefined-trips-more" class="d-flex flex-column gap-2 mt-2">
+        <!-- overflow trips (beyond the first few) -->
+      </div>
+    </details>
 
     <h2 class="h5 fw-bold mb-2">Option B: Choose your own trip</h2>
     <div class="ac-wrap mb-2">
@@ -71,6 +96,7 @@
       <input id="to" type="text" class="form-control" autocomplete="off" placeholder="e.g. Chicago Botanic Garden">
       <ul id="to-list" class="aclist list-group shadow-sm"></ul>
       <div id="to-terminal" class="mt-2"></div>
+      <div class="form-text small">Tip: you can also reach <b>O'Hare</b> terminals and <b>South Shore Line</b> stations in Indiana (Hammond, Gary, Michigan City, South Bend).</div>
     </div>
 
     <div class="d-flex justify-content-end mb-3">
@@ -103,7 +129,15 @@
     </footer>
   </aside>
 
-  <div id="map"></div>
+  <div class="map-wrap">
+    <div id="map"></div>
+    <div id="map-loading" class="map-loading" aria-hidden="true">
+      <div class="map-loading-card">
+        <div class="track"><span class="train">&#128646;</span></div>
+        <div class="map-loading-text">Planning your trip</div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Floating feedback button -->

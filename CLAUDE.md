@@ -43,6 +43,25 @@ npx wrangler d1 execute planner_emails --remote --json \
 Use `--remote` to hit the deployed database; omit it and you query a local dev
 copy. Add `--json | jq '.[0].results'` to get clean result rows.
 
+## South Shore Line (planner graft)
+
+The NICTD South Shore Line (Indiana → South Bend, plus the new Monon/Munster
+branch) is **grafted** onto the otherwise-precomputed planner, not routed
+end-to-end. It lives outside the six-county matrix, so instead of rebuilding the
+r5r network, `planner/data/southshore.json` holds the South Shore stations and
+their in-vehicle minutes/headways (straight from NICTD GTFS), keyed relative to
+the shared transfer hub. `planner/app.js` recognizes a South Shore endpoint
+(`snapSouthShore`), and `sslCandidates`/`sslLeg`/`bestTotal` route the rider to
+a hub that both the CrossTowner/Metra network and the South Shore serve —
+primary **55th-56th-57th St.**, with downtown Metra Electric stops as
+alternates — then adds the South Shore leg. So a trip = matrix time to the hub +
+transfer + South Shore leg; CrossTowner only ever changes how fast you reach the
+hub. Disclosed in `methodology.html` ("Reaching the South Shore Line").
+
+To refresh the schedule, re-fetch the feed and rebuild the data file:
+`http://www.mysouthshoreline.com/google/google_transit.zip` (Transitland feed
+`mysouthshoreline.com.dmfr.json`). Ride times are the 8 AM weekday slice.
+
 ## Local testing over HTTPS (ngrok)
 
 The planner can be tested over a trusted-cert HTTPS URL via ngrok. The

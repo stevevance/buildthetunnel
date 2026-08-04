@@ -70,6 +70,7 @@
   var shardCache = {};        // "net/slice/oid" -> {destId: minutes}
   var LINES = null;           // { "Red": [[[lon,lat],...]], ... } rail-line geometry
   var MMF_WALK = null;        // [[lat,lon],...] sidewalk: O'Hare Transfer <-> MMF
+  var SSL = null;             // South Shore Line graft (see data/southshore.json)
   var stationByName = {};     // station name -> {lat,lon} (for leg endpoints)
   var stationById = {};       // station id -> station (for airport egress lookup)
   var endpoints = { from: null, to: null };  // {lat,lon,label}
@@ -182,6 +183,125 @@
     });
   }
 
+  /* ---- South Shore Line (NICTD) graft ----------------------------------- */
+  // The South Shore Line isn't in the precomputed matrix — it runs east into
+  // Indiana, outside the Metra-county grid the matrices cover. Instead we
+  // *graft* it on: a rider reaches one of a few hub stations that both the
+  // CrossTowner/Metra network AND the South Shore serve (primary: 55th-56th-
+  // 57th St., plus the downtown Metra Electric stops), transfers, and rides the
+  // South Shore the rest of the way. So a South Shore trip = matrix time to a
+  // hub + transfer + a South Shore leg whose in-vehicle minutes and headway
+  // come straight from NICTD's GTFS. CrossTowner never speeds up the South
+  // Shore itself — only how fast you reach the hub — which is exactly what the
+  // today-vs-scenario comparison then shows. See data/southshore.json.
+  var SSL_SNAP_KM = 4.0;   // treat an endpoint this close to a South Shore-only
+                           // station as *being* that station (regional park-and-
+                           // rides, reached by car/bus — a walk cap is moot).
+
+  function initSSL(data) {
+    if (!data) return;
+    SSL = data;
+    SSL.byId = {}; SSL.byName = {};
+    (SSL.stations || []).forEach(function (s) { SSL.byId[s.ssl] = s; SSL.byName[s.name] = s; });
+    if (SSL.shape && LINES) {                    // clippable geometry for the map;
+      // keep the main line and the Monon branch separate so a branch trip can
+      // trace hub -> Hammond on the main line, then Hammond -> station on Monon.
+      if (SSL.shape.lakeshore) LINES.SSL = [SSL.shape.lakeshore];
+      if (SSL.shape.monon)     LINES.SSL_MONON = [SSL.shape.monon];
+    }
+  }
+
+  // Nearest South Shore-only station to a point: { s, km } or null.
+  function nearestSSL(lat, lon) {
+    if (!SSL || !SSL.stations) return null;
+    var best = null, bestKm = Infinity;
+    SSL.stations.forEach(function (s) {
+      var km = haversineKm(lat, lon, s.lat, s.lon);
+      if (km < bestKm) { bestKm = km; best = s; }
+    });
+    return best ? { s: best, km: bestKm } : null;
+  }
+
+  // If a geocoded point sits on (near) a South Shore-only station, rewrite the
+  // endpoint to that station and tag it `ssl`. Mirrors snapGeocode/O'Hare: an
+  // off-matrix place made routable by naming the station that serves it.
+  function snapSouthShore(ep) {
+    if (!ep || ep.airport || ep.ssl || !SSL) return ep;
+    var near = nearestSSL(ep.lat, ep.lon);
+    if (!near) return ep;
+    // In-county points only snap when they're essentially *at* a South Shore
+    // station (Hegewisch), so a normal South Side trip isn't hijacked; Indiana
+    // points (out of county) snap within the fuller park-and-ride radius.
+    var inCounty = counties && pointInCounties(ep.lon, ep.lat, counties);
+    var thresh = inCounty ? 1.5 : SSL_SNAP_KM;
+    if (near.km <= thresh) {
+      return { lat: near.s.lat, lon: near.s.lon, label: near.s.name, ssl: near.s.ssl };
+    }
+    return ep;
+  }
+
+  // Both ends on the South Shore Line: a single direct ride, no hub backtrack.
+  // Network-independent (CrossTowner doesn't touch the South Shore), so today
+  // and scenario come out equal — which is the honest answer.
+  function sslDirect() {
+    var a = SSL.byId[endpoints.from.ssl], b = SSL.byId[endpoints.to.ssl];
+    if (!a || !b || a.ssl === b.ssl) return null;
+    var out = b.sb >= a.sb;                       // b farther from Chicago than a
+    var ride = out ? (b.sb - a.sb) : (a.nb - b.nb);
+    if (!(ride >= 0)) return null;
+    var board = out ? SSL.board.out : SSL.board.in;
+    var total = board.wait + ride;
+    return {
+      total: total, rt: Math.round(total), nlegs: 1, access: 0, egress: 0,
+      ride: total, routes: "SSL",
+      legs: [{ mode: "TRAIN", line: "SSL", from: a.name, to: b.name,
+               ride: ride, wait: board.wait, freq: board.freq, ssl: true }],
+      board: { name: a.name, lat: a.lat, lon: a.lon, wheelchair: 0 },
+      alight: { name: b.name, lat: b.lat, lon: b.lon, wheelchair: 0 },
+      boardLabel: a.name, alightLabel: b.name
+    };
+  }
+
+  // The South Shore connector between a hub and a station, for one travel
+  // direction. `side` is the endpoint's role: "to" = outbound (hub -> Indiana),
+  // "from" = inbound (Indiana -> hub). Returns { time, leg, hub } where time is
+  // the whole connector cost (platform transfer + board wait + in-vehicle) and
+  // leg renders as a South Shore vehicle leg. Station sb/nb are in-vehicle
+  // minutes relative to the 55-56-57 hub; a hub's own sb/nb offsets it.
+  function sslLeg(st, hubNode, side) {
+    var out = side === "to";
+    var ride = out ? (st.sb - hubNode.sb) : (st.nb - hubNode.nb);
+    if (!(ride >= 0)) return null;
+    var board = out ? SSL.board.out : SSL.board.in;
+    var hubName = stationById[hubNode.id] ? stationById[hubNode.id].name : hubNode.name;
+    return {
+      time: SSL.transfer_min + board.wait + ride,
+      hub: hubNode,
+      leg: {
+        mode: "TRAIN", line: "SSL",
+        from: out ? hubName : st.name,
+        to:   out ? st.name : hubName,
+        ride: ride, wait: board.wait, freq: board.freq, ssl: true
+      }
+    };
+  }
+
+  // Boarding/alighting candidates for a South Shore endpoint: each hub station
+  // (already in the matrix) carrying its South Shore connector as `ssl`.
+  // bestTotal adds ssl.time to the total and splices ssl.leg into the trip.
+  function sslCandidates(ep, network, side) {
+    var st = SSL && SSL.byId[ep.ssl];
+    if (!st) return [];
+    var out = [];
+    (SSL.hubs || []).forEach(function (h) {
+      var hs = stationById[h.id];
+      if (!hs || (network === "today" && !hs.exists_today)) return;
+      var L = sslLeg(st, h, side);
+      if (L) out.push({ station: hs, walk: 0, ssl: L });
+    });
+    return out;
+  }
+
   /* ---- nearest stations within the walk cap ----------------------------- */
   function nearestStations(lat, lon, network) {
     var cands = [];
@@ -220,10 +340,13 @@
       .catch(function () { shardCache[key] = {}; return {}; }); // unreachable origin
   }
 
-  // Boarding/alighting candidates for one endpoint: an airport endpoint uses its
-  // two O'Hare rail stations with fixed ATS/walk egress (see OHARE); everything
-  // else uses the nearest walkable stations.
-  function candidateStations(ep, network) {
+  // Boarding/alighting candidates for one endpoint: a South Shore endpoint uses
+  // its transfer hubs with the South Shore connector baked in (see SSL); an
+  // airport endpoint uses its two O'Hare rail stations with fixed ATS/walk
+  // egress (see OHARE); everything else uses the nearest walkable stations.
+  // `side` ("from"/"to") sets the South Shore travel direction.
+  function candidateStations(ep, network, side) {
+    if (ep && ep.ssl) return sslCandidates(ep, network, side);
     if (ep && ep.airport && OHARE.terminals[ep.airport]) {
       var eg = OHARE.terminals[ep.airport].egress;
       var out = [];
@@ -240,8 +363,12 @@
 
   /* ---- the core lookup: best door-to-door total for one network --------- */
   function bestTotal(network, slice) {
-    var origins = candidateStations(endpoints.from, network);
-    var dests   = candidateStations(endpoints.to,   network);
+    // Both ends on the South Shore: a direct ride, not a hub graft.
+    if (endpoints.from && endpoints.from.ssl && endpoints.to && endpoints.to.ssl) {
+      return Promise.resolve(sslDirect());
+    }
+    var origins = candidateStations(endpoints.from, network, "from");
+    var dests   = candidateStations(endpoints.to,   network, "to");
     if (!origins.length || !dests.length) return Promise.resolve(null);
 
     // Fetch the origin shards we need, then combine with every candidate dest.
@@ -260,7 +387,19 @@
           var routes = (typeof cell === "object") ? cell.r : null;
           var legs   = (typeof cell === "object") ? cell.legs : null;
           if (ride == null) return;
-          var total = entry.o.walk + ride + d.walk;
+          // A South Shore endpoint carries its connector on the candidate; splice
+          // its leg in (origin ssl before the matrix legs, dest ssl after) and add
+          // its whole cost (transfer + wait + in-vehicle) to the total.
+          var oS = entry.o.ssl, dS = d.ssl;
+          var sslExtra = (oS ? oS.time : 0) + (dS ? dS.time : 0);
+          var total = entry.o.walk + ride + d.walk + sslExtra;
+          if (oS || dS) {
+            var base = legs && legs.length ? legs.slice()
+                     : [{ mode: "RAIL", line: routes ? String(routes).split("|")[0] : null,
+                          from: entry.o.station.name, to: d.station.name, ride: ride }];
+            legs = (oS ? [oS.leg] : []).concat(base, dS ? [dS.leg] : []);
+            routes = [oS ? "SSL" : null, routes, dS ? "SSL" : null].filter(Boolean).join("|");
+          }
           // Number of vehicle legs (fewer = simpler, fewer transfers).
           var nlegs = legs && legs.length ? legs.length
                     : routes ? String(routes).split("|").length : 1;
@@ -274,8 +413,13 @@
           if (better) {
             best = {
               total: total, rt: rt, nlegs: nlegs,
-              access: entry.o.walk, egress: d.walk, ride: ride, routes: routes, legs: legs,
-              board: entry.o.station, alight: d.station
+              access: entry.o.walk, egress: d.walk,
+              // "station-to-station" line covers the rail + connector time.
+              ride: ride + sslExtra, routes: routes, legs: legs,
+              board: entry.o.station, alight: d.station,
+              // True endpoints for the summary line when a South Shore leg is on.
+              boardLabel: oS ? oS.leg.from : entry.o.station.name,
+              alightLabel: dS ? dS.leg.to  : d.station.name
             };
           }
         });
@@ -290,6 +434,9 @@
   // people mover a "walk".
   function hopLi(side, r, minutes, boardName) {
     var ep = endpoints[side];
+    // A South Shore endpoint *is* the boarding/alighting station (you start or
+    // end on the platform), so there's no access/egress walk to show.
+    if (ep && ep.ssl) return "";
     var station = (side === "from") ? r.board : r.alight;
     var sk = ep && ep.airport && station ? ohareStationKey(station.id) : null;
     if (sk) {
@@ -307,6 +454,7 @@
 
   /* ---- render ----------------------------------------------------------- */
   function renderResults(slice, today, scen) {
+    showMapLoading(false);
     var el = document.getElementById("results");
     if (!today && !scen) {
       el.innerHTML = noRouteHtml();
@@ -336,8 +484,12 @@
           }
           // Service frequency makes the CrossTowner benefit visible: the same
           // corridor often runs more often in the scenario (added X-route trains).
-          var freqTxt = leg.freq ? '<div class="text-secondary">a train every ~' + leg.freq + ' min</div>' : '';
-          steps += '<li>Board the <b>' + label + '</b> at ' + leg.from + freqTxt + '</li>';
+          // The South Shore leg is a scheduled transfer, so its typical wait is a
+          // real part of the total (not folded into a median) — show it plainly.
+          var freqTxt = leg.freq ? '<div class="text-secondary">a train every ~' + leg.freq + ' min' +
+            (leg.ssl && leg.wait ? ', about ' + leg.wait + ' min typical wait' : '') + '</div>' : '';
+          var transferInto = leg.ssl ? ' <span class="text-secondary">(transfer to the South Shore Line)</span>' : '';
+          steps += '<li>Board the <b>' + label + '</b> at ' + leg.from + transferInto + freqTxt + '</li>';
           // Alighting is its own step so it's obvious where to get off.
           steps += '<li>Ride ' + leg.ride + ' min &rarr; alight at <b>' + leg.to + '</b></li>';
         });
@@ -357,7 +509,8 @@
       var sub = '<div class="text-secondary small mb-1">' + fmtMin(r.ride) +
         ' station-to-station &middot; ' + (xfers === 0 ? "one seat" :
           xfers + " transfer" + (xfers > 1 ? "s" : "")) +
-        ' &middot; ' + r.board.name + ' &rarr; ' + r.alight.name + '</div>';
+        ' &middot; ' + (r.boardLabel || r.board.name) + ' &rarr; ' +
+        (r.alightLabel || r.alight.name) + '</div>';
       return '<div class="card" style="border-top:3px solid ' + accent + '">' +
         '<div class="card-body py-2 px-3">' +
         '<h2 class="h6 d-flex justify-content-between align-items-baseline mb-1">' +
@@ -414,6 +567,12 @@
     return s ? s.label : id;
   }
 
+  // Show/hide the "Planning your trip" overlay (a little train) on the map.
+  function showMapLoading(on) {
+    var e = document.getElementById("map-loading");
+    if (e) { e.classList.toggle("show", !!on); e.setAttribute("aria-hidden", on ? "false" : "true"); }
+  }
+
   /* ---- map -------------------------------------------------------------- */
   function initMap() {
     map = L.map("map", { scrollWheelZoom: true }).setView([41.85, -87.72], 10);
@@ -457,6 +616,7 @@
     if (tok === "WALK" || tok === "") return null;
     if (net === "scenario" && CROSSTOWNER_RENAME[tok]) return CROSSTOWNER_RENAME[tok];
     if (/^X[1-6]$/.test(tok)) return "CrossTowner " + tok;
+    if (tok === "SSL") return "South Shore Line";
     if (/^rle$/i.test(tok) || /red.?ext/i.test(tok)) return "Red Line Extension";
     if (METRA_LINES[tok]) return METRA_LINES[tok];
     if (CTA_LINES[tok]) return CTA_LINES[tok] ? CTA_LINES[tok] : tok;
@@ -474,7 +634,8 @@
   var LINE_COLOR = {
     Red:"#C60C30", Blue:"#00A1DE", G:"#009B3A", Brn:"#62361B", Org:"#F9461C",
     P:"#522398", Pink:"#E27EA6", Y:"#F9E300", RLE:"#C60C30",
-    X1:"#0B7285", X2:"#0B7285", X3:"#0B7285", X4:"#0B7285", X5:"#0B7285", X6:"#0B7285"
+    X1:"#0B7285", X2:"#0B7285", X3:"#0B7285", X4:"#0B7285", X5:"#0B7285", X6:"#0B7285",
+    SSL:"#F6931C"   // NICTD South Shore Line orange (GTFS route_color)
   };
   function lineColor(code) {
     if (LINE_COLOR[code]) return LINE_COLOR[code];
@@ -593,7 +754,10 @@
     if (ai > bi2) seg.reverse();
     return seg;
   }
-  function stCoord(name) { var s = stationByName[name]; return s ? [s.lat, s.lon] : null; }
+  function stCoord(name) {
+    var s = stationByName[name] || (SSL && SSL.byName[name]);
+    return s ? [s.lat, s.lon] : null;
+  }
 
   function drawRoute(today, scen) {
     routeLayer.clearLayers();
@@ -657,6 +821,40 @@
       if (atsRide) drawGuideway(stLL[0], stLL[1], termLL[0], termLL[1]);
       else drawWalk([stLL, termLL]);
     }
+    // Draw one clipped rail leg, connecting the track to its station endpoints.
+    // A small station<->track gap is folded into the track (no visible seam); a
+    // real gap — e.g. Metra Union Station to the X1 tunnel a block west under
+    // Clinton St — is drawn as a *walk*, since that connection is on foot, not a
+    // one-seat ride. Orients the geometry to run from -> to.
+    var WALK_GAP2 = 6.4e-7;   // (~90 m)^2 in deg^2
+    function drawClipped(code, from, to, color) {
+      var geom = clipLine(code, from[0], from[1], to[0], to[1]);
+      if (!geom || !geom.length) { ride([from, to], color); allPts.push(from); allPts.push(to); return; }
+      if (d2(geom[geom.length - 1], from[0], from[1]) < d2(geom[0], from[0], from[1])) geom = geom.slice().reverse();
+      var g0 = geom[0], gN = geom[geom.length - 1], line = geom.slice();
+      if (d2(from, g0[0], g0[1]) > WALK_GAP2) drawWalk([from, g0]); else line = [from].concat(line);
+      if (d2(to,   gN[0], gN[1]) > WALK_GAP2) drawWalk([to, gN]);   else line = line.concat([to]);
+      ride(line, color);
+      line.forEach(function (p) { allPts.push(p); });
+    }
+    // A South Shore leg: a Monon-branch station is reached by tracing the main
+    // line to Hammond Gateway, then the Monon branch out to the station; every
+    // other station traces the main line directly.
+    function drawSSLLeg(leg, from, to) {
+      var col = lineColor("SSL");
+      var stName = (SSL && SSL.byName[leg.to]) ? leg.to : leg.from;
+      var st  = SSL && SSL.byName[stName];
+      var ham = SSL && SSL.byName["Hammond Gateway"];
+      if (st && st.branch === "monon" && ham) {
+        var hamLL = [ham.lat, ham.lon];
+        var hubLL = (stName === leg.to) ? from : to;
+        var stLL  = (stName === leg.to) ? to : from;
+        drawClipped("SSL", hubLL, hamLL, col);
+        drawClipped("SSL_MONON", hamLL, stLL, col);
+      } else {
+        drawClipped("SSL", from, to, col);
+      }
+    }
     if (r && r.legs && r.legs.length) {
       var fromAirport = endpoints.from.airport && ohareStationKey(r.board.id);
       var toAirport   = endpoints.to.airport   && ohareStationKey(r.alight.id);
@@ -669,11 +867,9 @@
           else walk([prevPt, from]);
           allPts.push(from);
         }
-        var geom = (from && to) ? clipLine(leg.line, from[0], from[1], to[0], to[1]) : null;
-        if (geom && geom.length > 1) {
-          ride(geom, lineColor(leg.line)); geom.forEach(function (p) { allPts.push(p); });
-        } else if (from && to) {
-          ride([from, to], lineColor(leg.line)); allPts.push(to);
+        if (from && to) {
+          if (leg.ssl) drawSSLLeg(leg, from, to);
+          else drawClipped(leg.line, from, to, lineColor(leg.line));
         }
         if (to) prevPt = to;
       });
@@ -703,13 +899,21 @@
   // plain {lat,lon,label} point.
   function setTripEnd(which, e) {
     if (e && e.airport && OHARE.terminals[e.airport]) setOhareEndpoint(which, e.airport);
+    else if (e && e.ssl && SSL && SSL.byId[e.ssl]) {
+      var s = SSL.byId[e.ssl];
+      setEndpoint(which, { lat: s.lat, lon: s.lon, label: s.name, ssl: s.ssl });
+    }
     else setEndpoint(which, { lat: e.lat, lon: e.lon, label: e.label });
   }
+  var PREDEFINED_VISIBLE = 4;   // trips beyond this hide under a "see more" toggle
   function renderPredefinedTrips() {
     var box = document.getElementById("predefined-trips");
     if (!box || !Array.isArray(CFG.predefined_trips)) return;
+    var moreBox = document.getElementById("predefined-trips-more");
+    var moreWrap = document.getElementById("predefined-more-wrap");
     box.innerHTML = "";
-    CFG.predefined_trips.forEach(function (trip) {
+    if (moreBox) moreBox.innerHTML = "";
+    CFG.predefined_trips.forEach(function (trip, i) {
       var b = document.createElement("button");
       b.type = "button";
       b.className = "btn trip-btn text-start w-100";
@@ -720,8 +924,9 @@
         setTripEnd("to", trip.to);
         onPlan("predefined");
       });
-      box.appendChild(b);
+      (i < PREDEFINED_VISIBLE ? box : (moreBox || box)).appendChild(b);
     });
+    if (moreWrap) moreWrap.hidden = CFG.predefined_trips.length <= PREDEFINED_VISIBLE;
   }
 
   /* ---- permalinks ------------------------------------------------------- */
@@ -850,8 +1055,10 @@
     var dTerm = endpoints.to   && endpoints.to.airport   ? endpoints.to.label   : null;
     logTrack({
       result: "ok",
-      origin: r.board.name,
-      destination: r.alight.name,
+      // A South Shore trip logs its real end station (e.g. "Gary Metro Center"),
+      // not the hub — still a station name, so the privacy model is unchanged.
+      origin: r.boardLabel || r.board.name,
+      destination: r.alightLabel || r.alight.name,
       slice: slice,
       today_min: today ? Math.round(today.total) : null,
       scenario_min: scen ? Math.round(scen.total) : null,
@@ -873,13 +1080,13 @@
   // never the typed address — same privacy model as a successful trip.
   function diagnoseNoRoute(slice) {
     var f = endpoints.from, t = endpoints.to;
-    var oCands = candidateStations(f, "scenario");
-    var dCands = candidateStations(t, "scenario");
+    var oCands = candidateStations(f, "scenario", "from");
+    var dCands = candidateStations(t, "scenario", "to");
     var oReach = oCands.length > 0, dReach = dCands.length > 0;
-    // Nearest station to each non-airport end, ignoring the walk cap (airport
-    // ends always have a serving station, so skip them).
-    var oNear = f && !f.airport ? nearestAnyStation(f.lat, f.lon) : null;
-    var dNear = t && !t.airport ? nearestAnyStation(t.lat, t.lon) : null;
+    // Nearest station to each end, ignoring the walk cap. Airport and South Shore
+    // ends always have a serving station/hub, so skip them.
+    var oNear = f && !f.airport && !f.ssl ? nearestAnyStation(f.lat, f.lon) : null;
+    var dNear = t && !t.airport && !t.ssl ? nearestAnyStation(t.lat, t.lon) : null;
 
     var reason;
     if (!oReach && !dReach) reason = "both_no_station";
@@ -952,9 +1159,9 @@
     var p = new URLSearchParams(location.search);
     if (!p.get("olat") || !p.get("dlat")) return;
     if (p.get("oa") && OHARE.terminals[p.get("oa")]) setOhareEndpoint("from", p.get("oa"));
-    else setEndpoint("from", { lat: +p.get("olat"), lon: +p.get("olon"), label: p.get("ol") || "Origin" });
+    else setEndpoint("from", snapSouthShore({ lat: +p.get("olat"), lon: +p.get("olon"), label: p.get("ol") || "Origin" }));
     if (p.get("da") && OHARE.terminals[p.get("da")]) setOhareEndpoint("to", p.get("da"));
-    else setEndpoint("to", { lat: +p.get("dlat"), lon: +p.get("dlon"), label: p.get("dl") || "Destination" });
+    else setEndpoint("to", snapSouthShore({ lat: +p.get("dlat"), lon: +p.get("dlon"), label: p.get("dl") || "Destination" }));
     if (p.get("sl")) document.getElementById("slice").value = p.get("sl");
     onPlan("permalink");
   }
@@ -987,11 +1194,13 @@
                 if (endpoints.from && endpoints.to) onPlan();
                 return;
               }
-              var ep = snapGeocode({ lat: lat, lon: lon, label: label });
-              if (!pointInCounties(ep.lon, ep.lat, counties)) {
+              var ep = snapSouthShore(snapGeocode({ lat: lat, lon: lon, label: label }));
+              // South Shore endpoints are the one exception to the in-county rule
+              // (they run east into Indiana) — they route via a shared hub.
+              if (!ep.ssl && !pointInCounties(ep.lon, ep.lat, counties)) {
                 list.innerHTML = '<li class="list-group-item text-danger small">Trips must ' +
                   'start and end in a Metra-service county (Cook, DuPage, Lake, Kane, ' +
-                  'McHenry, Will).</li>';
+                  'McHenry, Will) — or a South Shore Line station.</li>';
                 return;
               }
               setEndpoint(which, ep);
@@ -1024,8 +1233,8 @@
         setOhareEndpoint(which, OHARE_DEFAULT);
         return endpoints[which];
       }
-      var ep = snapGeocode({ lat: lat, lon: lon, label: label });
-      if (!pointInCounties(ep.lon, ep.lat, counties)) return { error: "county", which: which };
+      var ep = snapSouthShore(snapGeocode({ lat: lat, lon: lon, label: label }));
+      if (!ep.ssl && !pointInCounties(ep.lon, ep.lat, counties)) return { error: "county", which: which };
       setEndpoint(which, ep);
       return ep;
     }).catch(function () { return { error: "geocoder", which: which }; });
@@ -1042,6 +1251,7 @@
     var slice = document.getElementById("slice").value;
     var res = document.getElementById("results");
     res.innerHTML = '<p class="text-secondary small">Planning…</p>';
+    showMapLoading(true);
     Promise.all([resolveEndpoint("from"), resolveEndpoint("to")]).then(function (eps) {
       var bad = eps.filter(function (e) { return e && e.error; })[0];
       if (bad) {
@@ -1053,11 +1263,13 @@
         var kind = bad.error === "county" ? "out_of_county"
                  : bad.error === "notfound" ? "geocode_notfound" : "geocode_error";
         logFailed(kind, slice, src);
+        showMapLoading(false);
         return;
       }
       if (!endpoints.from || !endpoints.to) {
         res.innerHTML = '<p class="text-secondary small">Enter a starting point and a destination, ' +
           'or pick a predefined trip above.</p>';
+        showMapLoading(false);
         return;
       }
       Promise.all([bestTotal("today", slice), bestTotal("scenario", slice)])
@@ -1069,7 +1281,7 @@
           addShareButton(shareUrl, ttoken);
           trackTrip(slice, r[0], r[1], src, ttoken);
         });
-    });
+    }).catch(function () { showMapLoading(false); });   // never leave the spinner stuck
   }
 
   // Append a "Copy share link" button; the link carries a per-trip og: preview.
@@ -1119,6 +1331,7 @@
       if (tbox) tbox.innerHTML = "";
     });
     document.getElementById("results").innerHTML = "";
+    showMapLoading(false);
     var note = document.getElementById("method-note");
     if (note) note.innerHTML = "";
     // Wipe the map: route polylines live in routeLayer; the two markers don't.
@@ -1203,7 +1416,8 @@
       loadJSON(CFG.dataBase + "/stations.json"),
       loadJSON(CFG.dataBase + "/metra_counties.geojson"),
       loadJSON(CFG.dataBase + "/lines.json").catch(function () { return null; }),
-      loadJSON(CFG.dataBase + "/ats.json").catch(function () { return null; })
+      loadJSON(CFG.dataBase + "/ats.json").catch(function () { return null; }),
+      loadJSON(CFG.dataBase + "/southshore.json").catch(function () { return null; })
     ]).then(function (r) {
       stations = r[0]; counties = r[1]; LINES = r[2] || {};
       // Register the O'Hare ATS guideway as a clippable "line" so the map can
@@ -1216,6 +1430,7 @@
         if (!(s.name in stationByName)) stationByName[s.name] = s;
         stationById[s.id] = s;
       });
+      initSSL(r[4]);             // South Shore Line graft (adds LINES.SSL)
       renderPredefinedTrips();   // Option A one-click trips
       applyPermalink();          // if the URL already describes a trip, run it
     });

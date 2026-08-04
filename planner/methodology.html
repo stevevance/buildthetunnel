@@ -118,17 +118,39 @@
     Think these are off? <a href="index.html">Send feedback</a> — the numbers are easy to change.</div>
   </div>
 
+  <h2>Reaching the South Shore Line</h2>
+  <p>The <b>South Shore Line</b> (NICTD's electric interurban to northwest Indiana and South Bend) isn't in the
+  precomputed matrices — it runs east, outside the six-county grid the routing engine covers. Rather than rebuild
+  the whole network, the planner <b>grafts</b> it on: it recognizes when your origin or destination is a South
+  Shore station, routes you through a station that <i>both</i> the CrossTowner/Metra network and the South Shore
+  serve, and then rides the South Shore the rest of the way.</p>
+  <p>The transfer happens at whichever shared hub gives the fastest overall trip — the primary one is
+  <b>55th&ndash;56th&ndash;57th St.</b> in Hyde Park (where a CrossTowner rider meets the South Shore without
+  backtracking downtown), with the downtown Metra Electric stops (Millennium, Van Buren, Museum Campus) as
+  alternates. The South Shore portion — its in-vehicle minutes and how often trains run — comes straight from
+  <b>NICTD's published GTFS schedule</b>. A trip is therefore <code>time to the hub (from the matrix) + a short
+  platform transfer + the South Shore leg (typical wait + ride)</code>. Because the South Shore itself is
+  identical today and in the scenario, the CrossTowner comparison shows exactly one thing: <b>how much faster you
+  can reach the hub</b> — the tunnel never speeds up the South Shore itself.</p>
+  <p>Two honest caveats. First, morning service is uneven and modeled with a typical wait of about half the
+  headway: trains toward Indiana run roughly hourly at 8&nbsp;AM (so a ~30-minute wait), while trains toward
+  Chicago run every ~30&nbsp;minutes. Second, the Indiana stations are regional park-and-rides reached by car or
+  bus, so the planner treats your endpoint as being <i>at</i> the station rather than adding a walk to it. The
+  new Monon (Munster/Dyer) branch is reached with a timed transfer at Hammond Gateway.</p>
+
   <h2>Departure time</h2>
   <p>Trips are precomputed for a single weekday departure — <b>8 AM</b>. The result is a median over a
   30-minute departure window, so a single lucky (or unlucky) connection doesn't skew it.</p>
 
   <h2>Where you can travel</h2>
   <p>Trips must start and end within the six <b>Metra-service counties</b>: Cook, DuPage, Lake, Kane, McHenry,
-  and Will. Addresses outside that area are declined.</p>
+  and Will. Addresses outside that area are declined &mdash; with one exception, the <b>South Shore Line</b>
+  stations in Indiana (see above), which route in via a shared transfer hub.</p>
 
   <h2>Data sources</h2>
   <ul>
-    <li><b>Transit schedules:</b> published GTFS feeds from CTA, Metra, and Pace.</li>
+    <li><b>Transit schedules:</b> published GTFS feeds from CTA, Metra, and Pace, plus NICTD's
+    <b>South Shore Line</b> GTFS for the Indiana connection.</li>
     <li><b>Streets and walking:</b> OpenStreetMap.</li>
     <li><b>Station locations & rail lines:</b> <a href="https://www.chicagocityscape.com/" target="_blank" rel="noopener">Chicago Cityscape</a>'s place database, which includes data from <a href="https://www.transitexplorer.com/" target="_blank" rel="noopener">Transit Explorer</a>.</li>
     <li><b>CrossTowner service:</b> a synthetic GTFS feed built from Star:Line Chicago's published CrossTowner
@@ -141,6 +163,9 @@
     <li>The future scenario is <b>additive</b>: it adds the new lines on top of some of today's service without restructuring existing routes.</li>
     <li>Times reflect ordinary weekday service. Game-day and special-event buses (which the transit agencies don't always publish in their schedule data) are not included.</li>
     <li>No fares, crowding, or reliability are modeled.</li>
+    <li>South Shore Line trips are <b>grafted</b> onto the network at a shared transfer hub rather than routed
+    end-to-end, and use a typical (half-headway) wait for the infrequent morning service — see &ldquo;Reaching
+    the South Shore Line&rdquo; above.</li>
   </ul>
 
   <h2>Your privacy</h2>
