@@ -51,8 +51,10 @@ CREATE TABLE IF NOT EXISTS trips (
                           --   | pair_unreachable (data loaded but no connecting path — rare)
   origin_walk_min INTEGER, -- walk minutes to the nearest station at the origin (may exceed the walk cap)
   dest_walk_min   INTEGER, -- walk minutes to the nearest station at the destination
-  origin_typed TEXT,      -- the place the user typed at the origin — failed searches ONLY
-  dest_typed   TEXT,      -- the place the user typed at the destination — failed searches ONLY
+  origin_typed TEXT,      -- the geocoder's chosen LABEL at the origin (e.g. "Zion Mera Station") — failed searches ONLY
+  dest_typed   TEXT,      -- the geocoder's chosen LABEL at the destination — failed searches ONLY
+  origin_input TEXT,      -- the RAW string the user keyed at the origin (e.g. "zion station"), before relabeling — failed searches ONLY
+  dest_input   TEXT,      -- the RAW string the user keyed at the destination — failed searches ONLY
   origin_lat   REAL,      -- geocoded origin coordinates — failed searches ONLY
   origin_lon   REAL,
   dest_lat     REAL,      -- geocoded destination coordinates — failed searches ONLY

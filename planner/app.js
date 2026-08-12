@@ -1072,6 +1072,17 @@
     });
   }
 
+  // The raw text still in an address box — the user's actual keystrokes (e.g.
+  // "zion station"), before the geocoder rewrote it to a labeled result. Picking
+  // an autocomplete suggestion sets the endpoint but leaves the typed text in the
+  // box, so this is a faithful record of what was entered. Empty for predefined/
+  // permalink trips (no typing). Kept for failed searches only.
+  function rawInput(which) {
+    var box = document.getElementById(which === "from" ? "from" : "to");
+    var v = box && box.value ? box.value.trim() : "";
+    return v ? v.slice(0, 160) : null;
+  }
+
   // Diagnose *why* a search found no trip, so unmet demand is actionable. Uses
   // the scenario network — the most permissive (it adds the infill, CrossTowner,
   // and Red Line Extension stations); if even that can't reach an endpoint, no
@@ -1114,7 +1125,13 @@
       dest_walk_min: dNear ? Math.round(dNear.walk) : null,
       // For a failed search only, also keep what the user typed and the geocoded
       // coordinates, so unmet demand shows the real places people wanted and can
-      // be mapped (a successful trip never stores either).
+      // be mapped (a successful trip never stores either). `*_input` is the raw
+      // string still in the box (the actual keystrokes, e.g. "zion station");
+      // `*_typed` is the geocoder's chosen label (e.g. "Zion Mera Station") — the
+      // two differ when a geocoder result is misspelled or mismatched, which is
+      // exactly what we want to see.
+      origin_input: rawInput("from"),
+      dest_input: rawInput("to"),
       origin_typed: f && f.label ? f.label : null,
       dest_typed: t && t.label ? t.label : null,
       origin_lat: f && isFinite(f.lat) ? f.lat : null,
@@ -1136,6 +1153,8 @@
       p.destination = extra.destination;
       p.origin_walk_min = extra.origin_walk_min;
       p.dest_walk_min = extra.dest_walk_min;
+      p.origin_input = extra.origin_input;
+      p.dest_input = extra.dest_input;
       p.origin_typed = extra.origin_typed;
       p.dest_typed = extra.dest_typed;
       p.origin_lat = extra.origin_lat;
