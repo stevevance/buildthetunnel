@@ -417,9 +417,12 @@
               // "station-to-station" line covers the rail + connector time.
               ride: ride + sslExtra, routes: routes, legs: legs,
               board: entry.o.station, alight: d.station,
-              // True endpoints for the summary line when a South Shore leg is on.
-              boardLabel: oS ? oS.leg.from : entry.o.station.name,
-              alightLabel: dS ? dS.leg.to  : d.station.name
+              // The stations the rider actually boards/alights at. Usually the
+              // candidate stations, but a matrix cell's total can include r5r
+              // walking from the station we looked the cell up under to a
+              // different one (~24% of pairs) -- the legs know where that is.
+              boardLabel: (legs && legs.length) ? legs[0].from : entry.o.station.name,
+              alightLabel: (legs && legs.length) ? legs[legs.length - 1].to : d.station.name
             };
           }
         });
@@ -428,16 +431,42 @@
     });
   }
 
+  // A station object by name -- from the rail list or the South Shore graft.
+  // Matrix legs name their endpoints, so this is how a leg gets back to
+  // coordinates (and to its wheelchair flag).
+  function stNamed(name) {
+    return stationByName[name] || (SSL && SSL.byName[name]) || null;
+  }
+
+  // Walking minutes from an endpoint to a station, in the planner's own walk
+  // model. null when the endpoint isn't reached on foot: an O'Hare terminal
+  // (people mover / fixed egress) or a South Shore station the rider starts at.
+  function epWalkMin(which, station) {
+    var ep = endpoints[which];
+    if (!ep || ep.airport || ep.ssl || !station) return null;
+    return walkMinutes(haversineKm(ep.lat, ep.lon, station.lat, station.lon));
+  }
+
+  // Walking minutes between two stations named by legs (an out-of-station
+  // transfer, or the gap the matrix walked the rider across). "" if either
+  // name doesn't resolve.
+  function gapWalk(fromName, toName) {
+    var a = stNamed(fromName), b = stNamed(toName);
+    return (a && b) ? fmtMin(walkMinutes(haversineKm(a.lat, a.lon, b.lat, b.lon))) : "";
+  }
+
   // One access ("from") or egress ("to") hop as an <li>. For an O'Hare terminal
   // endpoint the hop is to/from a specific terminal, and is labeled as an ATS
   // ride or a walk depending on which station served it — so we never call the
   // people mover a "walk".
-  function hopLi(side, r, minutes, boardName) {
+  function hopLi(side, station, minutes, boardName) {
     var ep = endpoints[side];
     // A South Shore endpoint *is* the boarding/alighting station (you start or
-    // end on the platform), so there's no access/egress walk to show.
+    // end on the platform), so there's no access/egress walk to show. Nor is
+    // there when the endpoint sits on top of its station -- "Walk 0 min" is
+    // noise, not a step.
     if (ep && ep.ssl) return "";
-    var station = (side === "from") ? r.board : r.alight;
+    if (!ep.airport && Math.round(minutes) < 1) return "";
     var sk = ep && ep.airport && station ? ohareStationKey(station.id) : null;
     if (sk) {
       var ats = ohareHopMode(sk, ep.airport) === "ats";
@@ -464,7 +493,22 @@
       if (!r) return '<div class="card"><div class="card-body py-2 px-3">' +
         '<h2 class="h6 mb-1">' + title + '</h2>' +
         '<p class="text-secondary small mb-0">No rail trip found.</p></div></div>';
-      var wc = (r.board.wheelchair === 1 && r.alight.wheelchair === 1) ?
+      // Where the rider really boards and alights. The matrix cell's total can
+      // include r5r walking them from the station we looked the cell up under to
+      // a neighbouring one -- the legs say where -- so measure the access and
+      // egress hops to *those* stations, not to the station that keyed the cell.
+      // The map already draws it this way; this makes the steps agree.
+      var first = (r.legs && r.legs.length) ? r.legs[0] : null;
+      var last  = (r.legs && r.legs.length) ? r.legs[r.legs.length - 1] : null;
+      // An O'Hare end keeps its rail station: the hop there is a fixed ATS/walk
+      // egress to a terminal, not a hop to whatever station the legs name.
+      var bSt = (!endpoints.from.airport && first && stNamed(first.from)) || r.board;
+      var aSt = (!endpoints.to.airport   && last  && stNamed(last.to))    || r.alight;
+      var accessMin = epWalkMin("from", bSt);
+      var egressMin = epWalkMin("to", aSt);
+      if (accessMin == null) accessMin = r.access;
+      if (egressMin == null) egressMin = r.egress;
+      var wc = (bSt.wheelchair === 1 && aSt.wheelchair === 1) ?
         '<div class="small text-crcl mb-1">&#9855; Both stations are wheelchair-accessible</div>' : '';
       var rr = parseRoutes(r.routes, net);
       var xfers = rr ? rr.transfers : 0;
@@ -474,13 +518,14 @@
         // Per-leg wait is intentionally not shown: the headline time is the
         // 30-minute-window median (typical waiting is folded into it), so a
         // single departure's wait would be both misleading and inconsistent.
-        steps = hopLi("from", r, r.access, r.legs[0].from);
+        steps = hopLi("from", bSt, accessMin, first.from);
         r.legs.forEach(function (leg, i) {
           var label = routeLabel(leg.line, net) || leg.mode;
           // An out-of-station transfer: previous leg alighted at a different station.
           if (i > 0 && r.legs[i - 1].to !== leg.from) {
-            steps += '<li><span class="text-secondary">Transfer: walk from ' +
-              r.legs[i - 1].to + ' to <b>' + leg.from + '</b></span></li>';
+            var tw = gapWalk(r.legs[i - 1].to, leg.from);
+            steps += '<li><span class="text-secondary">Transfer: walk ' + (tw ? tw + ' ' : '') +
+              'from ' + r.legs[i - 1].to + ' to <b>' + leg.from + '</b></span></li>';
           }
           // Service frequency makes the CrossTowner benefit visible: the same
           // corridor often runs more often in the scenario (added X-route trains).
@@ -493,10 +538,10 @@
           // Alighting is its own step so it's obvious where to get off.
           steps += '<li>Ride ' + leg.ride + ' min &rarr; alight at <b>' + leg.to + '</b></li>';
         });
-        steps += hopLi("to", r, r.egress, null);
+        steps += hopLi("to", aSt, egressMin, null);
       } else {
         // Fallback: route sequence only (no station-level detail).
-        steps = hopLi("from", r, r.access, r.board.name);
+        steps = hopLi("from", r.board, r.access, r.board.name);
         if (rr && rr.labels.length) {
           rr.labels.forEach(function (lbl, i) {
             steps += '<li>' + (i === 0 ? 'Board the <b>' : 'Transfer to the <b>') + lbl + '</b></li>';
@@ -504,10 +549,16 @@
         } else {
           steps += '<li>Ride ' + r.board.name + ' &rarr; ' + r.alight.name + '</li>';
         }
-        steps += hopLi("to", r, r.egress, null);
+        steps += hopLi("to", r.alight, r.egress, null);
       }
-      var sub = '<div class="text-secondary small mb-1">' + fmtMin(r.ride) +
-        ' station-to-station &middot; ' + (xfers === 0 ? "one seat" :
+      // In-vehicle time, summed from the legs, so the headline under the total
+      // always reconciles with the ride steps below it. (r.ride is the matrix
+      // cell, which folds in waiting and any walking between stations.)
+      var sub = '<div class="text-secondary small mb-1">' +
+        (r.legs && r.legs.length
+          ? fmtMin(r.legs.reduce(function (a, l) { return a + (l.ride || 0); }, 0)) + ' riding'
+          : fmtMin(r.ride) + ' station-to-station') +
+        ' &middot; ' + (xfers === 0 ? "one seat" :
           xfers + " transfer" + (xfers > 1 ? "s" : "")) +
         ' &middot; ' + (r.boardLabel || r.board.name) + ' &rarr; ' +
         (r.alightLabel || r.alight.name) + '</div>';
@@ -534,7 +585,8 @@
     // because the slice label is dynamic.
     var note = document.getElementById("method-note");
     if (note) note.innerHTML = 'Precomputed median travel time in a 30-minute period ' +
-      sliceLabel(slice) + ', assuming 2.75 mph walk speed and a 20-minute maximum walk. The line you board ' +
+      sliceLabel(slice) + ', assuming 2.75 mph walk speed and a 20-minute maximum walk to any one station. ' +
+      'Walking between stations — to a faster boarding station, or at a transfer — is shown as its own step. The line you board ' +
       'reflects a representative departure at this time.';
     drawRoute(today, scen);
   }
@@ -755,7 +807,7 @@
     return seg;
   }
   function stCoord(name) {
-    var s = stationByName[name] || (SSL && SSL.byName[name]);
+    var s = stNamed(name);
     return s ? [s.lat, s.lon] : null;
   }
 

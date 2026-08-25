@@ -74,6 +74,19 @@
   studies, so estimates aren't rosy. The train time itself (station to station) also includes any transfers and
   waiting, computed by R5 from the actual schedules.</p>
 
+  <h3 class="h6 mt-3">Walking that happens <i>between</i> stations</h3>
+  <p>The station-to-station time R5 gives us is measured between two station points, but R5 is free to walk you
+  from that point to a <b>different</b> station nearby if that's genuinely the faster trip — and to walk you
+  between stations at a transfer. That walking is already inside the total; what the step list now does is
+  <b>name it</b>. So a trip whose time is looked up under "Morse" may tell you to walk over to Rogers Park and
+  board there, and a trip that rides to Cermak-Chinatown will say plainly that McCormick Place is a 20-odd-minute
+  walk from that platform rather than pretending you've arrived.</p>
+  <p class="text-secondary">Two consequences worth knowing. First, those between-station walks are estimated the
+  same straight-line way as the walk from your own address, while the total came from R5's real street network —
+  so the steps may not add up to the total exactly, usually because the straight-line estimate is the more
+  pessimistic of the two. Second, the 20-minute walking limit applies to <i>each</i> walk separately, not to the
+  trip as a whole, so a trip can legitimately contain more than 20 minutes of walking in total.</p>
+
   <h2>Which route it shows in the future scenario</h2>
   <p>In the future scenario, when more than one reasonable trip exists, the planner <b>prefers the CrossTowner
   route</b> even if it's a little slower. Specifically: among all the options that are within <b>12 minutes</b>
