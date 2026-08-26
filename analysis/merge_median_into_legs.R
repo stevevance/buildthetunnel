@@ -23,7 +23,7 @@ suppressMessages({library(r5r); library(data.table); library(jsonlite)})
 
 STATIONS <- "planner/data/stations.json"
 NET_DIR  <- "analysis/networks"
-OUT_ROOT <- "planner/data/matrix"
+OUT_ROOT <- Sys.getenv("LEGS_OUT", "planner/data/matrix")   # LEGS_OUT: merge into an alternate matrix root
 NETS  <- c(today="today", scenario="scenario_rle")
 SLICE <- "0800"; DEP <- "2026-07-07 08:00:00"
 WALK_SPEED <- 4.43; MAX_WALK <- 20; MAX_TRIP <- 180; TIME_WINDOW <- 30

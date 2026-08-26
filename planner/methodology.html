@@ -81,11 +81,18 @@
   <b>name it</b>. So a trip whose time is looked up under "Morse" may tell you to walk over to Rogers Park and
   board there, and a trip that rides to Cermak-Chinatown will say plainly that McCormick Place is a 20-odd-minute
   walk from that platform rather than pretending you've arrived.</p>
-  <p class="text-secondary">Two consequences worth knowing. First, those between-station walks are estimated the
-  same straight-line way as the walk from your own address, while the total came from R5's real street network —
-  so the steps may not add up to the total exactly, usually because the straight-line estimate is the more
-  pessimistic of the two. Second, the 20-minute walking limit applies to <i>each</i> walk separately, not to the
+  <p class="text-secondary">Those in-trip walks are R5's own street-network times, stored leg by leg alongside the
+  ride times, so the steps add up to the total at the top of the card. The one walk still estimated straight-line
+  is the one between your own address and a station: R5 measures from a station point, and your front door isn't
+  in its network. Note also that the 20-minute walking limit applies to <i>each</i> walk separately, not to the
   trip as a whole, so a trip can legitimately contain more than 20 minutes of walking in total.</p>
+
+  <h3 class="h6 mt-3">The waiting time shown</h3>
+  <p>The headline number is a median over a 30-minute window around the departure, while the leg-by-leg detail
+  comes from a single departure at the top of the hour. Waiting is what differs between those two — the walking
+  and the riding don't change — so the wait shown against each train is whatever the total has left over once the
+  walking and riding are accounted for. Read it as a typical wait for that trip, not as the wait you'd get by
+  arriving at exactly 8:00.</p>
 
   <h2>Which route it shows in the future scenario</h2>
   <p>In the future scenario, when more than one reasonable trip exists, the planner <b>prefers the CrossTowner

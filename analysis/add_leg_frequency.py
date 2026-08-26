@@ -22,7 +22,7 @@ Usage:  python3 analysis/add_leg_frequency.py
 import json, zipfile, csv, io, os, math, glob, sys, collections
 
 IN = "analysis/r5r_network_inputs"
-MATRIX = "planner/data/matrix"
+MATRIX = os.environ.get("LEGS_OUT", "planner/data/matrix")   # LEGS_OUT: work on an alternate matrix root
 STATIONS = "planner/data/stations.json"
 FEEDS = {
     "today":    ["metra-gtfs.zip", "cta-gtfs.zip", "pace-gtfs.zip"],
@@ -123,6 +123,7 @@ def main():
             changed = False
             for did, c in cell.items():
                 for leg in c.get("legs", []):
+                    if leg.get("mode") == "WALK": continue   # walking has no service to be frequent
                     key = (net, leg["from"], leg["to"])
                     if key not in cache: cache[key] = leg_freq(*key)
                     if cache[key] is not None:

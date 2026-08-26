@@ -17,16 +17,21 @@
 # chosen itinerary's transit legs. Each leg's board/alight station is the
 # nearest station to that segment's first/last geometry coordinate.
 #
-# Output cell: { m, r, x, legs: [ {mode, line, from, to, ride, wait}, ... ] }.
+# Output cell: { m, r, x, legs: [ {mode, line, from, to, ride, wait}, ... ] },
+# with walking kept as its own leg: { mode:"WALK", ride }.
 #
 # Usage:  Rscript analysis/precompute_legs_8am.R [network]   (default: both)
+#   LEGS_ORIGINS=3 LEGS_OUT=/tmp/m Rscript ...   (smoke test: first N origins
+#   into an alternate output root, leaving planner/data/matrix untouched)
 
 options(java.parameters = "-Xmx12G")
 suppressMessages({library(r5r); library(data.table); library(jsonlite); library(sf)})
 
 STATIONS <- "planner/data/stations.json"
 NET_DIR  <- "analysis/networks"
-OUT_ROOT <- "planner/data/matrix"
+OUT_ROOT <- Sys.getenv("LEGS_OUT", "planner/data/matrix")
+N_ORIGINS <- suppressWarnings(as.integer(Sys.getenv("LEGS_ORIGINS", "")))
+RESUME <- nzchar(Sys.getenv("LEGS_RESUME"))   # skip origins already written (restart a killed run)
 NETS  <- c(today="today", scenario="scenario_rle")
 SLICE <- "0800"; DEP <- "2026-07-07 08:00:00"
 WALK_SPEED <- 4.43; MAX_WALK <- 20; MAX_TRIP <- 180; PREFER_TOL <- 12
@@ -50,7 +55,10 @@ for (nl in nets_to_do) {
   dir.create(out_dir, recursive=TRUE, showWarnings=FALSE)
   cat(sprintf("== %s %s legs (prefer_x=%s): %d origins ==\n", nl, SLICE, prefer_x, nrow(pts)))
   t0 <- Sys.time()
-  for (i in seq_len(nrow(pts))) {
+  n_do <- if (is.na(N_ORIGINS)) nrow(pts) else min(N_ORIGINS, nrow(pts))
+  for (i in seq_len(n_do)) {
+    shard <- file.path(out_dir, paste0(pts$id[i], ".json"))
+    if (RESUME && file.exists(shard)) next
     it <- tryCatch(detailed_itineraries(net, origins=pts[i,], destinations=pts,
         mode=c("TRANSIT","WALK"), departure_datetime=dep, time_window=1,
         max_walk_time=MAX_WALK, walk_speed=WALK_SPEED, max_trip_duration=MAX_TRIP,
@@ -74,8 +82,18 @@ for (nl in nets_to_do) {
       } else cand[order(total)]$option[1]
       # read the chosen option's transit legs (with board/alight stations)
       seg <- d[option==chosen]
-      legs <- list()
+      # Keep the WALK segments as legs of their own. `m` is the whole trip
+      # between the two station points, so it already contains R5's walk to the
+      # boarding stop, any transfer walk, and the walk off at the far end;
+      # dropping them left the planner able to see that time but not say where
+      # it went, and its own straight-line guess never added up to `m`.
+      legs <- list(); nride <- 0L
       for (k in seq_len(nrow(seg))) {
+        if (seg$mode[k] == "WALK") {
+          w <- as.integer(round(seg$segment_duration[k]))
+          if (w > 0) legs[[length(legs)+1]] <- list(mode="WALK", ride=w)
+          next
+        }
         if (!(seg$mode[k] %in% TRANSIT)) next
         co <- sf::st_coordinates(geoms[[seg$ridx[k]]])
         legs[[length(legs)+1]] <- list(
@@ -84,13 +102,15 @@ for (nl in nets_to_do) {
           to   = nearest(co[nrow(co),2], co[nrow(co),1]),
           ride = as.integer(round(seg$segment_duration[k])),
           wait = as.integer(round(seg$wait[k])))
+        nride <- nride + 1L
       }
       crow <- cand[option==chosen]
       cell <- list(m = as.integer(round(crow$total)))
-      if (length(legs)) { cell$r <- crow$routes; cell$x <- max(length(legs)-1L, 0L); cell$legs <- legs }
+      # x counts transfers between vehicles, so it stays a transit-leg count.
+      if (nride) { cell$r <- crow$routes; cell$x <- max(nride-1L, 0L); cell$legs <- legs }
       obj[[did]] <- cell
     }
-    write_json(obj, file.path(out_dir, paste0(pts$id[i], ".json")), auto_unbox=TRUE)
+    write_json(obj, shard, auto_unbox=TRUE)
     if (i %% 50 == 0) cat(sprintf("  %d/%d (%.1f min)\n", i, nrow(pts),
         as.numeric(difftime(Sys.time(), t0, units="mins"))))
   }

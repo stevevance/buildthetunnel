@@ -71,7 +71,10 @@
   var LINES = null;           // { "Red": [[[lon,lat],...]], ... } rail-line geometry
   var MMF_WALK = null;        // [[lat,lon],...] sidewalk: O'Hare Transfer <-> MMF
   var SSL = null;             // South Shore Line graft (see data/southshore.json)
-  var stationByName = {};     // station name -> {lat,lon} (for leg endpoints)
+  var MATRIX_WALKED = false;  // manifest says the cells itemize their walking
+  var stationsByName = {};    // station name -> [stations]; six names (Berwyn,
+                              // Bryn Mawr, Cumberland, Harvey, Racine,
+                              // Rosemont) belong to two stations each
   var stationById = {};       // station id -> station (for airport egress lookup)
   var endpoints = { from: null, to: null };  // {lat,lon,label}
   var map, fromMarker, toMarker, routeLayer;
@@ -361,6 +364,28 @@
     return nearestStations(ep.lat, ep.lon, network);
   }
 
+  // R5's own walking, stored as its own leg: { mode:"WALK", ride }. A cell's
+  // `m` is the whole trip between two station points, so it always contained
+  // the walk to the boarding stop, any transfer walk, and the walk off at the
+  // far end -- the matrix just used to drop those segments, leaving the
+  // planner able to see the time but not say where it went. Fold each walk
+  // onto the vehicle leg it precedes (`wb`), and a trailing one onto the last
+  // leg (`wa`), so every other consumer still sees a plain list of vehicle
+  // legs.
+  function foldWalks(legs) {
+    if (!legs || !legs.length) return legs;
+    var out = [], pending = 0, i, k, copy;
+    for (i = 0; i < legs.length; i++) {
+      if (legs[i].mode === "WALK") { pending += legs[i].ride || 0; continue; }
+      copy = {};
+      for (k in legs[i]) copy[k] = legs[i][k];
+      if (pending) { copy.wb = pending; pending = 0; }
+      out.push(copy);
+    }
+    if (pending && out.length) out[out.length - 1].wa = pending;
+    return out;
+  }
+
   /* ---- the core lookup: best door-to-door total for one network --------- */
   function bestTotal(network, slice) {
     // Both ends on the South Shore: a direct ride, not a hub graft.
@@ -385,7 +410,9 @@
           // Cells are { m: minutes, r: "ME|X1", legs: [...] }; tolerate a bare number too.
           var ride   = (typeof cell === "number") ? cell : cell.m;
           var routes = (typeof cell === "object") ? cell.r : null;
-          var legs   = (typeof cell === "object") ? cell.legs : null;
+          var raw    = (typeof cell === "object") ? cell.legs : null;
+          var walked = MATRIX_WALKED && !!(raw && raw.length);
+          var legs   = foldWalks(raw);
           if (ride == null) return;
           // A South Shore endpoint carries its connector on the candidate; splice
           // its leg in (origin ssl before the matrix legs, dest ssl after) and add
@@ -416,6 +443,9 @@
               access: entry.o.walk, egress: d.walk,
               // "station-to-station" line covers the rail + connector time.
               ride: ride + sslExtra, routes: routes, legs: legs,
+              // Whether the cell itemized its walking (see foldWalks): if it
+              // did, the steps can report real minutes instead of estimates.
+              walked: walked,
               board: entry.o.station, alight: d.station,
               // The stations the rider actually boards/alights at. Usually the
               // candidate stations, but a matrix cell's total can include r5r
@@ -431,11 +461,44 @@
     });
   }
 
+  // Which operator a leg belongs to, as the station flag that marks it. CTA
+  // rail rides are SUBWAY; the X routes are the CrossTowner; other RAIL is
+  // Metra. A bus leg says nothing -- it can board at either operator's station.
+  function legOperator(leg) {
+    if (!leg) return null;
+    if (leg.mode === "SUBWAY") return "on_cta_rail";
+    if (leg.mode === "RAIL") return /^X[1-6]$/.test(leg.line) ? "on_crosstowner" : "on_metra";
+    return null;
+  }
+
   // A station object by name -- from the rail list or the South Shore graft.
   // Matrix legs name their endpoints, so this is how a leg gets back to
   // coordinates (and to its wheelchair flag).
-  function stNamed(name) {
-    return stationByName[name] || (SSL && SSL.byName[name]) || null;
+  //
+  // Six names are shared by two stations, one CTA and one Metra/CrossTowner
+  // (the Red Line's Bryn Mawr and the Metra Electric's, 15 miles apart), and a
+  // leg carries only the name. Resolve with what the leg does say -- its mode
+  // and route name the operator -- and, failing that, take whichever candidate
+  // sits nearer a reference point `near` ([lat, lon]): the other end of the
+  // leg, or the trip's own endpoint.
+  function stNamed(name, leg, near) {
+    var list = stationsByName[name];
+    if (!list || !list.length) return (SSL && SSL.byName[name]) || null;
+    if (list.length === 1) return list[0];
+    var pool = list, flag = legOperator(leg), i, matched = [];
+    if (flag) {
+      for (i = 0; i < list.length; i++) if (list[i][flag]) matched.push(list[i]);
+      if (matched.length) pool = matched;
+    }
+    if (pool.length > 1 && near) {
+      var best = pool[0], bestKm = haversineKm(best.lat, best.lon, near[0], near[1]), km;
+      for (i = 1; i < pool.length; i++) {
+        km = haversineKm(pool[i].lat, pool[i].lon, near[0], near[1]);
+        if (km < bestKm) { best = pool[i]; bestKm = km; }
+      }
+      return best;
+    }
+    return pool[0];
   }
 
   // Walking minutes from an endpoint to a station, in the planner's own walk
@@ -450,8 +513,9 @@
   // Walking minutes between two stations named by legs (an out-of-station
   // transfer, or the gap the matrix walked the rider across). "" if either
   // name doesn't resolve.
-  function gapWalk(fromName, toName) {
-    var a = stNamed(fromName), b = stNamed(toName);
+  function gapWalk(fromName, toName, fromLeg, toLeg) {
+    var a = stNamed(fromName, fromLeg);
+    var b = stNamed(toName, toLeg, a ? [a.lat, a.lon] : null);
     return (a && b) ? fmtMin(walkMinutes(haversineKm(a.lat, a.lon, b.lat, b.lon))) : "";
   }
 
@@ -502,30 +566,79 @@
       var last  = (r.legs && r.legs.length) ? r.legs[r.legs.length - 1] : null;
       // An O'Hare end keeps its rail station: the hop there is a fixed ATS/walk
       // egress to a terminal, not a hop to whatever station the legs name.
-      var bSt = (!endpoints.from.airport && first && stNamed(first.from)) || r.board;
-      var aSt = (!endpoints.to.airport   && last  && stNamed(last.to))    || r.alight;
-      var accessMin = epWalkMin("from", bSt);
-      var egressMin = epWalkMin("to", aSt);
-      if (accessMin == null) accessMin = r.access;
-      if (egressMin == null) egressMin = r.egress;
+      var bSt = (!endpoints.from.airport && first &&
+                 stNamed(first.from, first, [endpoints.from.lat, endpoints.from.lon])) || r.board;
+      var aSt = (!endpoints.to.airport   && last  &&
+                 stNamed(last.to, last, [endpoints.to.lat, endpoints.to.lon]))         || r.alight;
+      // Access and egress. When the cell itemized its walking, the first and
+      // last walk legs are R5's own street-network minutes from the station
+      // that keyed the cell to the stop the rider actually uses, so they add
+      // to our walk out to that station and the pair is exact. Without them
+      // all we can do is estimate the whole thing straight-line from the
+      // endpoint to the station the legs name.
+      var accessMin, egressMin;
+      if (r.walked) {
+        accessMin = r.access + ((first && first.wb) || 0);
+        egressMin = r.egress + ((last && last.wa) || 0);
+      } else {
+        accessMin = epWalkMin("from", bSt);
+        egressMin = epWalkMin("to", aSt);
+        if (accessMin == null) accessMin = r.access;
+        if (egressMin == null) egressMin = r.egress;
+      }
       var wc = (bSt.wheelchair === 1 && aSt.wheelchair === 1) ?
         '<div class="small text-crcl mb-1">&#9855; Both stations are wheelchair-accessible</div>' : '';
       var rr = parseRoutes(r.routes, net);
       var xfers = rr ? rr.transfers : 0;
+      // Waiting time, so the steps add up to the total above them. What's left
+      // of the total after the walking and riding we can name *is* the wait,
+      // and that's the honest place to put it: `m` is a 30-minute-window
+      // median while the legs come from a single 8:00 departure, and waiting
+      // is exactly what differs between the two. (A South Shore leg's wait is
+      // its own scheduled figure, added outside the matrix, so it stays put.)
+      var waitOf = [];
+      if (r.walked && r.legs && r.legs.length) {
+        // Work in the minutes the card actually prints. Every step is rounded
+        // on its way to the screen, so taking the leftover *after* rounding
+        // the rest is what makes the column add up to the headline instead of
+        // landing a minute or two off it.
+        var shown = Math.round(accessMin) + Math.round(egressMin), pool = 0;
+        r.legs.forEach(function (leg, i) {
+          shown += leg.ride || 0;
+          if (i > 0) shown += Math.round(leg.wb || 0);
+          if (leg.ssl) shown += leg.wait || 0; else pool += leg.wait || 0;
+        });
+        var left = Math.max(0, Math.round(r.total) - shown), spent = 0, i2;
+        r.legs.forEach(function (leg, i) {
+          if (leg.ssl) { waitOf[i] = null; return; }   // its own scheduled wait
+          var w = pool > 0 ? Math.round(left * (leg.wait || 0) / pool) : 0;
+          waitOf[i] = w; spent += w;
+        });
+        // Whatever the split rounded away goes to the first vehicle leg.
+        for (i2 = 0; i2 < r.legs.length; i2++) {
+          if (!r.legs[i2].ssl) { waitOf[i2] = Math.max(0, waitOf[i2] + left - spent); break; }
+        }
+      }
       var steps;
       if (r.legs && r.legs.length) {
         // Detailed legs: board/alight stations + in-vehicle ride per vehicle.
-        // Per-leg wait is intentionally not shown: the headline time is the
-        // 30-minute-window median (typical waiting is folded into it), so a
-        // single departure's wait would be both misleading and inconsistent.
         steps = hopLi("from", bSt, accessMin, first.from);
         r.legs.forEach(function (leg, i) {
           var label = routeLabel(leg.line, net) || leg.mode;
-          // An out-of-station transfer: previous leg alighted at a different station.
-          if (i > 0 && r.legs[i - 1].to !== leg.from) {
-            var tw = gapWalk(r.legs[i - 1].to, leg.from);
-            steps += '<li><span class="text-secondary">Transfer: walk ' + (tw ? tw + ' ' : '') +
-              'from ' + r.legs[i - 1].to + ' to <b>' + leg.from + '</b></span></li>';
+          // Walking at a transfer: to another station, or across the one
+          // you're in. Real minutes when the cell itemized its walking, a
+          // straight-line estimate otherwise.
+          if (i > 0) {
+            var moved = r.legs[i - 1].to !== leg.from;
+            var tw = r.walked ? (leg.wb >= 1 ? fmtMin(leg.wb) : "")
+                              : (moved ? gapWalk(r.legs[i - 1].to, leg.from, r.legs[i - 1], leg) : "");
+            if (moved) {
+              steps += '<li><span class="text-secondary">Transfer: walk ' + (tw ? tw + ' ' : '') +
+                'from ' + r.legs[i - 1].to + ' to <b>' + leg.from + '</b></span></li>';
+            } else if (tw) {
+              steps += '<li><span class="text-secondary">Transfer: walk ' + tw +
+                ' within <b>' + leg.from + '</b></span></li>';
+            }
           }
           // Service frequency makes the CrossTowner benefit visible: the same
           // corridor often runs more often in the scenario (added X-route trains).
@@ -534,7 +647,9 @@
           var freqTxt = leg.freq ? '<div class="text-secondary">a train every ~' + leg.freq + ' min' +
             (leg.ssl && leg.wait ? ', about ' + leg.wait + ' min typical wait' : '') + '</div>' : '';
           var transferInto = leg.ssl ? ' <span class="text-secondary">(transfer to the South Shore Line)</span>' : '';
-          steps += '<li>Board the <b>' + label + '</b> at ' + leg.from + transferInto + freqTxt + '</li>';
+          var wm = waitOf[i] != null ? Math.round(waitOf[i]) : 0;
+          var waitTxt = wm >= 1 ? ' after a ~' + wm + ' min wait' : '';
+          steps += '<li>Board the <b>' + label + '</b> at ' + leg.from + waitTxt + transferInto + freqTxt + '</li>';
           // Alighting is its own step so it's obvious where to get off.
           steps += '<li>Ride ' + leg.ride + ' min &rarr; alight at <b>' + leg.to + '</b></li>';
         });
@@ -586,8 +701,9 @@
     var note = document.getElementById("method-note");
     if (note) note.innerHTML = 'Precomputed median travel time in a 30-minute period ' +
       sliceLabel(slice) + ', assuming 2.75 mph walk speed and a 20-minute maximum walk to any one station. ' +
-      'Walking between stations — to a faster boarding station, or at a transfer — is shown as its own step. The line you board ' +
-      'reflects a representative departure at this time.';
+      'Walking inside the trip — to the platform, at a transfer, or out at the far end — is measured on the street ' +
+      'network, so the steps add up to the total; the walk between your address and a station is a straight-line ' +
+      'estimate. The line you board reflects a representative departure at this time.';
     drawRoute(today, scen);
   }
 
@@ -806,8 +922,8 @@
     if (ai > bi2) seg.reverse();
     return seg;
   }
-  function stCoord(name) {
-    var s = stNamed(name);
+  function stCoord(name, leg, near) {
+    var s = stNamed(name, leg, near);
     return s ? [s.lat, s.lon] : null;
   }
 
@@ -912,7 +1028,8 @@
       var toAirport   = endpoints.to.airport   && ohareStationKey(r.alight.id);
       var prevPt = [endpoints.from.lat, endpoints.from.lon];
       r.legs.forEach(function (leg, i) {
-        var from = stCoord(leg.from), to = stCoord(leg.to);
+        var from = stCoord(leg.from, leg, prevPt);
+        var to   = stCoord(leg.to, leg, from || prevPt);
         // i===0 is the access hop (airport connector); i>0 are transfer walks.
         if (from) {
           if (i === 0 && fromAirport) drawAirportHop(r.board, endpoints.from);
@@ -1488,8 +1605,14 @@
       loadJSON(CFG.dataBase + "/metra_counties.geojson"),
       loadJSON(CFG.dataBase + "/lines.json").catch(function () { return null; }),
       loadJSON(CFG.dataBase + "/ats.json").catch(function () { return null; }),
-      loadJSON(CFG.dataBase + "/southshore.json").catch(function () { return null; })
+      loadJSON(CFG.dataBase + "/southshore.json").catch(function () { return null; }),
+      loadJSON(CFG.dataBase + "/matrix/manifest.json").catch(function () { return null; })
     ]).then(function (r) {
+      // Does this matrix itemize its walking? It's a property of the whole
+      // build, not of one cell: 8.8% of cells legitimately have no walk at all
+      // (the station point *is* the stop), and reading "no walk legs here" as
+      // "this data is the old kind" would drop their waiting time.
+      MATRIX_WALKED = !!(r[5] && r[5].walk_legs);
       stations = r[0]; counties = r[1]; LINES = r[2] || {};
       // Register the O'Hare ATS guideway as a clippable "line" so the map can
       // trace it, and keep the Metra-Transfer<->MMF sidewalk for the walk hop.
@@ -1498,7 +1621,7 @@
         MMF_WALK = (r[3].mmfWalk || []).map(function (c) { return [c[1], c[0]]; });  // [lon,lat] -> [lat,lon]
       }
       stations.forEach(function (s) {
-        if (!(s.name in stationByName)) stationByName[s.name] = s;
+        (stationsByName[s.name] || (stationsByName[s.name] = [])).push(s);
         stationById[s.id] = s;
       });
       initSSL(r[4]);             // South Shore Line graft (adds LINES.SSL)
