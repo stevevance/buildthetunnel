@@ -10,6 +10,14 @@ window.PLANNER_CONFIG = {
   /* Where the precomputed static data lives, relative to this page. */
   dataBase: "data",
 
+  /* Cache-busting stamp for the static data, bumped whenever the matrix is
+   * rebuilt. The station list and the matrix shards have to agree -- a browser
+   * holding yesterday's stations.json against today's shards can't resolve the
+   * station a leg names -- and GitHub Pages serves both with a short max-age,
+   * so without this a returning visitor gets a few minutes of mismatch after a
+   * deploy. Appended to every data URL, so a rebuild invalidates them together. */
+  dataVersion: "2026-08-26",
+
   /* Departure-time slice(s), matching planner/data/matrix/<net>/<slice>/.
    * A single weekday 8 AM departure: "the first/best trip if you leave at 8:00". */
   slices: [

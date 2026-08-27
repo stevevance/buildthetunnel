@@ -80,6 +80,12 @@
   var map, fromMarker, toMarker, routeLayer;
 
   /* ---- data loading ----------------------------------------------------- */
+  // Static-data URL with the build stamp attached, so the station list and the
+  // matrix shards are cached and invalidated as one set (see CFG.dataVersion).
+  function dataURL(rel) {
+    return CFG.dataBase + rel + (CFG.dataVersion ? "?v=" + encodeURIComponent(CFG.dataVersion) : "");
+  }
+
   function loadJSON(path) {
     return fetch(path).then(function (r) {
       if (!r.ok) throw new Error("fetch " + path + " -> " + r.status);
@@ -337,7 +343,7 @@
   function getShard(network, slice, originId) {
     var key = network + "/" + slice + "/" + originId;
     if (shardCache[key]) return Promise.resolve(shardCache[key]);
-    var path = CFG.dataBase + "/matrix/" + key + ".json";
+    var path = dataURL("/matrix/" + key + ".json");
     return loadJSON(path)
       .then(function (obj) { shardCache[key] = obj; return obj; })
       .catch(function () { shardCache[key] = {}; return {}; }); // unreachable origin
@@ -461,6 +467,14 @@
     });
   }
 
+  // How a station reads on a card. build_stations.R gives every station a name
+  // that identifies it on its own -- the nine pairs the feeds ship under the
+  // same name (two "Bryn Mawr", 25 km apart) get the serving line appended
+  // there -- so this is just the name, via whatever resolved the station.
+  function stationLabel(st) {
+    return (st && st.name) || "";
+  }
+
   // Which operator a leg belongs to, as the station flag that marks it. CTA
   // rail rides are SUBWAY; the X routes are the CrossTowner; other RAIL is
   // Metra. A bus leg says nothing -- it can board at either operator's station.
@@ -475,12 +489,11 @@
   // Matrix legs name their endpoints, so this is how a leg gets back to
   // coordinates (and to its wheelchair flag).
   //
-  // Six names are shared by two stations, one CTA and one Metra/CrossTowner
-  // (the Red Line's Bryn Mawr and the Metra Electric's, 15 miles apart), and a
-  // leg carries only the name. Resolve with what the leg does say -- its mode
-  // and route name the operator -- and, failing that, take whichever candidate
-  // sits nearer a reference point `near` ([lat, lon]): the other end of the
-  // leg, or the trip's own endpoint.
+  // build_stations.R keeps names unique, so normally one candidate matches.
+  // This stays as a guard for the day a feed introduces a fresh collision:
+  // resolve with what the leg does say -- its mode and route name the operator
+  // -- and, failing that, take whichever candidate sits nearer a reference
+  // point `near` ([lat, lon]): the other end of the leg, or the trip endpoint.
   function stNamed(name, leg, near) {
     var list = stationsByName[name];
     if (!list || !list.length) return (SSL && SSL.byName[name]) || null;
@@ -622,9 +635,19 @@
       var steps;
       if (r.legs && r.legs.length) {
         // Detailed legs: board/alight stations + in-vehicle ride per vehicle.
-        steps = hopLi("from", bSt, accessMin, first.from);
+        steps = hopLi("from", bSt, accessMin, stationLabel(bSt) || first.from);
+        var ref = [endpoints.from.lat, endpoints.from.lon], prevToNm = "";
         r.legs.forEach(function (leg, i) {
           var label = routeLabel(leg.line, net) || leg.mode;
+          // Resolve both ends so they can be named unambiguously, walking the
+          // reference point forward so a bus leg at one of the same-named
+          // pairs resolves against where the rider actually is.
+          var fromSt = stNamed(leg.from, leg, ref);
+          if (fromSt) ref = [fromSt.lat, fromSt.lon];
+          var toSt = stNamed(leg.to, leg, ref);
+          var fromNm = stationLabel(fromSt) || leg.from;
+          var toNm = stationLabel(toSt) || leg.to;
+          if (toSt) ref = [toSt.lat, toSt.lon];
           // Walking at a transfer: to another station, or across the one
           // you're in. Real minutes when the cell itemized its walking, a
           // straight-line estimate otherwise.
@@ -634,10 +657,10 @@
                               : (moved ? gapWalk(r.legs[i - 1].to, leg.from, r.legs[i - 1], leg) : "");
             if (moved) {
               steps += '<li><span class="text-secondary">Transfer: walk ' + (tw ? tw + ' ' : '') +
-                'from ' + r.legs[i - 1].to + ' to <b>' + leg.from + '</b></span></li>';
+                'from ' + (prevToNm || r.legs[i - 1].to) + ' to <b>' + fromNm + '</b></span></li>';
             } else if (tw) {
               steps += '<li><span class="text-secondary">Transfer: walk ' + tw +
-                ' within <b>' + leg.from + '</b></span></li>';
+                ' within <b>' + fromNm + '</b></span></li>';
             }
           }
           // Service frequency makes the CrossTowner benefit visible: the same
@@ -649,20 +672,21 @@
           var transferInto = leg.ssl ? ' <span class="text-secondary">(transfer to the South Shore Line)</span>' : '';
           var wm = waitOf[i] != null ? Math.round(waitOf[i]) : 0;
           var waitTxt = wm >= 1 ? ' after a ~' + wm + ' min wait' : '';
-          steps += '<li>Board the <b>' + label + '</b> at ' + leg.from + waitTxt + transferInto + freqTxt + '</li>';
+          steps += '<li>Board the <b>' + label + '</b> at ' + fromNm + waitTxt + transferInto + freqTxt + '</li>';
           // Alighting is its own step so it's obvious where to get off.
-          steps += '<li>Ride ' + leg.ride + ' min &rarr; alight at <b>' + leg.to + '</b></li>';
+          steps += '<li>Ride ' + leg.ride + ' min &rarr; alight at <b>' + toNm + '</b></li>';
+          prevToNm = toNm;
         });
         steps += hopLi("to", aSt, egressMin, null);
       } else {
         // Fallback: route sequence only (no station-level detail).
-        steps = hopLi("from", r.board, r.access, r.board.name);
+        steps = hopLi("from", r.board, r.access, stationLabel(r.board));
         if (rr && rr.labels.length) {
           rr.labels.forEach(function (lbl, i) {
             steps += '<li>' + (i === 0 ? 'Board the <b>' : 'Transfer to the <b>') + lbl + '</b></li>';
           });
         } else {
-          steps += '<li>Ride ' + r.board.name + ' &rarr; ' + r.alight.name + '</li>';
+          steps += '<li>Ride ' + stationLabel(r.board) + ' &rarr; ' + stationLabel(r.alight) + '</li>';
         }
         steps += hopLi("to", r.alight, r.egress, null);
       }
@@ -675,8 +699,8 @@
           : fmtMin(r.ride) + ' station-to-station') +
         ' &middot; ' + (xfers === 0 ? "one seat" :
           xfers + " transfer" + (xfers > 1 ? "s" : "")) +
-        ' &middot; ' + (r.boardLabel || r.board.name) + ' &rarr; ' +
-        (r.alightLabel || r.alight.name) + '</div>';
+        ' &middot; ' + (stationLabel(bSt) || r.boardLabel || r.board.name) + ' &rarr; ' +
+        (stationLabel(aSt) || r.alightLabel || r.alight.name) + '</div>';
       return '<div class="card" style="border-top:3px solid ' + accent + '">' +
         '<div class="card-body py-2 px-3">' +
         '<h2 class="h6 d-flex justify-content-between align-items-baseline mb-1">' +
@@ -721,7 +745,7 @@
       ? '<p class="mb-2">' + far.map(function (e) {
           var mi = (e.n.km * 0.621371).toFixed(1);
           return "Your " + e.label + " is about a <b>" + Math.round(e.n.walk) +
-            "-minute walk</b> from the nearest station (" + e.n.station.name + ", " + mi + " mi away).";
+            "-minute walk</b> from the nearest station (" + stationLabel(e.n.station) + ", " + mi + " mi away).";
         }).join(" ") + '</p>'
       : '<p class="mb-2">There\'s no rail connection between these two points in the network.</p>';
     return '<div class="alert alert-warning" role="alert">' +
@@ -1601,12 +1625,12 @@
     wireAutocomplete("from", "from-list", "from");
     wireAutocomplete("to", "to-list", "to");
     Promise.all([
-      loadJSON(CFG.dataBase + "/stations.json"),
-      loadJSON(CFG.dataBase + "/metra_counties.geojson"),
-      loadJSON(CFG.dataBase + "/lines.json").catch(function () { return null; }),
-      loadJSON(CFG.dataBase + "/ats.json").catch(function () { return null; }),
-      loadJSON(CFG.dataBase + "/southshore.json").catch(function () { return null; }),
-      loadJSON(CFG.dataBase + "/matrix/manifest.json").catch(function () { return null; })
+      loadJSON(dataURL("/stations.json")),
+      loadJSON(dataURL("/metra_counties.geojson")),
+      loadJSON(dataURL("/lines.json")).catch(function () { return null; }),
+      loadJSON(dataURL("/ats.json")).catch(function () { return null; }),
+      loadJSON(dataURL("/southshore.json")).catch(function () { return null; }),
+      loadJSON(dataURL("/matrix/manifest.json")).catch(function () { return null; })
     ]).then(function (r) {
       // Does this matrix itemize its walking? It's a property of the whole
       // build, not of one cell: 8.8% of cells legitimately have no walk at all

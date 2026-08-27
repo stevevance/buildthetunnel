@@ -29,8 +29,8 @@ cluster,members,max_m
 56,metra:Clybourn | crosstowner:Clybourn,19
 57,metra:Ravenswood | crosstowner:Ravenswood,54
 58,metra:Rogers Park | crosstowner:Rogers Park,50
-59,metra:Main St. | cta_rail:Main | crosstowner:Main St (Evanston),41
-60,metra:Evanston (Davis St.) | cta_rail:Davis | crosstowner:Davis St (Evanston),105
+59,metra:Main St. | crosstowner:Main St (Evanston) | cta_rail:Main,41
+60,metra:Evanston (Davis St.) | crosstowner:Davis St (Evanston) | cta_rail:Davis,105
 61,metra:Central St. | crosstowner:Central/Green Bay (Evanston),22
 62,metra:Wilmette | crosstowner:Wilmette,9
 63,metra:Kenilworth | crosstowner:Kenilworth,2
@@ -51,7 +51,7 @@ cluster,members,max_m
 114,metra:Des Plaines | crosstowner:Des Plaines,18
 115,metra:Dee Road | crosstowner:Dee Road,8
 116,metra:Park Ridge | crosstowner:Park Ridge,4
-117,metra:Irving Park | cta_rail:Irving Park (Blue) | crosstowner:Irving Park/Keeler,62
+117,metra:Irving Park | crosstowner:Irving Park/Keeler | cta_rail:Irving Park (Blue),62
 131,metra:Mars | crosstowner:Oak Park Ave (Mars),10
 132,metra:Galewood | crosstowner:Narragansett Ave (Galewood),3
 133,metra:Hanson Park | crosstowner:Central Ave (Hanson Park),10
@@ -91,7 +91,7 @@ cluster,members,max_m
 201,metra:83rd St. | crosstowner:83rd,41
 202,metra:87th St. | crosstowner:87th,2
 203,metra:South Chicago (93rd) | crosstowner:93rd/South Chicago,2
-204,metra:LaSalle Street | cta_rail:LaSalle/Van Buren | cta_rail:LaSalle,100
+204,metra:LaSalle Street | cta_rail:LaSalle/Van Buren,61
 205,metra:Gresham | crosstowner:Gresham,5
 206,metra:Blue Island-Vermont | crosstowner:Blue Island,139
 209,metra:Brainerd | crosstowner:Brainerd,4
@@ -114,13 +114,11 @@ cluster,members,max_m
 230,metra:Chicago Union Station | crosstowner:Union Station,26
 235,metra:Rosemont | crosstowner:Rosemont - Balmoral Ave,15
 236,metra:Franklin Pk | crosstowner:Franklin Park - Belmont Ave,10
-239,"metra:35th St. - Lou Jones | cta_rail:Sox-35th | crosstowner:35th (""""Lou"""" Jones)",124
+239,"metra:35th St. - Lou Jones | crosstowner:35th (""""Lou"""" Jones) | cta_rail:Sox-35th",124
 241,metra:Peterson/Ridge | crosstowner:Peterson/Ridge,42
-247,cta_rail:Jackson (Blue) | cta_rail:Jackson (Red),141
 278,cta_rail:95th/Dan Ryan | rle:95th/Dan Ryan (RLE),0
 281,cta_rail:Cicero (Green) | crosstowner:Cicero/Lake,148
-307,cta_rail:Monroe (Blue) | cta_rail:Monroe (Red),139
-339,cta_rail:Clinton (Green/Pink) | crosstowner:Randolph/Clinton (Ogilvie),145
-356,cta_rail:Montrose (Blue) | crosstowner:Montrose (Mayfair),127
-360,cta_rail:Roosevelt | crosstowner:Roosevelt,37
-364,cta_rail:Addison (Brown) | crosstowner:Addison/Lincoln,75
+341,cta_rail:Clinton (Green/Pink) | crosstowner:Randolph/Clinton (Ogilvie),145
+358,cta_rail:Montrose (Blue) | crosstowner:Montrose (Mayfair),127
+363,cta_rail:Roosevelt | crosstowner:Roosevelt,37
+367,cta_rail:Addison (Brown) | crosstowner:Addison/Lincoln,75

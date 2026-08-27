@@ -148,6 +148,14 @@ for (i in seq_len(nrow(all_stops))) {
   d <- haversine_m(all_stops$lat[i], all_stops$lon[i],
                    all_stops$lat, all_stops$lon)
   hit <- which(!all_stops$assigned & d <= MERGE_M)
+  # A cluster stands for one physical station, so it holds at most one stop per
+  # feed: two parent stations in the *same* feed are two different stations no
+  # matter how close they sit. Monroe (Red) and Monroe (Blue) are 139 m apart
+  # on different subways, and merging them dropped the Red one entirely -- Red
+  # Line riders were then told to alight at a Blue Line station. Keep the
+  # nearest stop from each network and let the rest seed clusters of their own.
+  hit <- hit[order(d[hit])]
+  hit <- hit[!duplicated(all_stops$network[hit])]
   all_stops$assigned[hit] <- TRUE
   all_stops$cluster[hit]  <- next_cluster
   if (length(hit) > 1) {
@@ -198,6 +206,37 @@ coord_hash <- function(lat, lon) {
                               function(s) sum(utf8ToInt(s) * seq_along(utf8ToInt(s))))),
          1, 4)
 }
+# ---------------------------------------------------------------------------
+# 3b. Make every name identify exactly one station.
+#     Nine pairs come out of the feeds sharing a name -- a CTA station and a
+#     Metra one both called "Bryn Mawr", 25 km apart -- or differing only by a
+#     trailing period ("Lake Forest." is the UP-N one, "Lake Forest" the MD-N
+#     one, three miles away) or by Ave vs Avenue. A card naming one of them
+#     can't say which is meant, so append the line that actually serves it.
+#     Matched on coordinates, since the name is precisely what fails to tell
+#     these apart, and applied before the id is derived so ids follow names.
+# ---------------------------------------------------------------------------
+disambig <- data.table(
+  lat = c(41.8331, 41.9780, 41.7661, 41.9835, 42.0525, 41.9842,
+          41.6083, 41.6098, 42.2236, 42.2525, 42.3208, 42.3181,
+          41.6742, 41.8759, 41.9761, 41.9835, 41.8892, 41.8578),
+  lon = c(-87.7936, -87.6587, -87.5767, -87.6588, -87.9122, -87.8380,
+          -87.6439, -87.6432, -87.8747, -87.8397, -88.0153, -88.0172,
+          -87.6519, -87.6595, -87.8739, -87.8594, -87.6881, -87.6853),
+  new_name = c("Berwyn (BNSF)", "Berwyn (Red)", "Bryn Mawr (ME)", "Bryn Mawr (Red)",
+               "Cumberland (UP-NW)", "Cumberland (Blue)", "Harvey (ME)", "Harvey (X3)",
+               "Lake Forest (MD-N)", "Lake Forest (UP-N)",
+               "Prairie Crossing (MD-N)", "Prairie Crossing (NCS)",
+               "Racine (ME)", "Racine (Blue)", "Rosemont (NCS)", "Rosemont (Blue)",
+               "Western Ave (MD/NCS)", "Western Ave (BNSF)"))
+canon[,    ckey := sprintf("%.4f,%.4f", lat, lon)]
+disambig[, ckey := sprintf("%.4f,%.4f", lat, lon)]
+if (nrow(disambig[!ckey %in% canon$ckey]))
+  stop("disambiguation table has coordinates no station matches: ",
+       paste(disambig[!ckey %in% canon$ckey]$new_name, collapse = ", "))
+canon[disambig, on = "ckey", name := i.new_name]
+canon[, ckey := NULL]
+
 canon[, id := paste0(slugify(name), "-", coord_hash(lat, lon))]
 # Guard against any residual id collision.
 if (anyDuplicated(canon$id)) canon[, id := paste0(id, "-", .I)]
