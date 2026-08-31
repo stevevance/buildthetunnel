@@ -24,3 +24,18 @@ analysis/results/.catchment_ttm_cache.rds
 
 # Local Claude Code plans/session files
 .claude/
+
+# Rail-access gap and infill-station analysis outputs. All derived — regenerate with
+# analysis/no_rail_trip_blocks.py, infill_station_candidates.py, connectivity_stations.py,
+# jobs_access_planner_data.py and the accompanying map scripts. Two of them (the
+# block-level GeoJSON and CSV) run to 69 MB together, which does not belong in history.
+analysis/results/no_rail_trip_*
+analysis/results/unserved_blocks_corridor.csv
+analysis/results/infill_*
+analysis/results/connectivity_*
+analysis/results/conn_crossstreets.csv
+analysis/results/site_crossstreets.csv
+analysis/results/station_jobs_access.csv
+analysis/results/station_commute_flows.csv
+analysis/results/nrt_web.png
+analysis/results/*_web_*.png
