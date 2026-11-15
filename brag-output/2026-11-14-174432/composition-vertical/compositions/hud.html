@@ -1,0 +1,204 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; font-family: Inter, sans-serif; color: #2a1830;
+      --accent: #8d5a99; --note: #0e7c7b; --ink: #2a1830; }
+    #root .clip { position: absolute; }
+    #root .panel { background: rgba(255,255,255,.93); border-radius: 28px; box-shadow: 0 10px 40px rgba(30,10,40,.28); }
+    #root .kick { font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: #7a4a86; }
+    #root .ttl { font-weight: 800; letter-spacing: -.03em; line-height: 1.02; color: var(--ink); }
+    #root .sub { font-weight: 500; color: #4a3a50; }
+    #root .w { display: inline-block; }
+
+    /* station card: the site's purple callout, at video size */
+    #root .card .in { background: var(--accent); color: #fff; border-radius: 26px; box-shadow: 0 12px 40px rgba(30,10,40,.4); }
+    #root .pips { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    #root .pips i { display: block; width: 18px; height: 18px; border-radius: 50%; border: 3px solid #fff; }
+    #root .pips i.on { background: #fff; }
+    #root .pips span { margin-left: 10px; }
+    #root .nm { font-weight: 800; letter-spacing: -.02em; line-height: 1.05; }
+    #root .stats { display: flex; }
+    #root .stats b { display: block; font-weight: 800; letter-spacing: -.02em; line-height: 1; font-variant-numeric: tabular-nums; }
+    #root .stats span { display: block; font-weight: 600; }
+    #root .tr { font-weight: 500; color: #f3eaf5; border-top: 2px solid rgba(255,255,255,.35); }
+
+    #root .chip .in { display: inline-block; background: var(--note); color: #fff; font-weight: 700; border-radius: 999px; box-shadow: 0 6px 22px rgba(0,0,0,.35); white-space: nowrap; }
+    #root .chip { text-align: center; }
+    #root .tag .in { display: inline-block; background: rgba(255,255,255,.93); color: var(--ink); font-weight: 700; border-radius: 999px; box-shadow: 0 4px 16px rgba(30,10,40,.25); white-space: nowrap; }
+    #root .tag .in em { font-style: normal; color: #7a4a86; }
+    #root .url { font-weight: 700; color: #7a4a86; }
+    #root .tot { display: flex; }
+    #root .tot b { display: block; font-weight: 800; letter-spacing: -.03em; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
+    #root .tot span { display: block; font-weight: 600; color: #4a3a50; }
+    #root #credit { font-size: 18px; font-weight: 500; color: #fff; background: rgba(20,12,24,.62); padding: 5px 12px; border-radius: 8px; white-space: nowrap; }
+
+    /* ---------- landscape 1920x1080 ---------- */
+    #root .fmt-l #title, #root .fmt-l #end { left: 96px; top: 250px; width: 880px; }
+    #root .fmt-l .panel { padding: 56px 60px; }
+    #root .fmt-l .kick { font-size: 28px; letter-spacing: .05em; }
+    #root .fmt-l .ttl { font-size: 100px; margin: 18px 0 22px; }
+    #root .fmt-l .sub { font-size: 40px; }
+    #root .fmt-l .url { font-size: 38px; }
+    #root .fmt-l .tot { gap: 56px; margin-top: 40px; padding-top: 36px; border-top: 2px solid rgba(42,24,48,.15); }
+    #root .fmt-l .tot b { font-size: 88px; }
+    #root .fmt-l .tot span { font-size: 30px; margin-top: 8px; }
+    #root .fmt-l .card { left: 96px; bottom: 96px; width: 700px; }
+    #root .fmt-l .card .in { padding: 36px 44px 32px; }
+    #root .fmt-l .pips { font-size: 28px; }
+    #root .fmt-l .nm { font-size: 68px; margin: 16px 0 22px; }
+    #root .fmt-l .stats { gap: 64px; }
+    #root .fmt-l .stats b { font-size: 76px; }
+    #root .fmt-l .stats span { font-size: 32px; margin-top: 6px; }
+    #root .fmt-l .tr { font-size: 28px; margin-top: 24px; padding-top: 16px; }
+    #root .fmt-l .chip { left: 0; width: 1920px; top: 96px; }
+    #root .fmt-l .chip .in { font-size: 38px; padding: 16px 34px; }
+    #root .fmt-l .tag { left: 96px; top: 84px; }
+    #root .fmt-l .tag .in { font-size: 30px; padding: 14px 28px; }
+    #root .fmt-l #credit { right: 28px; bottom: 22px; }
+
+    /* ---------- vertical 1080x1920 (text inside the platform-safe band, clear of the right-hand rail) ---------- */
+    #root .fmt-v #title, #root .fmt-v #end { left: 72px; top: 256px; width: 936px; }
+    #root .fmt-v .panel { padding: 38px 56px; }
+    #root .fmt-v .kick { font-size: 30px; letter-spacing: .04em; }
+    #root .fmt-v .ttl { font-size: 84px; margin: 12px 0 14px; }
+    #root .fmt-v .sub { font-size: 40px; }
+    #root .fmt-v .url { font-size: 38px; }
+    #root .fmt-v .tot { gap: 48px; margin-top: 26px; padding-top: 24px; border-top: 2px solid rgba(42,24,48,.15); }
+    #root .fmt-v .tot b { font-size: 76px; }
+    #root .fmt-v .tot span { font-size: 30px; margin-top: 4px; }
+    #root .fmt-v .card { left: 72px; bottom: 690px; width: 936px; }
+    #root .fmt-v .card .in { padding: 26px 56px 22px; }
+    #root .fmt-v .pips { font-size: 30px; }
+    #root .fmt-v .nm { font-size: 64px; margin: 10px 0 14px; }
+    #root .fmt-v .stats { gap: 60px; }
+    #root .fmt-v .stats b { font-size: 80px; }
+    #root .fmt-v .stats span { font-size: 34px; margin-top: 2px; }
+    #root .fmt-v .tr { font-size: 30px; margin-top: 12px; padding-top: 10px; }
+    #root .fmt-v .chip { left: 0; width: 1080px; top: 384px; }
+    #root .fmt-v .chip .in { font-size: 38px; padding: 18px 34px; }
+    #root .fmt-v .tag { left: 0; width: 1080px; top: 282px; text-align: center; }
+    #root .fmt-v .tag .in { font-size: 32px; padding: 14px 30px; }
+    #root .fmt-v #credit { left: 72px; top: 1352px; }
+  </style>
+
+  <div id="root" data-composition-id="hud" data-width="1080" data-height="1920">
+  <div id="hud-wrap" class="fmt-v" style="position:absolute;inset:0">
+
+    <!-- 1 · title, on screen from frame 0 -->
+    <div id="title" class="clip" data-start="0" data-duration="3.0" data-track-index="1">
+      <div class="in panel" id="title-in">
+        <div class="kick" id="title-kick">Chicago · proposed subway</div>
+        <div class="ttl">Clinton–Roosevelt<br>Connector</div>
+        <div class="sub" id="title-sub"><span class="w">A&nbsp;</span><span class="w">3D&nbsp;</span><span class="w">flythrough,&nbsp;</span><span class="w">stop&nbsp;</span><span class="w">to&nbsp;</span><span class="w">stop</span></div>
+      </div>
+    </div>
+
+    <!-- persistent name tag during the flight -->
+    <div id="tag" class="clip tag" data-start="4.6" data-duration="15.3" data-track-index="2">
+      <div class="in" id="tag-in">Clinton–Roosevelt Connector <em>· proposed</em></div>
+    </div>
+
+    <!-- 2 · notes at the two ends (verbatim from the viewer) -->
+    <div id="note1" class="clip chip" data-start="3.2" data-duration="2.5" data-track-index="3" data-layout-allow-overlap>
+      <div class="in" id="note1-in">Connection to Metra Electric District</div>
+    </div>
+    <div id="note2" class="clip chip" data-start="18.7" data-duration="1.9" data-track-index="3" data-layout-allow-overlap>
+      <div class="in" id="note2-in">Low Line connection</div>
+    </div>
+
+    <!-- 3 · station cards -->
+    <div id="st1" class="clip card" data-start="6.11" data-duration="2.4" data-track-index="4">
+      <div class="in" id="st1-in">
+        <div class="pips"><i class="on new"></i><i></i><i></i><i></i><span>Stop 1 of 4</span></div>
+        <div class="nm">Roosevelt</div>
+        <div class="stats"><div><b id="st1-jobs">11,533</b><span>jobs</span></div><div><b>32,626</b><span>residents</span></div></div>
+        <div class="tr">Census Tracts 3206, 3301.02, 3302, 8390</div>
+      </div>
+    </div>
+    <div id="st2" class="clip card" data-track-index="7" data-start="9.38" data-duration="2.4">
+      <div class="in" id="st2-in">
+        <div class="pips"><i class="on"></i><i class="on new"></i><i></i><i></i><span>Stop 2 of 4</span></div>
+        <div class="nm">Taylor/Clinton</div>
+        <div class="stats"><div><b id="st2-jobs">24,894</b><span>jobs</span></div><div><b>6,567</b><span>residents</span></div></div>
+        <div class="tr">Census Tract 8419</div>
+      </div>
+    </div>
+    <div id="st3" class="clip card" data-track-index="8" data-start="12.66" data-duration="2.4">
+      <div class="in" id="st3-in">
+        <div class="pips"><i class="on"></i><i class="on"></i><i class="on new"></i><i></i><span>Stop 3 of 4</span></div>
+        <div class="nm">Union Station (West)</div>
+        <div class="stats"><div><b id="st3-jobs">37,015</b><span>jobs</span></div><div><b>6,907</b><span>residents</span></div></div>
+        <div class="tr">Census Tract 2819</div>
+      </div>
+    </div>
+    <div id="st4" class="clip card" data-track-index="9" data-start="15.93" data-duration="2.4">
+      <div class="in" id="st4-in">
+        <div class="pips"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on new"></i><span>Stop 4 of 4</span></div>
+        <div class="nm">Randolph/Clinton</div>
+        <div class="stats"><div><b id="st4-jobs">29,493</b><span>jobs</span></div><div><b>7,742</b><span>residents</span></div></div>
+        <div class="tr">Census Tract 2801</div>
+      </div>
+    </div>
+
+    <!-- 4 · end card -->
+    <div id="end" class="clip" data-start="20.6" data-duration="3.9" data-track-index="1">
+      <div class="in panel" id="end-in">
+        <div class="kick">Unlocking Chicagoland with regional rail</div>
+        <div class="ttl">Build the Tunnel</div>
+        <div class="url">stevevance.github.io/buildthetunnel</div>
+        <div class="tot" id="tot-l">
+          <div class="t1"><b>3.2</b><span>miles</span></div>
+          <div class="t2"><b>4</b><span>stations</span></div>
+          <div class="t3"><b class="jobs-total">102,935</b><span>jobs in station tracts</span></div>
+        </div>
+      </div>
+    </div>
+    <div id="credit" class="clip" data-start="0" data-duration="24.5" data-track-index="6" data-layout-ignore>© OpenFreeMap · © OpenMapTiles · © OpenStreetMap contributors</div>
+  </div>
+  </div>
+
+  <script>
+    (function () {
+      const root = document.getElementById("hud-wrap");
+      const V = root.classList.contains("fmt-v");
+      const TOT = "#tot-l";
+      const fmt = n => Math.round(n).toLocaleString("en-US");
+      const tl = gsap.timeline({ paused: true });
+      const count = (el, to, at, dur) => {
+        const o = { v: 0 };
+        tl.fromTo(o, { v: 0 }, { v: to, duration: dur, ease: "power2.out", onUpdate: () => { el.textContent = fmt(o.v); } }, at);
+      };
+
+      // 1 · title: panel is there at frame 0; kicker and sub-line settle, then it leaves with the dive
+      tl.fromTo("#title-kick", { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "power2.out" }, 0.1);
+      tl.fromTo("#title-sub .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.16, stagger: 0.07, ease: "power2.out" }, 0.35);
+      tl.fromTo("#title-in", { opacity: 1, y: 0, filter: "blur(0px)" }, { opacity: 0, y: -40, filter: "blur(8px)", duration: 0.35, ease: "power3.in" }, 2.45);
+
+      // 2 · notes
+      [["#note1-in", 3.2, 2.5], ["#note2-in", 18.7, 1.9]].forEach(([s, at, d]) => {
+        tl.fromTo(s, { opacity: 0, scale: 0.85 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(1.4)" }, at);
+        tl.fromTo(s, { opacity: 1 }, { opacity: 0, duration: 0.22, ease: "power2.in", immediateRender: false }, at + d - 0.24);
+      });
+      tl.fromTo("#tag-in", { opacity: 0, y: -24 }, { opacity: 1, y: 0, duration: 0.5, ease: "expo.out" }, 4.6);
+      tl.fromTo("#tag-in", { opacity: 1 }, { opacity: 0, duration: 0.25, ease: "power2.in", immediateRender: false }, 19.6);
+
+      // 3 · station cards — beat-grid: arrivals at 6.56, 9.83, 13.11 (strong cue), 16.38; cards lead by 0.45 s
+      const JOBS = [11533, 24894, 37015, 29493], START = [6.11, 9.38, 12.66, 15.93];
+      START.forEach((at, k) => {
+        const id = "#st" + (k + 1);
+        tl.fromTo(id + "-in", { opacity: 0, y: V ? 70 : 0, x: V ? 0 : -70 }, { opacity: 1, y: 0, x: 0, duration: 0.45, ease: "expo.out" }, at);
+        tl.fromTo(id + "-in .pips i.new", { scale: 0.2 }, { scale: 1, duration: 0.4, ease: "back.out(2)" }, at + 0.2);
+        count(root.querySelector(id + "-jobs"), JOBS[k], at + 0.15, 0.85);
+        tl.fromTo(id + "-in", { opacity: 1 }, { opacity: 0, duration: 0.2, ease: "power2.in", immediateRender: false }, at + 2.4 - 0.22);
+      });
+
+      // 4 · end card — stats on beats 21.28 / 21.84 / 22.37; total lands on 22.93 (beat-locked: strongest cue)
+      tl.fromTo("#end-in", { opacity: 0, y: 40, filter: "blur(8px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.55, ease: "expo.out" }, 20.6);
+      [21.28, 21.84, 22.37].forEach((at, k) => {
+        tl.fromTo(TOT + " .t" + (k + 1), { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.35, ease: "power4.out" }, at);
+      });
+      count(root.querySelector(TOT + " .jobs-total"), 102935, 22.37, 0.56);
+
+      window.__timelines["hud"] = tl;
+    })();
+  </script>
+</template>

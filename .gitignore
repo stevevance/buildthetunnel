@@ -39,3 +39,10 @@ analysis/results/station_jobs_access.csv
 analysis/results/station_commute_flows.csv
 analysis/results/nrt_web.png
 analysis/results/*_web_*.png
+
+# Launch-video projects (/brag): keep the compositions, scripts and stills, but
+# not the audio. Rendered video is already covered by *.mp4 / *.mov above.
+brag-output/**/*.mp3
+brag-output/**/*.ogg
+brag-output/**/*.wav
+brag-output/**/*.m4a

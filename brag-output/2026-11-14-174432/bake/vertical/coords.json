@@ -1,0 +1,80 @@
+{
+ "overview": {
+  "stations": [
+   {
+    "name": "Roosevelt",
+    "xy": [
+     603,
+     1146
+    ]
+   },
+   {
+    "name": "Taylor/Clinton",
+    "xy": [
+     449,
+     1110
+    ]
+   },
+   {
+    "name": "Union Station (West)",
+    "xy": [
+     446,
+     986
+    ]
+   },
+   {
+    "name": "Randolph/Clinton",
+    "xy": [
+     444,
+     882
+    ]
+   }
+  ],
+  "notes": [
+   {
+    "name": "Connection to Metra Electric District",
+    "xy": [
+     689,
+     1200
+    ]
+   },
+   {
+    "name": "Low Line connection",
+    "xy": [
+     391,
+     730
+    ]
+   }
+  ]
+ },
+ "legs": [
+  [
+   4.39,
+   6.56
+  ],
+  [
+   8.19,
+   9.83
+  ],
+  [
+   11.46,
+   13.11
+  ],
+  [
+   14.73,
+   16.38
+  ],
+  [
+   18.02,
+   19.5
+  ]
+ ],
+ "dive": [
+  2.19,
+  4.39
+ ],
+ "pull": [
+  19.66,
+  21.84
+ ]
+}

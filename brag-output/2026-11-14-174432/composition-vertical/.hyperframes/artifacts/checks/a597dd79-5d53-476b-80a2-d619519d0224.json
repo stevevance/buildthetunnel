@@ -1,0 +1,1327 @@
+{
+  "ok": true,
+  "strict": false,
+  "browserSkipped": false,
+  "lint": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": [],
+    "filesScanned": 2
+  },
+  "runtime": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": []
+  },
+  "layout": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 38,
+    "infoCount": 0,
+    "findings": [
+      {
+        "selector": "#title-kick",
+        "dataAttributes": {},
+        "sourceFile": "compositions/hud.html",
+        "bbox": {
+          "x": 108,
+          "y": 230,
+          "width": 532.52,
+          "height": 39
+        },
+        "time": 1.361,
+        "rect": {
+          "left": 108,
+          "top": 230,
+          "right": 640.52,
+          "bottom": 269,
+          "width": 532.52,
+          "height": 39
+        },
+        "code": "outside_safe_zone",
+        "severity": "warning",
+        "text": "Chicago · proposed subway",
+        "message": "<div> \"Chicago · proposed subway\" is outside the safe area: TikTok (left and top edges), Instagram Reels (top edge), YouTube Shorts (top edge).",
+        "fixHint": "Move the text inside the safe area, or mark text meant to sit there with data-layout-allow-safe-zone.",
+        "firstSeen": 1.361,
+        "lastSeen": 1.361,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          1.361
+        ]
+      },
+      {
+        "selector": "#title-in > div:nth-of-type(2)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/hud.html",
+        "bbox": {
+          "x": 108,
+          "y": 274,
+          "width": 780.69,
+          "height": 204.83
+        },
+        "time": 1.361,
+        "rect": {
+          "left": 108,
+          "top": 274,
+          "right": 888.69,
+          "bottom": 478.83,
+          "width": 780.69,
+          "height": 204.83
+        },
+        "code": "outside_safe_zone",
+        "severity": "warning",
+        "text": "Clinton–RooseveltConnector",
+        "message": "<div> \"Clinton–RooseveltConnector\" is outside the safe area: TikTok (left edge), YouTube Shorts (top and right edges).",
+        "fixHint": "Move the text inside the safe area, or mark text meant to sit there with data-layout-allow-safe-zone.",
+        "firstSeen": 1.361,
+        "lastSeen": 1.361,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          1.361
+        ]
+      },
+      {
+        "selector": "#title-sub",
+        "dataAttributes": {},
+        "sourceFile": "compositions/hud.html",
+        "bbox": {
+          "x": 108,
+          "y": 486.66,
+          "width": 578.67,
+          "height": 51
+        },
+        "time": 1.361,
+        "rect": {
+          "left": 108,
+          "top": 486.66,
+          "right": 686.67,
+          "bottom": 537.66,
+          "width": 578.67,
+          "height": 51
+        },
+        "code": "outside_safe_zone",
+        "severity": "warning",
+        "text": "A 3D flythrough, stop to stop",
+        "message": "<div> \"A 3D flythrough, stop to stop\" is outside the safe area: TikTok (left edge).",
+        "fixHint": "Move the text inside the safe area, or mark text meant to sit there with data-layout-allow-safe-zone.",
+        "firstSeen": 1.361,
+        "lastSeen": 1.361,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          1.361
+        ]
+      },
+      {
+        "selector": "#note1",
+        "dataAttributes": {
+          "data-start": "3.2",
+          "data-duration": "2.5",
+          "data-track-index": "3",
+          "data-layout-allow-overlap": ""
+        },
+        "sourceFile": "compositions/hud.html",
+        "bbox": {
+          "x": 168.38,
+          "y": 308,
+          "width": 743.25,
+          "height": 51
+        },
+        "time": 4.083,
+        "rect": {
+          "left": 168.38,
+          "top": 308,
+          "right": 911.63,
+          "bottom": 359,
+          "width": 743.25,
+          "height": 51
+        },
+        "code": "outside_safe_zone",
+        "severity": "warning",
+        "text": "Connection to Metra Electric District",
+        "message": "<div> \"Connection to Metra Electric District\" is outside the safe area: YouTube Shorts (right edge).",
+        "fixHint": "Move the text inside the safe area, or mark text meant to sit there with data-layout-allow-safe-zone.",
+        "firstSeen": 4.083,
+        "lastSeen": 4.083,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          4.083
+        ]
+      },
+      {
+        "selector": "#tag",
+        "dataAttributes": {
+          "data-start": "4.6",
+          "data-duration": "15.3",
+          "data-track-index": "2"
+        },
+        "sourceFile": "compositions/hud.html",
+        "bbox": {
+          "x": 205.19,
+          "y": 200,
+          "width": 669.62,
+          "height": 41
+        },
+        "time": 6.806,
+        "rect": {
+          "left": 205.19,
+          "top": 200,
+          "right": 874.81,
+          "bottom": 241,
+          "width": 669.62,
+          "height": 41
+        },
+        "code": "outside_safe_zone",
+        "severity": "warning",
+        "text": "Clinton–Roosevelt Connector · proposed",
+        "message": "<div> \"Clinton–Roosevelt Connector · proposed\" is outside the safe area: TikTok (top edge), Instagram Reels (top edge), YouTube Shorts (top edge).",
+        "fixHint": "Move the text inside the safe area, or mark text meant to sit there with data-layout-allow-safe-zone.",
+        "firstSeen": 6.806,
+        "lastSeen": 17.694,
+        "occurrences": 5,
+        "heldMs": 0,
+        "times": [
+          6.806,
+          9.528,
+          12.25,
+          14.972,
+          17.694
+        ]
+      },
+      {
+        "selector": "#st1-in > div:nth-of-type(2)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/hud.html",
+        "bbox": {
+          "x": 108,
+          "y": 1063,
+          "width": 398.53,
+          "height": 101
+        },
+        "time": 6.806,
+        "rect": {
+          "left": 108,
+          "top": 1063,
+          "right": 506.53,
+          "bottom": 1164,
+          "width": 398.53,
+          "height": 101
+        },
+        "code": "outside_safe_zone",
+        "severity": "warning",
+        "text": "Roosevelt",
+        "message": "<div> \"Roosevelt\" is outside the safe area: TikTok (left edge).",
+        "fixHint": "Move the text inside the safe area, or mark text meant to sit there with data-layout-allow-safe-zone.",
+        "firstSeen": 6.806,
+        "lastSeen": 6.806,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          6.806
+        ]
+      },
+      {
+        "selector": "#st1-jobs",
+        "dataAttributes": {},
+        "sourceFile": "compositions/hud.html",
+        "bbox": {
+          "x": 108,
+          "y": 1166.19,
+          "width": 310.59,
+          "height": 111
+        },
+        "time": 6.806,
+        "rect": {
+          "left": 108,
+          "top": 1166.19,
+          "right": 418.59,
+          "bottom": 1277.19,
+          "width": 310.59,
+          "height": 111
+        },
+        "code": "outside_safe_zone",
+        "severity": "warning",
+        "text": "10,974",
+        "message": "<b> \"10,974\" is outside the safe area: TikTok (left and bottom edges), Instagram Reels (bottom edge), YouTube Shorts (bottom edge).",
+        "fixHint": "Move the text inside the safe area, or mark text meant to sit there with data-layout-allow-safe-zone.",
+        "firstSeen": 6.806,
+        "lastSeen": 6.806,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          6.806
+        ]
+      },
+      {
+        "selector": "#st1-in > div:nth-of-type(3) > div:nth-of-type(1) > span:nth-of-type(1)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/hud.html",
+        "bbox": {
+          "x": 108,
+          "y": 1272.19,
+          "width": 77.67,
+          "height": 46
+        },
+        "time": 6.806,
+        "rect": {
+          "left": 108,
+          "top": 1272.19,
+          "right": 185.67,
+          "bottom": 1318.19,
+          "width": 77.67,
+          "height": 46
+        },
+        "code": "outside_safe_zone",
+        "severity": "warning",
+        "text": "jobs",
+        "message": "<span> \"jobs\" is outside the safe area: TikTok (bottom edge), Instagram Reels (bottom edge), YouTube Shorts (bottom edge).",
+        "fixHint": "Move the text inside the safe area, or mark text meant to sit there with data-layout-allow-safe-zone.",
+        "firstSeen": 6.806,
+        "lastSeen": 6.806,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          6.806
+        ]
+      },
+      {
+        "selector": "#st1-in > div:nth-of-type(3) > div:nth-of-type(2) > b:nth-of-type(1)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/hud.html",
+        "bbox": {
+          "x": 508.59,
+          "y": 1166.19,
+          "width": 310.6,
+          "height": 111
+        },
+        "time": 6.806,
+        "rect": {
+          "left": 508.59,
+          "top": 1166.19,
+          "right": 819.19,
+          "bottom": 1277.19,
+          "width": 310.6,
+          "height": 111
+        },
+        "code": "outside_safe_zone",
+        "severity": "warning",
+        "text": "32,626",
+        "message": "<b> \"32,626\" is outside the safe area: TikTok (right and bottom edges), Instagram Reels (bottom edge), YouTube Shorts (bottom edge).",
+        "fixHint": "Move the text inside the safe area, or mark text meant to sit there with data-layout-allow-safe-zone.",
+        "firstSeen": 6.806,
+        "lastSeen": 6.806,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          6.806
+        ]
+      },
+      {
+        "selector": "#st1-in > div:nth-of-type(3) > div:nth-of-type(2) > span:nth-of-type(1)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/hud.html",
+        "bbox": {
+          "x": 508.59,
+          "y": 1272.19,
+          "width": 171,
+          "height": 46
+        },
+        "time": 6.806,
+        "rect": {
+          "left": 508.59,
+          "top": 1272.19,
+          "right": 679.59,
+          "bottom": 1318.19,
+          "width": 171,
+          "height": 46
+        },
+        "code": "outside_safe_zone",
+        "severity": "warning",
+        "text": "residents",
+        "message": "<span> \"residents\" is outside the safe area: TikTok (bottom edge), Instagram Reels (bottom edge), YouTube Shorts (bottom edge).",
+        "fixHint": "Move the text inside the safe area, or mark text meant to sit there with data-layout-allow-safe-zone.",
+        "firstSeen": 6.806,
+        "lastSeen": 6.806,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          6.806
+        ]
+      },
+      {
+        "selector": "#st1-in > div:nth-of-type(4)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/hud.html",
+        "bbox": {
+          "x": 108,
+          "y": 1352.19,
+          "width": 646.16,
+          "height": 39
+        },
+        "time": 6.806,
+        "rect": {
+          "left": 108,
+          "top": 1352.19,
+          "right": 754.16,
+          "bottom": 1391.19,
+          "width": 646.16,
+          "height": 39
+        },
+        "code": "outside_safe_zone",
+        "severity": "warning",
+        "text": "Census Tracts 3206, 3301.02, 3302, 8390",
+        "message": "<div> \"Census Tracts 3206, 3301.02, 3302, 8390\" is outside the safe area: TikTok (bottom edge), Instagram Reels (bottom edge), YouTube Shorts (bottom edge).",
+        "fixHint": "Move the text inside the safe area, or mark text meant to sit there with data-layout-allow-safe-zone.",
+        "firstSeen": 6.806,
+        "lastSeen": 6.806,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          6.806
+        ]
+      },
+      {
+        "selector": "#st2-in > div:nth-of-type(2)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/hud.html",
+        "bbox": {
+          "x": 108,
+          "y": 1073.99,
+          "width": 569.17,
+          "height": 101
+        },
+        "time": 9.528,
+        "rect": {
+          "left": 108,
+          "top": 1073.99,
+          "right": 677.17,
+          "bottom": 1174.99,
+          "width": 569.17,
+          "height": 101
+        },
+        "code": "outside_safe_zone",
+        "severity": "warning",
+        "text": "Taylor/Clinton",
+        "message": "<div> \"Taylor/Clinton\" is outside the safe area: TikTok (left edge).",
+        "fixHint": "Move the text inside the safe area, or mark text meant to sit there with data-layout-allow-safe-zone.",
+        "firstSeen": 9.528,
+        "lastSeen": 9.528,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          9.528
+        ]
+      },
+      {
+        "selector": "#st2-jobs",
+        "dataAttributes": {},
+        "sourceFile": "compositions/hud.html",
+        "bbox": {
+          "x": 108,
+          "y": 1177.18,
+          "width": 57.55,
+          "height": 111
+        },
+        "time": 9.528,
+        "rect": {
+          "left": 108,
+          "top": 1177.18,
+          "right": 165.55,
+          "bottom": 1288.18,
+          "width": 57.55,
+          "height": 111
+        },
+        "code": "outside_safe_zone",
+        "severity": "warning",
+        "text": "0",
+        "message": "<b> \"0\" is outside the safe area: TikTok (left and bottom edges), Instagram Reels (bottom edge), YouTube Shorts (bottom edge).",
+        "fixHint": "Move the text inside the safe area, or mark text meant to sit there with data-layout-allow-safe-zone.",
+        "firstSeen": 9.528,
+        "lastSeen": 9.528,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          9.528
+        ]
+      },
+      {
+        "selector": "#st2-in > div:nth-of-type(3) > div:nth-of-type(1) > span:nth-of-type(1)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/hud.html",
+        "bbox": {
+          "x": 108,
+          "y": 1283.18,
+          "width": 77.67,
+          "height": 46
+        },
+        "time": 9.528,
+        "rect": {
+          "left": 108,
+          "top": 1283.18,
+          "right": 185.67,
+          "bottom": 1329.18,
+          "width": 77.67,
+          "height": 46
+        },
+        "code": "outside_safe_zone",
+        "severity": "warning",
+        "text": "jobs",
+        "message": "<span> \"jobs\" is outside the safe area: TikTok (bottom edge), Instagram Reels (bottom edge), YouTube Shorts (bottom edge).",
+        "fixHint": "Move the text inside the safe area, or mark text meant to sit there with data-layout-allow-safe-zone.",
+        "firstSeen": 9.528,
+        "lastSeen": 9.528,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          9.528
+        ]
+      },
+      {
+        "selector": "#st2-in > div:nth-of-type(3) > div:nth-of-type(2) > b:nth-of-type(1)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/hud.html",
+        "bbox": {
+          "x": 275.67,
+          "y": 1177.18,
+          "width": 253.05,
+          "height": 111
+        },
+        "time": 9.528,
+        "rect": {
+          "left": 275.67,
+          "top": 1177.18,
+          "right": 528.72,
+          "bottom": 1288.18,
+          "width": 253.05,
+          "height": 111
+        },
+        "code": "outside_safe_zone",
+        "severity": "warning",
+        "text": "6,567",
+        "message": "<b> \"6,567\" is outside the safe area: TikTok (bottom edge), Instagram Reels (bottom edge), YouTube Shorts (bottom edge).",
+        "fixHint": "Move the text inside the safe area, or mark text meant to sit there with data-layout-allow-safe-zone.",
+        "firstSeen": 9.528,
+        "lastSeen": 9.528,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          9.528
+        ]
+      },
+      {
+        "selector": "#st2-in > div:nth-of-type(3) > div:nth-of-type(2) > span:nth-of-type(1)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/hud.html",
+        "bbox": {
+          "x": 275.67,
+          "y": 1283.18,
+          "width": 171,
+          "height": 46
+        },
+        "time": 9.528,
+        "rect": {
+          "left": 275.67,
+          "top": 1283.18,
+          "right": 446.67,
+          "bottom": 1329.18,
+          "width": 171,
+          "height": 46
+        },
+        "code": "outside_safe_zone",
+        "severity": "warning",
+        "text": "residents",
+        "message": "<span> \"residents\" is outside the safe area: TikTok (bottom edge), Instagram Reels (bottom edge), YouTube Shorts (bottom edge).",
+        "fixHint": "Move the text inside the safe area, or mark text meant to sit there with data-layout-allow-safe-zone.",
+        "firstSeen": 9.528,
+        "lastSeen": 9.528,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          9.528
+        ]
+      },
+      {
+        "selector": "#st2-in > div:nth-of-type(4)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/hud.html",
+        "bbox": {
+          "x": 108,
+          "y": 1363.18,
+          "width": 284.89,
+          "height": 39
+        },
+        "time": 9.528,
+        "rect": {
+          "left": 108,
+          "top": 1363.18,
+          "right": 392.89,
+          "bottom": 1402.18,
+          "width": 284.89,
+          "height": 39
+        },
+        "code": "outside_safe_zone",
+        "severity": "warning",
+        "text": "Census Tract 8419",
+        "message": "<div> \"Census Tract 8419\" is outside the safe area: TikTok (bottom edge), Instagram Reels (bottom edge), YouTube Shorts (bottom edge).",
+        "fixHint": "Move the text inside the safe area, or mark text meant to sit there with data-layout-allow-safe-zone.",
+        "firstSeen": 9.528,
+        "lastSeen": 9.528,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          9.528
+        ]
+      },
+      {
+        "selector": "#st3-in > div:nth-of-type(2)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/hud.html",
+        "bbox": {
+          "x": 108,
+          "y": 1063,
+          "width": 825.09,
+          "height": 101
+        },
+        "time": 14.972,
+        "rect": {
+          "left": 108,
+          "top": 1063,
+          "right": 933.09,
+          "bottom": 1164,
+          "width": 825.09,
+          "height": 101
+        },
+        "code": "outside_safe_zone",
+        "severity": "warning",
+        "text": "Union Station (West)",
+        "message": "<div> \"Union Station (West)\" is outside the safe area: TikTok (left and right edges), YouTube Shorts (right edge).",
+        "fixHint": "Move the text inside the safe area, or mark text meant to sit there with data-layout-allow-safe-zone.",
+        "firstSeen": 14.972,
+        "lastSeen": 14.972,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          14.972
+        ]
+      },
+      {
+        "selector": "#st3-jobs",
+        "dataAttributes": {},
+        "sourceFile": "compositions/hud.html",
+        "bbox": {
+          "x": 108,
+          "y": 1166.19,
+          "width": 310.59,
+          "height": 111
+        },
+        "time": 14.972,
+        "rect": {
+          "left": 108,
+          "top": 1166.19,
+          "right": 418.59,
+          "bottom": 1277.19,
+          "width": 310.59,
+          "height": 111
+        },
+        "code": "outside_safe_zone",
+        "severity": "warning",
+        "text": "37,015",
+        "message": "<b> \"37,015\" is outside the safe area: TikTok (left and bottom edges), Instagram Reels (bottom edge), YouTube Shorts (bottom edge).",
+        "fixHint": "Move the text inside the safe area, or mark text meant to sit there with data-layout-allow-safe-zone.",
+        "firstSeen": 14.972,
+        "lastSeen": 14.972,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          14.972
+        ]
+      },
+      {
+        "selector": "#st3-in > div:nth-of-type(3) > div:nth-of-type(1) > span:nth-of-type(1)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/hud.html",
+        "bbox": {
+          "x": 108,
+          "y": 1272.19,
+          "width": 77.67,
+          "height": 46
+        },
+        "time": 14.972,
+        "rect": {
+          "left": 108,
+          "top": 1272.19,
+          "right": 185.67,
+          "bottom": 1318.19,
+          "width": 77.67,
+          "height": 46
+        },
+        "code": "outside_safe_zone",
+        "severity": "warning",
+        "text": "jobs",
+        "message": "<span> \"jobs\" is outside the safe area: TikTok (bottom edge), Instagram Reels (bottom edge), YouTube Shorts (bottom edge).",
+        "fixHint": "Move the text inside the safe area, or mark text meant to sit there with data-layout-allow-safe-zone.",
+        "firstSeen": 14.972,
+        "lastSeen": 14.972,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          14.972
+        ]
+      },
+      {
+        "selector": "#st3-in > div:nth-of-type(3) > div:nth-of-type(2) > b:nth-of-type(1)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/hud.html",
+        "bbox": {
+          "x": 508.59,
+          "y": 1166.19,
+          "width": 253.05,
+          "height": 111
+        },
+        "time": 14.972,
+        "rect": {
+          "left": 508.59,
+          "top": 1166.19,
+          "right": 761.64,
+          "bottom": 1277.19,
+          "width": 253.05,
+          "height": 111
+        },
+        "code": "outside_safe_zone",
+        "severity": "warning",
+        "text": "6,907",
+        "message": "<b> \"6,907\" is outside the safe area: TikTok (bottom edge), Instagram Reels (bottom edge), YouTube Shorts (bottom edge).",
+        "fixHint": "Move the text inside the safe area, or mark text meant to sit there with data-layout-allow-safe-zone.",
+        "firstSeen": 14.972,
+        "lastSeen": 14.972,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          14.972
+        ]
+      },
+      {
+        "selector": "#st3-in > div:nth-of-type(3) > div:nth-of-type(2) > span:nth-of-type(1)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/hud.html",
+        "bbox": {
+          "x": 508.59,
+          "y": 1272.19,
+          "width": 171,
+          "height": 46
+        },
+        "time": 14.972,
+        "rect": {
+          "left": 508.59,
+          "top": 1272.19,
+          "right": 679.59,
+          "bottom": 1318.19,
+          "width": 171,
+          "height": 46
+        },
+        "code": "outside_safe_zone",
+        "severity": "warning",
+        "text": "residents",
+        "message": "<span> \"residents\" is outside the safe area: TikTok (bottom edge), Instagram Reels (bottom edge), YouTube Shorts (bottom edge).",
+        "fixHint": "Move the text inside the safe area, or mark text meant to sit there with data-layout-allow-safe-zone.",
+        "firstSeen": 14.972,
+        "lastSeen": 14.972,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          14.972
+        ]
+      },
+      {
+        "selector": "#st3-in > div:nth-of-type(4)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/hud.html",
+        "bbox": {
+          "x": 108,
+          "y": 1352.19,
+          "width": 284.44,
+          "height": 39
+        },
+        "time": 14.972,
+        "rect": {
+          "left": 108,
+          "top": 1352.19,
+          "right": 392.44,
+          "bottom": 1391.19,
+          "width": 284.44,
+          "height": 39
+        },
+        "code": "outside_safe_zone",
+        "severity": "warning",
+        "text": "Census Tract 2819",
+        "message": "<div> \"Census Tract 2819\" is outside the safe area: TikTok (bottom edge), Instagram Reels (bottom edge), YouTube Shorts (bottom edge).",
+        "fixHint": "Move the text inside the safe area, or mark text meant to sit there with data-layout-allow-safe-zone.",
+        "firstSeen": 14.972,
+        "lastSeen": 14.972,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          14.972
+        ]
+      },
+      {
+        "selector": "#st4-in > div:nth-of-type(2)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/hud.html",
+        "bbox": {
+          "x": 108,
+          "y": 1063,
+          "width": 700.94,
+          "height": 101
+        },
+        "time": 17.694,
+        "rect": {
+          "left": 108,
+          "top": 1063,
+          "right": 808.94,
+          "bottom": 1164,
+          "width": 700.94,
+          "height": 101
+        },
+        "code": "outside_safe_zone",
+        "severity": "warning",
+        "text": "Randolph/Clinton",
+        "message": "<div> \"Randolph/Clinton\" is outside the safe area: TikTok (left and right edges).",
+        "fixHint": "Move the text inside the safe area, or mark text meant to sit there with data-layout-allow-safe-zone.",
+        "firstSeen": 17.694,
+        "lastSeen": 17.694,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          17.694
+        ]
+      },
+      {
+        "selector": "#st4-jobs",
+        "dataAttributes": {},
+        "sourceFile": "compositions/hud.html",
+        "bbox": {
+          "x": 108,
+          "y": 1166.19,
+          "width": 310.59,
+          "height": 111
+        },
+        "time": 17.694,
+        "rect": {
+          "left": 108,
+          "top": 1166.19,
+          "right": 418.59,
+          "bottom": 1277.19,
+          "width": 310.59,
+          "height": 111
+        },
+        "code": "outside_safe_zone",
+        "severity": "warning",
+        "text": "29,493",
+        "message": "<b> \"29,493\" is outside the safe area: TikTok (left and bottom edges), Instagram Reels (bottom edge), YouTube Shorts (bottom edge).",
+        "fixHint": "Move the text inside the safe area, or mark text meant to sit there with data-layout-allow-safe-zone.",
+        "firstSeen": 17.694,
+        "lastSeen": 17.694,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          17.694
+        ]
+      },
+      {
+        "selector": "#st4-in > div:nth-of-type(3) > div:nth-of-type(1) > span:nth-of-type(1)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/hud.html",
+        "bbox": {
+          "x": 108,
+          "y": 1272.19,
+          "width": 77.67,
+          "height": 46
+        },
+        "time": 17.694,
+        "rect": {
+          "left": 108,
+          "top": 1272.19,
+          "right": 185.67,
+          "bottom": 1318.19,
+          "width": 77.67,
+          "height": 46
+        },
+        "code": "outside_safe_zone",
+        "severity": "warning",
+        "text": "jobs",
+        "message": "<span> \"jobs\" is outside the safe area: TikTok (bottom edge), Instagram Reels (bottom edge), YouTube Shorts (bottom edge).",
+        "fixHint": "Move the text inside the safe area, or mark text meant to sit there with data-layout-allow-safe-zone.",
+        "firstSeen": 17.694,
+        "lastSeen": 17.694,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          17.694
+        ]
+      },
+      {
+        "selector": "#st4-in > div:nth-of-type(3) > div:nth-of-type(2) > b:nth-of-type(1)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/hud.html",
+        "bbox": {
+          "x": 508.59,
+          "y": 1166.19,
+          "width": 253.05,
+          "height": 111
+        },
+        "time": 17.694,
+        "rect": {
+          "left": 508.59,
+          "top": 1166.19,
+          "right": 761.64,
+          "bottom": 1277.19,
+          "width": 253.05,
+          "height": 111
+        },
+        "code": "outside_safe_zone",
+        "severity": "warning",
+        "text": "7,742",
+        "message": "<b> \"7,742\" is outside the safe area: TikTok (bottom edge), Instagram Reels (bottom edge), YouTube Shorts (bottom edge).",
+        "fixHint": "Move the text inside the safe area, or mark text meant to sit there with data-layout-allow-safe-zone.",
+        "firstSeen": 17.694,
+        "lastSeen": 17.694,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          17.694
+        ]
+      },
+      {
+        "selector": "#st4-in > div:nth-of-type(3) > div:nth-of-type(2) > span:nth-of-type(1)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/hud.html",
+        "bbox": {
+          "x": 508.59,
+          "y": 1272.19,
+          "width": 171,
+          "height": 46
+        },
+        "time": 17.694,
+        "rect": {
+          "left": 508.59,
+          "top": 1272.19,
+          "right": 679.59,
+          "bottom": 1318.19,
+          "width": 171,
+          "height": 46
+        },
+        "code": "outside_safe_zone",
+        "severity": "warning",
+        "text": "residents",
+        "message": "<span> \"residents\" is outside the safe area: TikTok (bottom edge), Instagram Reels (bottom edge), YouTube Shorts (bottom edge).",
+        "fixHint": "Move the text inside the safe area, or mark text meant to sit there with data-layout-allow-safe-zone.",
+        "firstSeen": 17.694,
+        "lastSeen": 17.694,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          17.694
+        ]
+      },
+      {
+        "selector": "#st4-in > div:nth-of-type(4)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/hud.html",
+        "bbox": {
+          "x": 108,
+          "y": 1352.19,
+          "width": 284.92,
+          "height": 39
+        },
+        "time": 17.694,
+        "rect": {
+          "left": 108,
+          "top": 1352.19,
+          "right": 392.92,
+          "bottom": 1391.19,
+          "width": 284.92,
+          "height": 39
+        },
+        "code": "outside_safe_zone",
+        "severity": "warning",
+        "text": "Census Tract 2801",
+        "message": "<div> \"Census Tract 2801\" is outside the safe area: TikTok (bottom edge), Instagram Reels (bottom edge), YouTube Shorts (bottom edge).",
+        "fixHint": "Move the text inside the safe area, or mark text meant to sit there with data-layout-allow-safe-zone.",
+        "firstSeen": 17.694,
+        "lastSeen": 17.694,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          17.694
+        ]
+      },
+      {
+        "selector": "#end-in > div:nth-of-type(1)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/hud.html",
+        "bbox": {
+          "x": 108,
+          "y": 230,
+          "width": 839.23,
+          "height": 39
+        },
+        "time": 23.139,
+        "rect": {
+          "left": 108,
+          "top": 230,
+          "right": 947.23,
+          "bottom": 269,
+          "width": 839.23,
+          "height": 39
+        },
+        "code": "outside_safe_zone",
+        "severity": "warning",
+        "text": "Unlocking Chicagoland with regional rail",
+        "message": "<div> \"Unlocking Chicagoland with regional rail\" is outside the safe area: TikTok (left and top edges), Instagram Reels (top edge), YouTube Shorts (top edge).",
+        "fixHint": "Move the text inside the safe area, or mark text meant to sit there with data-layout-allow-safe-zone.",
+        "firstSeen": 23.139,
+        "lastSeen": 23.139,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          23.139
+        ]
+      },
+      {
+        "selector": "#end-in > div:nth-of-type(2)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/hud.html",
+        "bbox": {
+          "x": 108,
+          "y": 274,
+          "width": 687.84,
+          "height": 111
+        },
+        "time": 23.139,
+        "rect": {
+          "left": 108,
+          "top": 274,
+          "right": 795.84,
+          "bottom": 385,
+          "width": 687.84,
+          "height": 111
+        },
+        "code": "outside_safe_zone",
+        "severity": "warning",
+        "text": "Build the Tunnel",
+        "message": "<div> \"Build the Tunnel\" is outside the safe area: TikTok (left edge), YouTube Shorts (top edge).",
+        "fixHint": "Move the text inside the safe area, or mark text meant to sit there with data-layout-allow-safe-zone.",
+        "firstSeen": 23.139,
+        "lastSeen": 23.139,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          23.139
+        ]
+      },
+      {
+        "selector": "div.url",
+        "dataAttributes": {},
+        "sourceFile": "compositions/hud.html",
+        "bbox": {
+          "x": 108,
+          "y": 392.83,
+          "width": 713.81,
+          "height": 49
+        },
+        "time": 23.139,
+        "rect": {
+          "left": 108,
+          "top": 392.83,
+          "right": 821.81,
+          "bottom": 441.83,
+          "width": 713.81,
+          "height": 49
+        },
+        "code": "outside_safe_zone",
+        "severity": "warning",
+        "text": "stevevance.github.io/buildthetunnel",
+        "message": "<div> \"stevevance.github.io/buildthetunnel\" is outside the safe area: TikTok (left edge).",
+        "fixHint": "Move the text inside the safe area, or mark text meant to sit there with data-layout-allow-safe-zone.",
+        "firstSeen": 23.139,
+        "lastSeen": 23.139,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          23.139
+        ]
+      },
+      {
+        "selector": "#tot-v > div:nth-of-type(1) > b:nth-of-type(1)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/hud.html",
+        "bbox": {
+          "x": 104,
+          "y": 1185,
+          "width": 114.63,
+          "height": 95
+        },
+        "time": 23.139,
+        "rect": {
+          "left": 104,
+          "top": 1185,
+          "right": 218.63,
+          "bottom": 1280,
+          "width": 114.63,
+          "height": 95
+        },
+        "code": "outside_safe_zone",
+        "severity": "warning",
+        "text": "3.2",
+        "message": "<b> \"3.2\" is outside the safe area: TikTok (left and bottom edges), Instagram Reels (bottom edge), YouTube Shorts (bottom edge).",
+        "fixHint": "Move the text inside the safe area, or mark text meant to sit there with data-layout-allow-safe-zone.",
+        "firstSeen": 23.139,
+        "lastSeen": 23.139,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          23.139
+        ]
+      },
+      {
+        "selector": "#tot-v > div:nth-of-type(1) > span:nth-of-type(1)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/hud.html",
+        "bbox": {
+          "x": 104,
+          "y": 1276,
+          "width": 76.94,
+          "height": 36
+        },
+        "time": 23.139,
+        "rect": {
+          "left": 104,
+          "top": 1276,
+          "right": 180.94,
+          "bottom": 1312,
+          "width": 76.94,
+          "height": 36
+        },
+        "code": "outside_safe_zone",
+        "severity": "warning",
+        "text": "miles",
+        "message": "<span> \"miles\" is outside the safe area: TikTok (bottom edge), Instagram Reels (bottom edge), YouTube Shorts (bottom edge).",
+        "fixHint": "Move the text inside the safe area, or mark text meant to sit there with data-layout-allow-safe-zone.",
+        "firstSeen": 23.139,
+        "lastSeen": 23.139,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          23.139
+        ]
+      },
+      {
+        "selector": "#tot-v > div:nth-of-type(2) > b:nth-of-type(1)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/hud.html",
+        "bbox": {
+          "x": 385.98,
+          "y": 1185,
+          "width": 48.02,
+          "height": 95
+        },
+        "time": 23.139,
+        "rect": {
+          "left": 385.98,
+          "top": 1185,
+          "right": 434,
+          "bottom": 1280,
+          "width": 48.02,
+          "height": 95
+        },
+        "code": "outside_safe_zone",
+        "severity": "warning",
+        "text": "4",
+        "message": "<b> \"4\" is outside the safe area: TikTok (bottom edge), Instagram Reels (bottom edge), YouTube Shorts (bottom edge).",
+        "fixHint": "Move the text inside the safe area, or mark text meant to sit there with data-layout-allow-safe-zone.",
+        "firstSeen": 23.139,
+        "lastSeen": 23.139,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          23.139
+        ]
+      },
+      {
+        "selector": "#tot-v > div:nth-of-type(2) > span:nth-of-type(1)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/hud.html",
+        "bbox": {
+          "x": 385.98,
+          "y": 1276,
+          "width": 116,
+          "height": 36
+        },
+        "time": 23.139,
+        "rect": {
+          "left": 385.98,
+          "top": 1276,
+          "right": 501.98,
+          "bottom": 1312,
+          "width": 116,
+          "height": 36
+        },
+        "code": "outside_safe_zone",
+        "severity": "warning",
+        "text": "stations",
+        "message": "<span> \"stations\" is outside the safe area: TikTok (bottom edge), Instagram Reels (bottom edge), YouTube Shorts (bottom edge).",
+        "fixHint": "Move the text inside the safe area, or mark text meant to sit there with data-layout-allow-safe-zone.",
+        "firstSeen": 23.139,
+        "lastSeen": 23.139,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          23.139
+        ]
+      },
+      {
+        "selector": "#tot-v > div:nth-of-type(3) > b:nth-of-type(1)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/hud.html",
+        "bbox": {
+          "x": 669.34,
+          "y": 1185,
+          "width": 306.66,
+          "height": 95
+        },
+        "time": 23.139,
+        "rect": {
+          "left": 669.34,
+          "top": 1185,
+          "right": 976,
+          "bottom": 1280,
+          "width": 306.66,
+          "height": 95
+        },
+        "code": "outside_safe_zone",
+        "severity": "warning",
+        "text": "102,935",
+        "message": "<b> \"102,935\" is outside the safe area: TikTok (right and bottom edges), Instagram Reels (bottom edge), YouTube Shorts (right and bottom edges).",
+        "fixHint": "Move the text inside the safe area, or mark text meant to sit there with data-layout-allow-safe-zone.",
+        "firstSeen": 23.139,
+        "lastSeen": 23.139,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          23.139
+        ]
+      },
+      {
+        "selector": "#tot-v > div:nth-of-type(3) > span:nth-of-type(1)",
+        "dataAttributes": {},
+        "sourceFile": "compositions/hud.html",
+        "bbox": {
+          "x": 669.34,
+          "y": 1276,
+          "width": 293.47,
+          "height": 36
+        },
+        "time": 23.139,
+        "rect": {
+          "left": 669.34,
+          "top": 1276,
+          "right": 962.81,
+          "bottom": 1312,
+          "width": 293.47,
+          "height": 36
+        },
+        "code": "outside_safe_zone",
+        "severity": "warning",
+        "text": "jobs in station tracts",
+        "message": "<span> \"jobs in station tracts\" is outside the safe area: TikTok (bottom edge), Instagram Reels (bottom edge), YouTube Shorts (bottom edge).",
+        "fixHint": "Move the text inside the safe area, or mark text meant to sit there with data-layout-allow-safe-zone.",
+        "firstSeen": 23.139,
+        "lastSeen": 23.139,
+        "occurrences": 1,
+        "heldMs": 0,
+        "times": [
+          23.139
+        ]
+      }
+    ],
+    "duration": 24.5,
+    "samples": [
+      1.361,
+      4.083,
+      6.806,
+      9.528,
+      12.25,
+      14.972,
+      17.694,
+      20.417,
+      23.139
+    ],
+    "transitionSamples": [],
+    "transitionSamplesDropped": 0,
+    "tolerance": 2,
+    "totalIssueCount": 38,
+    "truncated": false
+  },
+  "motion": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": [],
+    "enabled": false,
+    "samples": 0
+  },
+  "contrast": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": [],
+    "enabled": true,
+    "samples": [
+      1.361,
+      6.806,
+      12.25,
+      17.694,
+      23.139
+    ],
+    "checked": 37,
+    "passed": 37
+  },
+  "craft": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": [],
+    "enabled": true,
+    "step": 0.125,
+    "samples": 196
+  },
+  "audio": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": []
+  },
+  "hdr": {
+    "autoPromotion": null,
+    "inspection": "available"
+  },
+  "snapshots": {
+    "enabled": false,
+    "files": [],
+    "times": [],
+    "findingFiles": []
+  }
+}

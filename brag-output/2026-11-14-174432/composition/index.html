@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: #e9e4dc; }
+      #root { position: relative; width: 1920px; height: 1080px; overflow: hidden; }
+      #map { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; object-fit: contain; z-index: 1; }
+      #hud { z-index: 2; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="24.5" data-width="1920" data-height="1080">
+      <!-- the real viewer's flythrough, baked by ../bake/bake-map.mjs -->
+      <video id="map" class="clip" muted playsinline data-start="0" data-duration="24.5" data-track-index="0" src="assets/map.mp4"></video>
+
+      <div id="hud" data-composition-id="hud" data-composition-src="compositions/hud.html" data-start="0" data-duration="24.5"
+           data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+
+      <audio id="music" class="clip" data-start="0" data-duration="24.5" data-track-index="10" data-volume="0.32" data-fade-in="0.4" data-fade-out="1.6"
+             src="assets/music/happy-beats-business-moves-vol-12-by-ende-dot-app.mp3"></audio>
+      <audio id="sfx-dive" class="clip" data-start="2.19" data-duration="0.18" data-track-index="11" data-volume="0.5" src="assets/sfx/impactSoft_medium_001.ogg"></audio>
+      <audio id="sfx-st1" class="clip" data-start="6.11" data-duration="0.11" data-track-index="12" data-volume="0.55" src="assets/sfx/drop_001.ogg"></audio>
+      <audio id="sfx-st2" class="clip" data-start="9.38" data-duration="0.19" data-track-index="12" data-volume="0.55" src="assets/sfx/drop_002.ogg"></audio>
+      <audio id="sfx-st3" class="clip" data-start="12.66" data-duration="0.19" data-track-index="12" data-volume="0.55" src="assets/sfx/drop_003.ogg"></audio>
+      <audio id="sfx-st4" class="clip" data-start="15.93" data-duration="0.11" data-track-index="12" data-volume="0.55" src="assets/sfx/drop_001.ogg"></audio>
+      <audio id="sfx-total" class="clip" data-start="22.9" data-duration="0.65" data-track-index="13" data-volume="0.5" src="assets/sfx/impactBell_heavy_003.ogg"></audio>
+    </div>
+    <script>
+      window.__timelines["main"] = gsap.timeline({ paused: true });
+    </script>
+  </body>
+</html>

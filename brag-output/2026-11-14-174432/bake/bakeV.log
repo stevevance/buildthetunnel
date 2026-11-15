@@ -1,0 +1,54 @@
+vertical frame 0 / 735 0s
+vertical frame 60 / 735 12s
+vertical frame 120 / 735 27s
+vertical frame 180 / 735 44s
+vertical frame 240 / 735 58s
+vertical frame 300 / 735 73s
+vertical frame 360 / 735 85s
+vertical frame 420 / 735 99s
+vertical frame 480 / 735 113s
+vertical frame 540 / 735 126s
+vertical frame 600 / 735 142s
+vertical frame 660 / 735 157s
+vertical frame 720 / 735 169s
+ffmpeg version 9.0.2 Copyright (c) 2000-2026 the FFmpeg developers
+  built with Apple clang version 17.0.0 (clang-1700.6.3.2)
+  configuration: --prefix=/opt/homebrew/Cellar/ffmpeg/9.0.2 --enable-shared --cc=clang --host-cflags= --host-ldflags= --enable-gpl --enable-libaom --enable-libdav1d --enable-libharfbuzz --enable-libmp3lame --enable-libopus --enable-libsnappy --enable-libsvtav1 --enable-libtheora --enable-libvorbis --enable-libvpx --enable-libx264 --enable-libx265 --enable-libfontconfig --enable-libfreetype --enable-frei0r --enable-libass --enable-demuxer=dash --enable-neon --enable-opencl --enable-audiotoolbox --enable-videotoolbox --disable-htmlpages --enable-libbluray --enable-libjxl --enable-libopenh264 --enable-libopenjpeg --enable-librav1e --enable-librsvg --enable-librubberband --enable-libsoxr --enable-libspeex --enable-libsrt --enable-libvidstab --enable-libvmaf --enable-libwebp --enable-libxml2 --enable-libzimg --enable-openssl --enable-nonfree --enable-version3
+  libavutil      61.  1.102 / 61.  1.102
+  libavcodec     63.  1.102 / 63.  1.102
+  libavformat    63.  1.102 / 63.  1.102
+  libavdevice    63.  1.102 / 63.  1.102
+  libavfilter    12.  1.102 / 12.  1.102
+  libswscale     10.  1.102 / 10.  1.102
+  libswresample   7.  1.102 /  7.  1.102
+Input #0, image2, from '/Users/stevevance/Sites/BuildTheTunnel/brag-output/2026-11-14-174432/bake/vertical/frames/f%04d.png':
+  Duration: 00:00:24.50, start: 0.000000, bitrate: N/A
+  Stream #0:0: Video: png, rgb24(pc, gbr/unknown/unknown), 1080x1920, 30 fps, 30 tbr, 30 tbn
+Stream mapping:
+  Stream #0:0 -> #0:0 (png (native) -> h264 (libx264))
+Press [q] to stop, [?] for help
+[libx264 @ 0x1496076b0] using cpu capabilities: ARMv8 NEON DotProd
+[libx264 @ 0x1496076b0] profile High, level 4.0, 4:2:0, 8-bit
+[libx264 @ 0x1496076b0] 264 - core 165 r3222 b35605a - H.264/MPEG-4 AVC codec - Copyleft 2003-2025 - http://www.videolan.org/x264.html - options: cabac=1 ref=1 deblock=1:0:0 analyse=0x3:0x113 me=hex subme=7 psy=1 psy_rd=1.00:0.00 mixed_ref=0 me_range=16 chroma_me=1 trellis=1 8x8dct=1 cqm=0 deadzone=21,11 fast_pskip=1 chroma_qp_offset=-2 threads=12 lookahead_threads=2 sliced_threads=0 nr=0 decimate=1 interlaced=0 bluray_compat=0 constrained_intra=0 bframes=0 weightp=0 keyint=1 keyint_min=1 scenecut=40 intra_refresh=0 rc=crf mbtree=0 crf=14.0 qcomp=0.60 qpmin=0 qpmax=69 qpstep=4 ip_ratio=1.40 aq=1:1.00
+Output #0, mp4, to '/Users/stevevance/Sites/BuildTheTunnel/brag-output/2026-11-14-174432/bake/vertical/map.mp4':
+  Metadata:
+    encoder         : Lavf63.1.102
+  Stream #0:0: Video: h264 (avc1 / 0x31637661), yuv420p(tv, progressive), 1080x1920, q=2-31, 30 fps, 15360 tbn
+    Metadata:
+      encoder         : Lavc63.1.102 libx264
+    Side data:
+      CPB properties: bitrate max/min/avg: 0/0/0 buffer size: 0 vbv_delay: N/A
+frame=   21 fps=0.0 q=20.0 size=    4096KiB time=00:00:00.70 bitrate=47935.5kbits/s speed=1.37x elapsed=0:00:00.50    frame=   54 fps= 53 q=20.0 size=   11008KiB time=00:00:01.80 bitrate=50098.8kbits/s speed=1.78x elapsed=0:00:01.01    frame=   85 fps= 56 q=21.0 size=   17664KiB time=00:00:02.83 bitrate=51072.0kbits/s speed=1.87x elapsed=0:00:01.51    frame=  113 fps= 56 q=22.0 size=   24576KiB time=00:00:03.76 bitrate=53449.6kbits/s speed=1.86x elapsed=0:00:02.02    frame=  139 fps= 55 q=22.0 size=   31488KiB time=00:00:04.63 bitrate=55672.7kbits/s speed=1.83x elapsed=0:00:02.53    frame=  164 fps= 54 q=22.0 size=   38400KiB time=00:00:05.46 bitrate=57543.9kbits/s speed= 1.8x elapsed=0:00:03.03    frame=  191 fps= 54 q=21.0 size=   45056KiB time=00:00:06.36 bitrate=57973.7kbits/s speed=1.79x elapsed=0:00:03.54    frame=  221 fps= 54 q=21.0 size=   50944KiB time=00:00:07.36 bitrate=56651.6kbits/s speed=1.82x elapsed=0:00:04.05    frame=  255 fps= 56 q=22.0 size=   57600KiB time=00:00:08.50 bitrate=55512.9kbits/s speed=1.86x elapsed=0:00:04.56    frame=  281 fps= 55 q=22.0 size=   63744KiB time=00:00:09.36 bitrate=55750.0kbits/s speed=1.85x elapsed=0:00:05.07    frame=  313 fps= 56 q=20.0 size=   71680KiB time=00:00:10.43 bitrate=56281.4kbits/s speed=1.87x elapsed=0:00:05.58    frame=  347 fps= 57 q=20.0 size=   78080KiB time=00:00:11.56 bitrate=55299.6kbits/s speed= 1.9x elapsed=0:00:06.09    frame=  376 fps= 57 q=20.0 size=   84224KiB time=00:00:12.53 bitrate=55050.3kbits/s speed= 1.9x elapsed=0:00:06.59    frame=  409 fps= 58 q=21.0 size=   90368KiB time=00:00:13.63 bitrate=54300.4kbits/s speed=1.92x elapsed=0:00:07.10    frame=  440 fps= 58 q=20.0 size=   96512KiB time=00:00:14.66 bitrate=53906.4kbits/s speed=1.93x elapsed=0:00:07.60    frame=  469 fps= 58 q=21.0 size=  102400KiB time=00:00:15.63 bitrate=53658.5kbits/s speed=1.93x elapsed=0:00:08.11    frame=  499 fps= 58 q=20.0 size=  108288KiB time=00:00:16.63 bitrate=53332.4kbits/s speed=1.93x elapsed=0:00:08.62    frame=  529 fps= 58 q=20.0 size=  113920KiB time=00:00:17.63 bitrate=52924.4kbits/s speed=1.93x elapsed=0:00:09.12    frame=  560 fps= 58 q=22.0 size=  119808KiB time=00:00:18.66 bitrate=52578.6kbits/s speed=1.94x elapsed=0:00:09.63    frame=  585 fps= 58 q=22.0 size=  126976KiB time=00:00:19.53 bitrate=53251.9kbits/s speed=1.93x elapsed=0:00:10.13    frame=  608 fps= 57 q=22.0 size=  133888KiB time=00:00:20.26 bitrate=54119.0kbits/s speed= 1.9x elapsed=0:00:10.64    frame=  635 fps= 57 q=20.0 size=  142848KiB time=00:00:21.16 bitrate=55285.6kbits/s speed= 1.9x elapsed=0:00:11.15    frame=  666 fps= 57 q=20.0 size=  149504KiB time=00:00:22.20 bitrate=55168.3kbits/s speed= 1.9x elapsed=0:00:11.66    frame=  703 fps= 58 q=20.0 size=  157184KiB time=00:00:23.43 bitrate=54949.6kbits/s speed=1.93x elapsed=0:00:12.17    [mp4 @ 0x149606a20] Starting second pass: moving the moov atom to the beginning of the file
+[out#0/mp4 @ 0x600003850480] video:164198KiB audio:0KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: 0.002835%
+frame=  735 fps= 58 q=-1.0 Lsize=  164203KiB time=00:00:24.50 bitrate=54904.0kbits/s speed=1.94x elapsed=0:00:12.64    
+[libx264 @ 0x1496076b0] frame I:735   Avg QP:20.36  size:228760
+[libx264 @ 0x1496076b0] mb I  I16..4: 12.5% 26.1% 61.4%
+[libx264 @ 0x1496076b0] 8x8 transform intra:26.1%
+[libx264 @ 0x1496076b0] coded y,uvDC,uvAC intra: 58.9% 51.0% 40.2%
+[libx264 @ 0x1496076b0] i16 v,h,dc,p: 43% 52%  4%  1%
+[libx264 @ 0x1496076b0] i8 v,h,dc,ddl,ddr,vr,hd,vl,hu: 64% 14% 10%  2%  1%  2%  2%  2%  3%
+[libx264 @ 0x1496076b0] i4 v,h,dc,ddl,ddr,vr,hd,vl,hu: 38% 27%  9%  3%  3%  5%  5%  5%  4%
+[libx264 @ 0x1496076b0] i8c dc,h,v,p: 52% 25% 20%  3%
+[libx264 @ 0x1496076b0] kb/s:54902.29
+encoded 0
+done vertical 735 frames
