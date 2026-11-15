@@ -20,7 +20,7 @@ const ROOT = path.join(__dirname, "..");
 const DATA = path.join(ROOT, "planner", "data");
 const SLICE = "0800";
 const TOP_N = 4;
-const SITE = "https://stevevance.github.io/buildthetunnel/";
+const SITE = "https://tunnel.stevevance.net/";
 
 /* ---- popularity, from D1 ------------------------------------------------- */
 // A station pair counts as predefined if it was ever planned from a predefined

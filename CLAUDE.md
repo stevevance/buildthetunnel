@@ -2,11 +2,14 @@
 
 ## Live site
 
-The site is hosted on GitHub Pages at a project path (no custom domain / CNAME):
+The site is hosted on GitHub Pages with the custom domain `tunnel.stevevance.net`
+(the `CNAME` file at the repo root; DNS is a CNAME record at DreamHost pointing to
+`stevevance.github.io`):
 
-- **Base URL:** https://stevevance.github.io/buildthetunnel/
-- **Trip planner:** https://stevevance.github.io/buildthetunnel/planner/
+- **Base URL:** https://tunnel.stevevance.net/
+- **Trip planner:** https://tunnel.stevevance.net/planner/
 
+The old address, https://stevevance.github.io/buildthetunnel/, redirects to it.
 Do **not** use `buildthetunnel.com` — that domain is not configured for this site.
 
 ## Deploys

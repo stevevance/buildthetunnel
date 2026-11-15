@@ -14,7 +14,7 @@
 import { ImageResponse } from "workers-og";
 
 const GEOCODE_URL = "https://api.geocode.earth/v1/autocomplete";
-const PLANNER_URL = "https://stevevance.github.io/buildthetunnel/planner/";
+const PLANNER_URL = "https://tunnel.stevevance.net/planner/";
 
 // Chicago-area focus point so autocomplete favours local results.
 const FOCUS = { lat: 41.85, lon: -87.75 };
@@ -249,7 +249,7 @@ function handleOg(url) {
       <div style="display:flex;font-size:38px;margin-top:28px;opacity:0.95">Today ${ogtext(td || "?")} min   →   With CrossTowner ${ogtext(xd || "?")} min</div>
       ${saved != null ? `<div style="display:flex;font-size:48px;font-weight:700;margin-top:16px;color:#9BE7F5">${saved} minutes faster</div>` : ""}
     </div>
-    <div style="display:flex;font-size:26px;opacity:0.8">stevevance.github.io/buildthetunnel</div>
+    <div style="display:flex;font-size:26px;opacity:0.8">tunnel.stevevance.net</div>
   </div>`;
   return new ImageResponse(markup, { width: 1200, height: 630 });
 }

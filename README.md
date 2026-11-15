@@ -4,19 +4,19 @@ Two web tools about proposed and under-construction transit, centered on the
 **CrossTowner** regional-rail tunnel — a Chicago-area proposal from
 [Star:Line Chicago](https://buildthetunnelchicago.org):
 
-1. **[3D flythrough viewer](https://stevevance.github.io/buildthetunnel/flythrough/)** — a
+1. **[3D flythrough viewer](https://tunnel.stevevance.net/flythrough/)** — a
    cinematic camera that flies along a transit line over real 3D buildings
    (described below).
-2. **[CrossTowner Trip Planner](https://stevevance.github.io/buildthetunnel/planner/)** —
+2. **[CrossTowner Trip Planner](https://tunnel.stevevance.net/planner/)** —
    plan any Chicago-area rail trip and compare it today versus with the tunnel built
    (see [Trip planner](#trip-planner)).
 
 Both run as static pages on GitHub Pages at
-<https://stevevance.github.io/buildthetunnel/>.
+<https://tunnel.stevevance.net/>.
 
 ## Trip planner
 
-The [CrossTowner Trip Planner](https://stevevance.github.io/buildthetunnel/planner/)
+The [CrossTowner Trip Planner](https://tunnel.stevevance.net/planner/)
 lets you enter any origin and destination in the Chicago area and compares the rail
 trip **as it is today** against the **CrossTowner + Red Line Extension** future
 scenario — travel time, the route taken, and the walk to and from stations.
@@ -27,7 +27,7 @@ GTFS feed for the proposed CrossTowner service. The full method — data sources
 walk-time model, which future route is shown, and caveats — is documented on the
 planner's methodology page:
 
-**→ [How the CrossTowner Trip Planner works](https://stevevance.github.io/buildthetunnel/planner/methodology.html)**
+**→ [How the CrossTowner Trip Planner works](https://tunnel.stevevance.net/planner/methodology.html)**
 
 The planner lives in `planner/` (`index.html`, `app.js`, `config.js`, precomputed
 results under `planner/data/`, and `methodology.html`).
@@ -43,12 +43,12 @@ Six lines are selectable, each directly linkable via a URL hash (old
 
 | Line | Status | Permalink |
 |------|--------|-----------|
-| **Chicago — Clinton–Roosevelt Connector (CRCL)** | proposed | [`#crcl`](https://stevevance.github.io/buildthetunnel/flythrough/#crcl) |
-| **Chicago — Red Line Extension (95th–130th)** | under construction | [`#rle`](https://stevevance.github.io/buildthetunnel/flythrough/#rle) |
-| **Toulouse — Ligne C (Line 3)** | under construction | [`#toulouse`](https://stevevance.github.io/buildthetunnel/flythrough/#toulouse) |
-| **Austin — Light Rail (Project Connect)** | planned | [`#austin`](https://stevevance.github.io/buildthetunnel/flythrough/#austin) |
-| **Bogotá — Metro Línea 1** | under construction | [`#bogota`](https://stevevance.github.io/buildthetunnel/flythrough/#bogota) |
-| **Hamburg — U5** | under construction / planned | [`#hamburg`](https://stevevance.github.io/buildthetunnel/flythrough/#hamburg) |
+| **Chicago — Clinton–Roosevelt Connector (CRCL)** | proposed | [`#crcl`](https://tunnel.stevevance.net/flythrough/#crcl) |
+| **Chicago — Red Line Extension (95th–130th)** | under construction | [`#rle`](https://tunnel.stevevance.net/flythrough/#rle) |
+| **Toulouse — Ligne C (Line 3)** | under construction | [`#toulouse`](https://tunnel.stevevance.net/flythrough/#toulouse) |
+| **Austin — Light Rail (Project Connect)** | planned | [`#austin`](https://tunnel.stevevance.net/flythrough/#austin) |
+| **Bogotá — Metro Línea 1** | under construction | [`#bogota`](https://tunnel.stevevance.net/flythrough/#bogota) |
+| **Hamburg — U5** | under construction / planned | [`#hamburg`](https://tunnel.stevevance.net/flythrough/#hamburg) |
 
 The viewer is `flythrough/index.html` plus `lines.js` (the line datasets). It runs straight
 from disk — no server and no API keys — because all geometry and statistics are
@@ -57,7 +57,7 @@ baked into `lines.js`.
 ## Running it
 
 Open `flythrough/index.html` in any modern browser, or visit the live version at
-<https://stevevance.github.io/buildthetunnel/flythrough/>. It needs an internet connection
+<https://tunnel.stevevance.net/flythrough/>. It needs an internet connection
 for the MapLibre library (CDN) and the OpenFreeMap vector tiles only.
 
 ### Controls
@@ -191,7 +191,8 @@ OpenStreetMap."**
 | `flythrough/index.html` | The flythrough viewer — map, camera engine, UI, and per-line theming. |
 | `favicon.svg`, `apple-touch-icon.png`, `img/og-card.png` | Site icon and the share-preview image. |
 | `popular.html` | The most-planned trips that aren't predefined examples, each with today-vs-CrossTowner maps and time bars. Generated: run `node analysis/build_popular_routes.js` to refresh it from the live `trips` table. |
-| `sitemap.xml` | The six public pages, for Search Console. |
+| `sitemap.xml`, `robots.txt` | The six public pages, for search engines. |
+| `CNAME` | The GitHub Pages custom domain, `tunnel.stevevance.net`. |
 | `lines.js` | The line datasets and the `TRANSIT_LINES` config registry. |
 | `crcl_geo.json` | The finalized CRCL geometry (camera `path`, drawn `line`, `stations`). |
 | `planner/` | The CrossTowner Trip Planner — `index.html`, `app.js`, `config.js`, precomputed results in `data/`, and `methodology.html`. |
