@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="12" fill="#0B7285"/>
+  <!-- tunnel mouth -->
+  <path d="M10 56V30a22 22 0 0 1 44 0v26z" fill="#12323a"/>
+  <!-- train front -->
+  <path d="M20 54V32a12 12 0 0 1 24 0v22z" fill="#fff"/>
+  <rect x="24" y="28" width="16" height="11" rx="3" fill="#0B7285"/>
+  <circle cx="25.5" cy="47" r="2.5" fill="#f4a300"/>
+  <circle cx="38.5" cy="47" r="2.5" fill="#f4a300"/>
+  <!-- track -->
+  <rect x="6" y="54" width="52" height="4" rx="2" fill="#cfe3e7"/>
+</svg>

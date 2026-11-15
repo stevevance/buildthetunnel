@@ -1,420 +1,144 @@
 <!DOCTYPE html>
-<html><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CRCL 3D Flythrough</title>
-<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
-<style>
- html,body{margin:0;height:100%}#map{position:absolute;inset:0}
- #ui{position:absolute;left:12px;top:12px;z-index:5;font:14px system-ui;background:rgba(255,255,255,.9);
-     padding:10px 12px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.2)}
- /* per-line accent colors, swapped when the active line changes */
- :root{--accent:#8d5a99;--note:#0e7c7b}
- #ui b{color:var(--accent)}
- #ui a{color:var(--accent);font-weight:600;text-decoration:none}
- #ui a:hover{text-decoration:underline}
- button{font:13px system-ui;margin-top:6px;margin-right:6px;padding:6px 10px;border:0;border-radius:8px;background:var(--accent);color:#fff;cursor:pointer}
- #pause{min-width:38px;padding:6px 12px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle}
- label{display:block;margin-top:6px}
- select{font:13px system-ui;margin-top:2px;padding:4px 6px;border-radius:6px;border:1px solid #ccc;max-width:230px}
- #now{margin-top:8px;font-weight:600;color:#d62728;min-height:18px}
- #legend{margin-top:8px;font-size:12px;color:#555;display:none}
- /* branch announcement banner (top center) */
- #announce{position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:6;display:none;
-     background:var(--accent);color:#fff;font:600 15px system-ui;padding:8px 16px;border-radius:20px;
-     box-shadow:0 3px 12px rgba(0,0,0,.3);white-space:nowrap}
- /* secondary info box, lower-left (shown only for the CRCL line) */
- #info2{position:absolute;left:12px;bottom:12px;z-index:5;max-width:300px;font:13px system-ui;line-height:1.4;
-     background:rgba(255,255,255,.92);padding:11px 13px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.2);display:none}
- #info2 p{margin:0 0 7px}
- #info2 p.stat{font-size:11px;color:#555;border-top:1px solid rgba(0,0,0,.12);padding-top:6px}
- #info2 a{display:block;margin-top:3px;color:var(--accent);font-weight:600;text-decoration:none}
- #info2 a:hover{text-decoration:underline}
- /* station info callout (a MapLibre popup styled as a pointer label) */
- .callout .maplibregl-popup-content{background:var(--accent);color:#fff;font:13px system-ui;
-     padding:8px 12px;border-radius:9px;box-shadow:0 3px 10px rgba(0,0,0,.35);white-space:nowrap;text-align:center}
- .callout .ttl{font-weight:700;font-size:14px;margin-bottom:3px}
- .callout .sub{font-size:11px;opacity:.8;margin-top:2px}
- /* census stats: left-aligned "Label: value", label and value the same size */
- .callout .census{text-align:left;white-space:normal;max-width:250px}
- .callout .census .row{font-size:13px;line-height:1.5}
- .callout .census .v{font-weight:700;margin-left:4px}
- .callout .zoning{margin-top:6px;padding-top:5px;border-top:1px solid rgba(255,255,255,.3)}
- .callout .zoning .zh{font-size:10px;text-transform:uppercase;letter-spacing:.04em;opacity:.8;margin-bottom:2px}
- .callout .zoning .zrow{font-size:12px;line-height:1.45;display:flex;justify-content:space-between;gap:12px}
- .callout .zoning .zrow .v{font-weight:700}
- .callout .walk{margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.35)}
- .callout .walk .wv{font-size:18px;font-weight:800;line-height:1.1}
- .callout .walk .wl{font-size:10px;opacity:.85;text-transform:uppercase;letter-spacing:.03em}
- .callout.maplibregl-popup-anchor-bottom .maplibregl-popup-tip{border-top-color:var(--accent)}
- .callout.maplibregl-popup-anchor-top .maplibregl-popup-tip{border-bottom-color:var(--accent)}
- /* non-dwell annotation callout (teal) */
- .note .maplibregl-popup-content{background:var(--note);color:#fff;font:600 13px system-ui;
-     padding:7px 11px;border-radius:9px;box-shadow:0 3px 10px rgba(0,0,0,.35);white-space:nowrap;text-align:center}
- .note.maplibregl-popup-anchor-bottom .maplibregl-popup-tip{border-top-color:var(--note)}
- .note.maplibregl-popup-anchor-top .maplibregl-popup-tip{border-bottom-color:var(--note)}
- /* site navigation, at the top of the info panel */
- #sitenav{font-size:12px;margin-bottom:13px;padding-bottom:8px;border-bottom:1px solid rgba(0,0,0,.12);line-height:1.6}
- #sitenav a{color:#0b7285;font-weight:600;text-decoration:none}
- #sitenav a:hover{text-decoration:underline}
- #sitenav .cur{color:#333;font-weight:700}
-</style></head><body>
-<div id="map"></div>
-<div id="announce"></div>
-<div id="ui">
-  <nav id="sitenav">
-    <a href="planner/">Trip planner</a> &middot;
-    <a href="ohareaccess.html">O'Hare&nbsp;workforce</a> &middot;
-    <a href="planner/methodology.html">Methodology</a> &middot;
-    <span class="cur">3D&nbsp;map</span>
-  </nav>
-  <div><b id="ttl">Clinton&ndash;Roosevelt Connector Line</b></div>
-  <div id="sub" style="margin-top:1px;font-size:12px;color:#555">Chicago &middot; 3D flythrough</div>
-  <label>Line
-    <select id="lineSel">
-      <optgroup label="North America">
-        <option value="crcl">Chicago &mdash; Clinton&ndash;Roosevelt Connector</option>
-        <option value="rle">Chicago &mdash; Red Line Extension (95th&ndash;130th)</option>
-        <option value="austin">Austin &mdash; Light Rail (Project Connect)</option>
-      </optgroup>
-      <optgroup label="South America">
-        <option value="bogota">Bogot&aacute; &mdash; Metro L&iacute;nea 1</option>
-      </optgroup>
-      <optgroup label="Europe">
-        <option value="toulouse">Toulouse &mdash; Ligne C (Line 3)</option>
-        <option value="hamburg">Hamburg &mdash; U5</option>
-      </optgroup>
-    </select>
-  </label>
-  <label>Pitch <input id="pitch" type="range" min="0" max="80" value="62"></label>
-  <label>Zoom <input id="zoom" type="range" min="14" max="17.5" step="0.1" value="16"></label>
-  <button id="pause" title="Pause"><svg width="10" height="12" viewBox="0 0 10 12" aria-hidden="true" style="vertical-align:-1px"><rect width="3.5" height="12" fill="#fff"/><rect x="6.5" width="3.5" height="12" fill="#fff"/></svg></button>
-  <button id="play" title="Replay">Replay</button>
-  <span style="font-size:11px;color:#555">drag to pan &middot; click a station</span>
-  <div id="now"></div>
-  <div id="legend"></div>
-</div>
-<div id="info2"></div>
-<script src="lines.js"></script>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <script>
-// permalink: #<key> in the URL selects a line directly (e.g. …/index.html#austin)
-let activeLineKey = TRANSIT_LINES[location.hash.slice(1)] ? location.hash.slice(1) : 'crcl';
-let activeLine = TRANSIT_LINES[activeLineKey].data;
-const ZOOM_BOOST = 1.2;       // extra zoom when arriving at a station (station-zoom lines)
-const ZOOM_RANGE = 0.06;      // arc-length window over which zoom ramps in/out
-const NOTE_RANGE = 0.05;      // arc-length window over which a note callout shows
-const INTRO_HOLD = 1500;      // ms framing the entire line before diving in
-const INTRO_DIVE = 3000;      // ms gliding from the whole-line view down to the start
-let overviewCam = null;       // camera that frames the whole line (set in loadLine)
-
-const map = new maplibregl.Map({
-  container:'map', style:'https://tiles.openfreemap.org/styles/liberty',
-  center:activeLine.path[0], zoom:16, pitch:62, bearing:0, antialias:true, hash:false
-});
-map.addControl(new maplibregl.NavigationControl({visualizePitch:true}));
-
-function bearing(a,b){const r=Math.PI/180,d=180/Math.PI;
-  const y=Math.sin((b[0]-a[0])*r)*Math.cos(b[1]*r);
-  const x=Math.cos(a[1]*r)*Math.sin(b[1]*r)-Math.sin(a[1]*r)*Math.cos(b[1]*r)*Math.cos((b[0]-a[0])*r);
-  return (Math.atan2(y,x)*d+360)%360;}
-const smooth=u=>u*u*u*(u*(u*6-15)+10);
-// bounding box [[minLng,minLat],[maxLng,maxLat]] of a coordinate list
-function lineBounds(coords){let m=[180,90],M=[-180,-90];
-  for(const p of coords){ if(p[0]<m[0])m[0]=p[0]; if(p[1]<m[1])m[1]=p[1]; if(p[0]>M[0])M[0]=p[0]; if(p[1]>M[1])M[1]=p[1]; }
-  return [[m[0],m[1]],[M[0],M[1]]];}
-
-// --- damped camera bearing (smoother turns) ---
-let camBearing=null;
-function easeBearing(target){
-  if(camBearing===null){camBearing=target; return target;}
-  const k=TRANSIT_LINES[activeLineKey].bearingEase||0.08;
-  let d=((target-camBearing+540)%360)-180;
-  camBearing=(camBearing+d*k+360)%360;
-  return camBearing;
+// the 3D flythrough used to live here; forward its old #<line> permalinks
+(function(){ var k=location.hash.slice(1);
+  if(['crcl','rle','austin','bogota','toulouse','hamburg'].indexOf(k)>-1) location.replace('flythrough/#'+k); })();
+</script>
+<title>Build the Tunnel: CrossTowner regional rail for Chicago</title>
+<meta name="description" content="CrossTowner is a proposed regional-rail tunnel for Chicago. Compare any rail trip today vs. with the tunnel, see who gains access to O'Hare, and fly the route in 3D.">
+<link rel="canonical" href="https://stevevance.github.io/buildthetunnel/">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Build the Tunnel">
+<meta property="og:title" content="Build the Tunnel: CrossTowner regional rail for Chicago">
+<meta property="og:description" content="Compare any Chicago-area rail trip today vs. with the proposed CrossTowner tunnel, see who gains access to O'Hare, and fly the route in 3D.">
+<meta property="og:url" content="https://stevevance.github.io/buildthetunnel/">
+<meta property="og:image" content="https://stevevance.github.io/buildthetunnel/img/og-card.png">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "Build the Tunnel",
+  "url": "https://stevevance.github.io/buildthetunnel/",
+  "description": "Tools and analysis about CrossTowner, a proposed regional-rail tunnel for Chicago.",
+  "inLanguage": "en",
+  "author": { "@type": "Person", "name": "Steven Vance" }
 }
-// --- damped camera zoom (smooth zoom in to dwell, smooth zoom out to flyover) ---
-let camZoom=null;
-function easeZoom(target){
-  if(camZoom===null){camZoom=target; return target;}
-  camZoom+=(target-camZoom)*0.05;
-  return camZoom;
-}
+</script>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+<style>
+  :root{ --crcl:#0B7285; --gain:#f4a300; }
+  body{ padding-bottom:3rem; color:#1c2427; }
+  .bg-crcl{ background:var(--crcl)!important; }
+  header h1{ letter-spacing:-.01em; }
+  main{ max-width:780px; }
+  h2{ color:var(--crcl); font-size:1.3rem; margin-top:2.4rem; }
+  .lead-sm{ font-size:1.06rem; }
+  a{ color:#095c6c; }
+  /* tool cards */
+  .tools{ display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:.9rem; margin:1.2rem 0; }
+  .tool{ display:block; background:#fff; border:1px solid #d7dee2; border-radius:10px; padding:1rem 1.1rem; text-decoration:none; color:inherit; }
+  .tool:hover,.tool:focus{ border-color:var(--crcl); background:#eef5f6; color:inherit; }
+  .tool h3{ font-size:1.05rem; font-weight:700; color:var(--crcl); margin:0 0 .35rem; }
+  .tool p{ font-size:.9rem; margin:0; color:#424a4d; }
+  /* stat cards */
+  .stats{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:.9rem; margin:1.2rem 0; }
+  .stat{ background:#fff; border:1px solid #d7dee2; border-radius:10px; padding:.9rem 1rem; }
+  .stat .n{ font-size:1.8rem; font-weight:800; color:var(--crcl); line-height:1.05; }
+  .stat .n.gain{ color:var(--gain); }
+  .stat .l{ font-size:.82rem; color:#5b6770; margin-top:.25rem; }
+</style>
+</head>
+<body>
+<header class="bg-crcl text-white px-3 py-3">
+  <div class="mx-auto" style="max-width:780px">
+    <h1 class="h4 mb-0">Build the Tunnel</h1>
+    <div class="small opacity-75">CrossTowner regional rail for Chicago, mapped and measured</div>
+    <nav class="small mt-2 d-flex flex-wrap gap-3">
+      <a href="./" class="text-white text-decoration-none fw-semibold" style="border-bottom:2px solid #fff;padding-bottom:1px">Home</a>
+      <a href="planner/" class="text-white text-decoration-none opacity-75">Trip planner</a>
+      <a href="popular.html" class="text-white text-decoration-none opacity-75">Popular trips</a>
+      <a href="ohareaccess.html" class="text-white text-decoration-none opacity-75">O'Hare workforce</a>
+      <a href="planner/methodology.html" class="text-white text-decoration-none opacity-75">Methodology</a>
+      <a href="flythrough/" class="text-white text-decoration-none opacity-75">3D map</a>
+    </nav>
+  </div>
+</header>
 
-// --- station-stop schedule (rebuilt for the active line on every fly) ---
-const LEG_MS=s0=>4000+16000*s0;
-function buildTimeline(){
-  const L=TRANSIT_LINES[activeLineKey];
-  const stops=activeLine.stations.map(s=>s.s);
-  const waypoints=[0,...stops,1.0];
-  const phases=[]; let tAcc=0;
-  const introDur=INTRO_HOLD+INTRO_DIVE; phases.push({type:'intro',dur:introDur,t0:0}); tAcc+=introDur;
-  for(let k=0;k<waypoints.length-1;k++){
-    const sFrom=waypoints[k], sTo=waypoints[k+1];
-    const dur=LEG_MS(sTo-sFrom);
-    phases.push({type:'move',sFrom,sTo,dur,t0:tAcc}); tAcc+=dur;
-    if(k<stops.length){
-      phases.push({type:'hold',s:sTo,dur:L.dwell,t0:tAcc,st:activeLine.stations[k]}); tAcc+=L.dwell;
-    }
-  }
-  return {phases,total:tAcc,stops};
-}
+<main class="mx-auto px-3 mt-4">
+  <p class="lead-sm"><b>CrossTowner</b> is a proposed regional-rail tunnel for the Chicago area, from
+  <a href="https://buildthetunnelchicago.org/" target="_blank" rel="noopener">Star:Line Chicago</a>.
+  This site shows what it would change: how much faster rail trips across Chicagoland would be,
+  who could reach O'Hare by transit, and where the tunnel would run.</p>
 
-// station info callout (pointer label showing jobs in the tract)
-let callout=null, calloutName=null;
-function showCallout(st){
-  if(calloutName===st.name) return;
-  calloutName=st.name;
-  if(!callout) callout=new maplibregl.Popup({closeButton:false,closeOnClick:false,
-    anchor:'bottom',offset:30,className:'callout'});
-  let html;
-  if(TRANSIT_LINES[activeLineKey].callout==='census'){
-    const jobs = (st.jobs!=null) ? st.jobs.toLocaleString() : '—';
-    const hh   = (st.households!=null) ? st.households.toLocaleString() : '—';
-    const pop  = (st.population!=null) ? st.population.toLocaleString() : '—';
-    html = '<div class="census"><div class="ttl">'+st.name+'</div>'
-      + '<div class="row">Residents:<span class="v">'+pop+'</span></div>'
-      + '<div class="row">Jobs:<span class="v">'+jobs+'</span></div>'
-      + '<div class="row">Households:<span class="v">'+hh+'</span></div>'
-      + '<div class="sub">in '+(st.tractName||'this Census tract')+'</div>';
-    if(st.zoning && st.zoning.length){
-      html += '<div class="zoning"><div class="zh">Top zoning &frac12; mi (by area)</div>'
-        + st.zoning.map(z=>'<div class="zrow"><span>'+z.zone+'</span><span class="v">'+z.pct+'%</span></div>').join('')
-        + '</div>';
-    }
-    html += '</div>';
-  } else {
-    html = '<div class="ttl">'+(st.name_local||st.name)+'</div>';
-    if(st.name_local && st.name_local!==st.name) html += '<div class="sub">'+st.name+'</div>';
-    if(st.walkPop!=null) html += '<div class="walk"><div class="wv">'+st.walkPop.toLocaleString()+'</div>'
-      + '<div class="wl">residents within a &frac12;-mile walk</div></div>';
-  }
-  callout.setLngLat(st.lonlat).setHTML(html).addTo(map);
-}
-function hideCallout(){ if(callout){callout.remove();} calloutName=null; }
+  <div class="tools">
+    <a class="tool" href="planner/">
+      <h3>Trip planner</h3>
+      <p>Enter any two Chicago-area addresses and compare the rail trip today with the same trip once the tunnel is built.</p>
+    </a>
+    <a class="tool" href="popular.html">
+      <h3>Popular trips</h3>
+      <p>The trips people plan most, with a map and the travel time for each one today and with CrossTowner.</p>
+    </a>
+    <a class="tool" href="ohareaccess.html">
+      <h3>O'Hare workforce</h3>
+      <p>Where O'Hare's 48,921 workers live, and how many more could commute there by transit with CrossTowner.</p>
+    </a>
+    <a class="tool" href="flythrough/">
+      <h3>3D map</h3>
+      <p>Fly along the proposed Clinton&ndash;Roosevelt Connector Line, station by station, over real 3D buildings.</p>
+    </a>
+  </div>
 
-// non-dwell annotation callout (appears as the camera passes, no pause)
-let noteCallout=null, noteName=null;
-function showNote(nt){
-  if(noteName===nt.name) return;
-  noteName=nt.name;
-  if(!noteCallout) noteCallout=new maplibregl.Popup({closeButton:false,closeOnClick:false,
-    anchor:'bottom',offset:24,className:'note'});
-  noteCallout.setLngLat(nt.lonlat).setHTML(nt.name).addTo(map);
-}
-function hideNote(){ if(noteCallout){noteCallout.remove();} noteName=null; }
-function updateNotes(s){
-  let active=null;
-  for(const nt of activeLine.notes){ if(Math.abs(s-nt.s) < NOTE_RANGE){ active=nt; break; } }
-  if(active) showNote(active); else hideNote();
-}
-// branch announcement banner: shown while s falls within a configured leg range
-function updateAnnounce(s){
-  const el=document.getElementById('announce');
-  let txt='';
-  for(const a of (TRANSIT_LINES[activeLineKey].announce||[])){ if(s>=a.from && s<a.to){ txt=a.text; break; } }
-  el.innerHTML=txt; el.style.display=txt?'block':'none';
-}
+  <h2>What is CrossTowner?</h2>
+  <p>Regional rail is the &ldquo;missing middle&rdquo; between CTA's &lsquo;L&rsquo; service and Metra's
+  commuter rail operations. Star:Line Chicago's proposal would connect all of Chicagoland with it, largely
+  on existing infrastructure. The new piece is a tunnel, the
+  <a href="flythrough/#crcl">Clinton&ndash;Roosevelt Connector Line</a>, a proposed subway in Chicago. Six CrossTowner routes, X1 through X6,
+  would run on the combined network.</p>
+  <p>Read the full proposal at
+  <a href="https://buildthetunnelchicago.org/" target="_blank" rel="noopener">buildthetunnelchicago.org</a>.</p>
 
-let raf=null, elapsed=0, lastTs=null, paused=false, timeline=null;
-const pitchEl=()=>+document.getElementById('pitch').value;
-const zoomEl=()=>+document.getElementById('zoom').value;
-const nowEl=()=>document.getElementById('now');
-const pauseBtn=()=>document.getElementById('pause');
-const PLAY_ICON='<svg width="11" height="12" viewBox="0 0 11 12" aria-hidden="true" style="vertical-align:-1px"><path d="M0 0 11 6 0 12z" fill="#fff"/></svg>';
-const PAUSE_ICON='<svg width="10" height="12" viewBox="0 0 10 12" aria-hidden="true" style="vertical-align:-1px"><rect width="3.5" height="12" fill="#fff"/><rect x="6.5" width="3.5" height="12" fill="#fff"/></svg>';
-function setPauseState(playing){ const b=pauseBtn(); b.innerHTML=playing?PAUSE_ICON:PLAY_ICON; b.title=playing?'Pause':'Play'; }
+  <h2>What the tunnel changes for your trip</h2>
+  <p>The <a href="planner/">CrossTowner Trip Planner</a> compares two networks side by side. One is today's
+  CTA, Metra, and Pace service. The other adds the CrossTowner routes and the CTA Red Line Extension, which
+  is under construction. For each trip it shows the travel time, the route, and the walk to and from
+  stations. It also reaches O'Hare's terminals and South Shore Line stations in Indiana.</p>
+  <p>Every trip is computed ahead of time with Conveyal R5, an open-source routing engine used by
+  transportation planners. The <a href="planner/methodology.html">methodology page</a> lists the data
+  sources, assumptions, and limitations.</p>
 
-function render(el){
-  const L=TRANSIT_LINES[activeLineKey];
-  const n=activeLine.path.length, look=10;
-  const ph=(()=>{ for(const p of timeline.phases){ if(el>=p.t0 && el<p.t0+p.dur) return p; }
-    return timeline.phases[timeline.phases.length-1]; })();
+  <h2>A bigger labor market for O'Hare</h2>
+  <p>O'Hare is one of the largest job sites in Illinois, and most of its workers live outside the city.
+  CrossTowner would put about 48,500 more workers within a 60-minute transit commute of the airport.</p>
+  <div class="stats">
+    <div class="stat"><div class="n">48,921</div><div class="l">people employed at O'Hare (LODES 2023)</div></div>
+    <div class="stat"><div class="n">69%</div><div class="l">live outside the City of Chicago</div></div>
+    <div class="stat"><div class="n gain">+48,500</div><div class="l">workers added to the 60-minute transit labor shed</div></div>
+  </div>
+  <p><a href="ohareaccess.html">See the maps and the full analysis of O'Hare's workforce</a>.</p>
 
-  // intro: frame the whole line for INTRO_HOLD ms, then glide down to its start
-  if(ph.type==='intro'){
-    const e=el-ph.t0;
-    const lt=e<INTRO_HOLD ? 0 : smooth(Math.min((e-INTRO_HOLD)/INTRO_DIVE,1));
-    const start=activeLine.path[0], oc=overviewCam;
-    const c=[oc.center[0]+(start[0]-oc.center[0])*lt, oc.center[1]+(start[1]-oc.center[1])*lt];
-    const z=oc.zoom+(zoomEl()-oc.zoom)*lt;
-    let dB=((bearing(start, activeLine.path[Math.min(look,n-1)])+540)%360)-180; // shortest turn from north-up
-    const br=(dB*lt+360)%360;
-    map.jumpTo({center:c, bearing:br, pitch:pitchEl()*lt, zoom:z});
-    hideCallout(); updateAnnounce(-1); nowEl().textContent=''; return;
-  }
+  <h2>See the route in 3D</h2>
+  <p>The <a href="flythrough/">3D map</a> flies a camera along the tunnel's alignment and pauses at each
+  station to show the residents, jobs, and households nearby. It also covers the
+  <a href="flythrough/#rle">Red Line Extension</a> and new lines in
+  <a href="flythrough/#austin">Austin</a>, <a href="flythrough/#bogota">Bogot&aacute;</a>,
+  <a href="flythrough/#toulouse">Toulouse</a>, and <a href="flythrough/#hamburg">Hamburg</a>.</p>
 
-  let s, holding=false, st=null;
-  if(ph.type==='move'){
-    const lt=Math.min((el-ph.t0)/ph.dur,1);
-    s=ph.sFrom+(ph.sTo-ph.sFrom)*smooth(lt);
-  } else { s=ph.s; holding=true; st=ph.st; }
-
-  let f=s*(n-1), i=Math.floor(f), fr=f-i;
-  let a=activeLine.path[i], b=activeLine.path[Math.min(i+1,n-1)];
-  let c=[a[0]+(b[0]-a[0])*fr, a[1]+(b[1]-a[1])*fr];
-  let br=easeBearing(bearing(a, activeLine.path[Math.min(i+look,n-1)]));
-
-  // zoom target: proximity ramp near stations, or a steady zoom when stationZoom is off
-  let z;
-  if(L.stationZoom){
-    let dmin=1; for(const sp of timeline.stops) dmin=Math.min(dmin, Math.abs(s-sp));
-    let prox=smooth(Math.max(0, 1 - dmin/ZOOM_RANGE));
-    z=easeZoom(zoomEl() + ZOOM_BOOST*prox);
-  } else {
-    z=easeZoom(zoomEl());
-  }
-
-  map.jumpTo({center:c, bearing:br, pitch:pitchEl(), zoom:z});
-
-  if(holding){ showCallout(st); nowEl().textContent='▶ '+st.name; }
-  else { hideCallout(); nowEl().textContent=''; }
-  updateNotes(s);      // non-dwell annotations near the ends
-  updateAnnounce(s);   // branch banner (Austin)
-}
-
-function loop(ts){
-  if(lastTs===null) lastTs=ts;
-  if(!paused) elapsed += ts-lastTs;
-  lastTs=ts;
-  render(Math.min(elapsed, timeline.total));
-  if(elapsed < timeline.total){ raf=requestAnimationFrame(loop); }
-  else { raf=null; nowEl().textContent=''; hideCallout(); setPauseState(false); }  // finished -> play icon (replays)
-}
-
-function startFly(){                 // full restart from the beginning
-  if(raf) cancelAnimationFrame(raf);
-  camBearing=null; camZoom=null; elapsed=0; lastTs=null; paused=false;
-  hideCallout(); hideNote();
-  timeline=buildTimeline();
-  setPauseState(true);
-  raf=requestAnimationFrame(loop);
-}
-// pause: halt the auto-fly (keeps position) so the user can pan or read a station
-function pauseFly(){ if(raf){cancelAnimationFrame(raf); raf=null;} paused=true; setPauseState(false); }
-// resume from the current position (or replay if it already finished)
-function resumeFly(){
-  if(raf) return;
-  if(!timeline || elapsed>=timeline.total){ startFly(); return; }
-  paused=false; lastTs=null; setPauseState(true);
-  raf=requestAnimationFrame(loop);
-}
-
-// (re)build the map layers for the active line
-function buildLine(){
-  const L=TRANSIT_LINES[activeLineKey];
-  ['ctx-line','ctx-st','crcl-casing','crcl-line','notes','st'].forEach(id=>{ if(map.getLayer(id)) map.removeLayer(id); });
-  ['ctx','ctx-st','route','notes','st'].forEach(id=>{ if(map.getSource(id)) map.removeSource(id); });
-
-  // existing-rail context overlay, drawn first so the featured line sits on top.
-  // context.lines = network (array of linestrings); context.line = single linestring.
-  if(L.context){
-    const segs = L.context.lines || [L.context.line];
-    map.addSource('ctx',{type:'geojson',
-      data:{type:'Feature',geometry:{type:'MultiLineString',coordinates:segs}}});
-    map.addLayer({id:'ctx-line',type:'line',source:'ctx',layout:{'line-cap':'round','line-join':'round'},
-      paint:{'line-color':'#6b6b6b','line-width':5,'line-opacity':0.8,'line-dasharray':[2,1.6]}});
-    const ctxSt = L.context.stations || [];
-    map.addSource('ctx-st',{type:'geojson',
-      data:{type:'FeatureCollection',features:ctxSt.map(s=>({type:'Feature',
-        properties:{name:s.name},geometry:{type:'Point',coordinates:s.lonlat}}))}});
-    map.addLayer({id:'ctx-st',type:'circle',source:'ctx-st',
-      paint:{'circle-radius':5.5,'circle-color':'#fff','circle-stroke-color':'#6b6b6b','circle-stroke-width':2.5}});
-  }
-
-  map.addSource('route',{type:'geojson',
-    data:{type:'Feature',geometry:{type:'LineString',coordinates:activeLine.line}}});
-
-  // Tunnel treatment. MapLibre GL JS can't place geometry below grade, so a
-  // subsurface alignment is shown the conventional cartographic way: a soft
-  // "trench" casing under a dashed tunnel line. Above-grade lines draw solid.
-  map.addLayer({id:'crcl-casing',type:'line',source:'route',
-    layout:{'line-cap':'round','line-join':'round'},
-    paint:{'line-color':'#333','line-width':16,'line-opacity':0.22,'line-blur':4}});
-  const linePaint={'line-color':L.accent,'line-width':10,'line-opacity':0.85};
-  if(L.dashed) linePaint['line-dasharray']=[1.6,1.2];
-  map.addLayer({id:'crcl-line',type:'line',source:'route',
-    layout:{'line-cap':'round','line-join':'round'},paint:linePaint});
-
-  // non-dwell annotation markers at any notes
-  map.addSource('notes',{type:'geojson',
-    data:{type:'FeatureCollection',features:(activeLine.notes||[]).map(n=>({type:'Feature',
-      properties:{name:n.name},geometry:{type:'Point',coordinates:n.lonlat}}))}});
-  map.addLayer({id:'notes',type:'circle',source:'notes',
-    paint:{'circle-radius':10,'circle-color':L.note,'circle-stroke-color':'#fff','circle-stroke-width':2.5}});
-
-  map.addSource('st',{type:'geojson',
-    data:{type:'FeatureCollection',features:activeLine.stations.map(s=>({type:'Feature',
-      properties:{name:s.name},geometry:{type:'Point',coordinates:s.lonlat}}))}});
-  map.addLayer({id:'st',type:'circle',source:'st',
-    paint:{'circle-radius':15,'circle-color':'#d62728','circle-stroke-color':'#fff','circle-stroke-width':3}});
-}
-
-// switch to a line: retheme the UI, rebuild layers, recenter and fly
-function loadLine(key){
-  activeLineKey=key; activeLine=TRANSIT_LINES[key].data; activeLine.notes=activeLine.notes||[];
-  const L=TRANSIT_LINES[key];
-  document.documentElement.style.setProperty('--accent',L.accent);
-  document.documentElement.style.setProperty('--note',L.note);
-  document.getElementById('ttl').innerHTML=L.title;
-  document.getElementById('sub').innerHTML=L.sub;
-  document.getElementById('lineSel').value=key;
-  // decode HTML entities in the title for the browser tab
-  const dec=document.createElement('textarea'); dec.innerHTML=L.title;
-  document.title=dec.value+' — 3D flythrough';
-  const pitch=document.getElementById('pitch'), zoom=document.getElementById('zoom');
-  pitch.value=L.pitch; zoom.min=L.zoomMin; zoom.max=L.zoomMax; zoom.value=L.zoom;
-
-  // secondary lower-left info box (only lines that define `info`)
-  const i2=document.getElementById('info2');
-  if(L.info){
-    // links: either an array of {url,text} or a single url/urlText pair
-    const links = L.info.links || (L.info.url ? [{url:L.info.url,text:L.info.urlText}] : []);
-    i2.innerHTML='<p><b>'+L.info.title+'</b></p><p>'+L.info.text+'</p>'
-      +(L.info.stat?'<p class="stat">'+L.info.stat+'</p>':'')
-      +links.map(l=>'<a href="'+l.url+'" target="_blank" rel="noopener">'+l.text+'</a>').join('');
-    i2.style.display='block';
-  }
-  else i2.style.display='none';
-
-  // legend for a context overlay (e.g. existing rail)
-  const lg=document.getElementById('legend');
-  if(L.context){ lg.innerHTML='<span style="display:inline-block;width:16px;border-top:3px dashed #6b6b6b;vertical-align:middle;margin-right:6px"></span>'+L.contextLabel; lg.style.display='block'; }
-  else lg.style.display='none';
-
-  // permalink: keep the URL hash in sync (replaceState avoids firing hashchange)
-  try{ history.replaceState(null,'','#'+key); }catch(e){ location.hash=key; }
-
-  buildLine();
-  // frame the whole line (leave room on the left for the control panel)
-  const cam=map.cameraForBounds(lineBounds(activeLine.line),{padding:{top:50,right:50,bottom:50,left:300},bearing:0});
-  overviewCam={center:[cam.center.lng,cam.center.lat], zoom:cam.zoom};
-  map.jumpTo({center:overviewCam.center, zoom:overviewCam.zoom, pitch:0, bearing:0});
-  startFly();
-}
-
-map.on('load',()=>{
-  try{ map.setSky({'sky-color':'#bcd4f0','horizon-color':'#e8eef5','fog-color':'#ffffff','fog-ground-blend':0.5}); }catch(e){}
-  loadLine(activeLineKey);
-});
-
-document.getElementById('lineSel').onchange=e=>loadLine(e.target.value);
-// permalink: respond to hash edits / back-forward navigation
-window.addEventListener('hashchange',()=>{ const k=location.hash.slice(1); if(TRANSIT_LINES[k] && k!==activeLineKey) loadLine(k); });
-
-// let users explore: any manual drag pauses the auto-fly so the map can be panned
-map.on('dragstart',()=>{ if(raf!==null) pauseFly(); });
-// click a station marker (featured or existing-rail context) to re-show its name
-function stationClick(st){ if(!st) return; pauseFly(); showCallout(st); nowEl().textContent='▶ '+st.name; }
-for(const lyr of ['st','ctx-st']){
-  map.on('mouseenter',lyr,()=>{ map.getCanvas().style.cursor='pointer'; });
-  map.on('mouseleave',lyr,()=>{ map.getCanvas().style.cursor=''; });
-}
-map.on('click','st',e=>stationClick(activeLine.stations.find(s=>s.name===e.features[0].properties.name)));
-map.on('click','ctx-st',e=>stationClick({name:e.features[0].properties.name, lonlat:e.features[0].geometry.coordinates.slice()}));
-
-document.getElementById('play').onclick=startFly;   // Replay -> restart from the beginning
-document.getElementById('pause').onclick=()=>{ if(raf) pauseFly(); else resumeFly(); };
-</script><!-- Cloudflare Web Analytics -->
+  <footer class="text-secondary small mt-5 pt-3 border-top">
+    <p>Made by Steven Vance, using the
+    <a href="https://buildthetunnelchicago.org/" target="_blank" rel="noopener">Star:Line Chicago CrossTowner</a>
+    map and synthetic schedule. This site is otherwise unaffiliated with Star:Line Chicago.</p>
+  </footer>
+</main>
+<!-- Cloudflare Web Analytics -->
 <script type="module" src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "998e0617479743128964a1b458776630"}'></script>
 <!-- End Cloudflare Web Analytics -->
 </body></html>
