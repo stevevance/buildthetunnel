@@ -14,10 +14,15 @@ Do **not** use `buildthetunnel.com` — that domain is not configured for this s
 
 ## Deploys
 
-Pushes to `main` deploy automatically via GitHub Pages. Check build status with:
+Pushes to `main` deploy automatically via the GitHub Actions workflow
+`.github/workflows/pages.yml`. It publishes **only** the files it lists (the
+pages, `flythrough/`, `planner/`, `maps/`, `img/`, and a few root files); the
+rest of the repo (`CLAUDE.md`, `README.md`, `analysis/`, `docs/`, `newsletter/`,
+`worker/`) is not served. A new top-level file or folder must be added to that
+list to go live. Check the latest deploy with:
 
 ```
-gh api repos/stevevance/buildthetunnel/pages/builds/latest --jq '{status, commit: .commit, error: .error.message}'
+gh run list --workflow=pages.yml --limit 1
 ```
 
 ## Cloudflare Worker + D1 database
