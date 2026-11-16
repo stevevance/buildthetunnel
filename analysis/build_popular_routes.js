@@ -480,6 +480,7 @@ ${networkDefs()}
       <a href="ohareaccess.html" class="text-white text-decoration-none opacity-75">O'Hare workforce</a>
       <a href="planner/methodology.html" class="text-white text-decoration-none opacity-75">Methodology</a>
       <a href="flythrough/" class="text-white text-decoration-none opacity-75">3D map</a>
+      <a href="signup.html" class="text-white text-decoration-none opacity-75">Get updates</a>
     </nav>
   </div>
 </header>

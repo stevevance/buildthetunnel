@@ -2,12 +2,10 @@
  * app.js -- CrossTowner trip planner (static, client-side).
  *
  * Flow:
- *   1. Email wall: first visit shows a modal; the address is POSTed to the
- *      Worker and a localStorage flag reveals the tool.
- *   2. The user types an origin and destination address; each is geocoded via
+ *   1. The user types an origin and destination address; each is geocoded via
  *      the Worker's Geocode.earth proxy and validated to be inside a
  *      Metra-service county.
- *   3. For a chosen departure slice we snap each endpoint to its nearest
+ *   2. For a chosen departure slice we snap each endpoint to its nearest
  *      stations, look up the precomputed station-to-station minutes for both
  *      the "today" and "scenario" networks, add the walking access/egress, and
  *      show the best total for each -- so the rider sees today vs CrossTowner.
@@ -1555,29 +1553,6 @@
     history.replaceState(null, "", location.pathname);
   }
 
-  /* ---- email wall ------------------------------------------------------- */
-  function initEmailWall() {
-    var KEY = "btt_planner_email_ok";
-    var wall = new bootstrap.Modal(document.getElementById("emailwall"));
-    if (!localStorage.getItem(KEY)) wall.show();
-    document.getElementById("emailform").addEventListener("submit", function (e) {
-      e.preventDefault();
-      // honeypot: bots fill the hidden field; humans don't.
-      if (document.getElementById("hp").value) return;
-      var email = document.getElementById("email").value.trim();
-      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return;
-      fetch(CFG.workerBase + "/email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email, source: "planner" })
-      }).catch(function () { /* soft wall: let them in even if the POST fails */ })
-        .finally(function () {
-          localStorage.setItem(KEY, "1");
-          wall.hide();
-        });
-    });
-  }
-
   /* ---- feedback --------------------------------------------------------- */
   function initFeedback() {
     var modal = new bootstrap.Modal(document.getElementById("feedbackmodal"));
@@ -1610,7 +1585,6 @@
   function boot() {
     captureContext();   // referrer/UTM/device — before applyPermalink rewrites the URL
     initMap();
-    initEmailWall();
     initFeedback();
     // Populate the slice selector.
     var sel = document.getElementById("slice");

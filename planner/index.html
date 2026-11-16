@@ -78,6 +78,7 @@
     <a href="../ohareaccess.html" class="text-white text-decoration-none opacity-75">O'Hare workforce</a>
     <a href="methodology.html" class="text-white text-decoration-none opacity-75">Methodology</a>
     <a href="../flythrough/" class="text-white text-decoration-none opacity-75">3D map</a>
+    <a href="../signup.html" class="text-white text-decoration-none opacity-75">Get updates</a>
   </nav>
 </header>
 
@@ -136,6 +137,7 @@
       <p id="method-note" class="mb-2"><!-- per-trip methodology note, set by app.js after a plan --></p>
       <p>The trip planner will find the nearest rail station (existing, under construction, and proposed new CrossTowner) at your selected origin and destination and route a trip between them. These trips have been precomputed to ensure this website is super fast.</p>
       <p>Made by Steven Vance, using the <a href="https://buildthetunnelchicago.org/" target="_blank">Star:Line Chicago CrossTowner</a> map and synthetic schedule as input to Conveyal R5 trip-planning software. This tool is otherwise unaffiliated with Star:Line Chicago. <a href="methodology.html">How this works &rarr;</a></p>
+      <p><a href="../signup.html">Sign up for email updates &rarr;</a></p>
       <details>
         <summary>Privacy</summary>
         <p>Your trips are computed in your browser from precomputed data. To understand usage, we log each trip's stations and timing with an anonymous ID, plus how you arrived at this website and your device type. When a search finds no rail trip, we also keep the places you entered and their coordinates, to map where service is missing. We also count aggregate visits with Cloudflare Web Analytics. Your email is not associated with your use of the planner, but if you provide feedback then your email is associated with the most recent planned trip.</p>
@@ -176,23 +178,6 @@
             <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
           </div>
           <div id="fb-status" class="small text-secondary mt-2"></div>
-        </form>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Email wall -->
-<div class="modal fade" id="emailwall" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-body p-4">
-        <h2 class="h5">See your CrossTowner trip</h2>
-        <p class="text-secondary small">Enter your email to use the planner and get occasional Build the Tunnel updates. We won't share it.</p>
-        <form id="emailform">
-          <input class="d-none" id="hp" tabindex="-1" autocomplete="off">
-          <input id="email" type="email" class="form-control mb-2" required placeholder="you@example.com">
-          <button type="submit" class="btn btn-crcl w-100">Start planning</button>
         </form>
       </div>
     </div>
