@@ -749,7 +749,8 @@
     return '<div class="alert alert-warning" role="alert">' +
       '<h2 class="h5 alert-heading mb-2">🚫 No rail trip found</h2>' + why +
       '<p class="mb-0 small">A trip needs a train station within a ' + cap +
-      '-minute walk of <em>each</em> end. Try an address closer to a station.</p></div>';
+      '-minute walk of <em>each</em> end. The trip planner doesn\'t include bus routes yet, ' +
+      'so it can\'t plan a bus ride to the station. Try an address closer to a station.</p></div>';
   }
 
   function sliceLabel(id) {
