@@ -49,3 +49,6 @@ brag-output/**/*.m4a
 # HyperFrames render caches and Python bytecode in the launch-video projects
 brag-output/**/.hyperframes/
 brag-output/**/__pycache__/
+
+# Subscriber newsletters: drafts, send log and sent copies stay local
+newsletter/
