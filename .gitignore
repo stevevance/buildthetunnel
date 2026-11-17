@@ -46,3 +46,6 @@ brag-output/**/*.mp3
 brag-output/**/*.ogg
 brag-output/**/*.wav
 brag-output/**/*.m4a
+# HyperFrames render caches and Python bytecode in the launch-video projects
+brag-output/**/.hyperframes/
+brag-output/**/__pycache__/
