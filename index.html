@@ -46,11 +46,23 @@
   .lead-sm{ font-size:1.06rem; }
   a{ color:#095c6c; }
   /* tool cards */
-  .tools{ display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:.9rem; margin:1.2rem 0; }
+  .tools{ display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:.9rem; margin:1.2rem 0; }
   .tool{ display:block; background:#fff; border:1px solid #d7dee2; border-radius:10px; padding:1rem 1.1rem; text-decoration:none; color:inherit; }
   .tool:hover,.tool:focus{ border-color:var(--crcl); background:#eef5f6; color:inherit; }
   .tool h3{ font-size:1.05rem; font-weight:700; color:var(--crcl); margin:0 0 .35rem; }
   .tool p{ font-size:.9rem; margin:0; color:#424a4d; }
+  /* featured tool: the trip planner spans the row, filled teal, with a call to action */
+  .tool-featured{ grid-column:1/-1; background:var(--crcl); border-color:var(--crcl); color:#fff;
+    padding:1.25rem 1.35rem; box-shadow:0 6px 18px rgba(11,114,133,.25); transition:transform .15s, box-shadow .15s; }
+  .tool-featured:hover,.tool-featured:focus{ background:#095c6c; border-color:#095c6c; color:#fff;
+    transform:translateY(-2px); box-shadow:0 10px 24px rgba(11,114,133,.32); }
+  .tool-featured h3{ color:#fff; font-size:1.35rem; }
+  .tool-featured p{ color:#e3f1f3; font-size:1rem; }
+  .tool-featured .badge-start{ display:inline-block; background:var(--gain); color:#1c2427; font-size:.72rem;
+    font-weight:700; text-transform:uppercase; letter-spacing:.05em; border-radius:999px; padding:.15rem .6rem; margin-bottom:.5rem; }
+  .tool-featured .cta{ display:inline-block; margin-top:.85rem; background:#fff; color:var(--crcl);
+    font-weight:700; border-radius:6px; padding:.45rem .95rem; }
+  @media(prefers-reduced-motion:reduce){ .tool-featured,.tool-featured:hover{ transition:none; transform:none; } }
   /* stat cards */
   .stats{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:.9rem; margin:1.2rem 0; }
   .stat{ background:#fff; border:1px solid #d7dee2; border-radius:10px; padding:.9rem 1rem; }
@@ -83,9 +95,11 @@
   who could reach O'Hare by transit, and where the tunnel would run.</p>
 
   <div class="tools">
-    <a class="tool" href="planner/">
+    <a class="tool tool-featured" href="planner/">
+      <span class="badge-start">Start here</span>
       <h3>Trip planner</h3>
       <p>Enter any two Chicago-area addresses and compare the rail trip today with the same trip once the tunnel is built.</p>
+      <span class="cta">Plan a trip &rarr;</span>
     </a>
     <a class="tool" href="popular.html">
       <h3>Popular trips</h3>

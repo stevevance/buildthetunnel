@@ -55,6 +55,26 @@
   .trip-btn{background:#fff;border:1px solid #ced4da;color:inherit}
   .trip-btn:hover,.trip-btn:focus{background:#eef5f6;border-color:var(--crcl);color:inherit}
   .trip-btn .blurb{color:#5b6770}
+  /* "Plan your trip" card: from/to fields joined by a dot-to-pin rail */
+  .trip-card{background:#f3f8f9;border:1px solid #cfe3e7;border-top:4px solid var(--crcl);
+    border-radius:.75rem;padding:1rem}
+  .od-box{display:flex;align-items:center;gap:.6rem;margin-bottom:.35rem}
+  .od-rail{display:flex;flex-direction:column;align-items:center;align-self:stretch;
+    padding:2.25rem 0 1rem}
+  .od-dot{width:12px;height:12px;border-radius:50%;border:3px solid var(--crcl);background:#fff;flex:none}
+  .od-line{flex:1;border-left:2px dotted #8fb5bd;margin:4px 0}
+  .od-pin{width:12px;height:12px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);
+    background:#c92a2a;flex:none}
+  .od-fields{flex:1;display:flex;flex-direction:column;gap:.6rem;min-width:0}
+  .od-label{display:block;font-size:.75rem;font-weight:600;text-transform:uppercase;
+    letter-spacing:.03em;color:#495057;margin-bottom:.15rem}
+  .od-fields .form-control{font-size:1rem;padding:.6rem .75rem;border-color:#adc8ce}
+  .od-fields .form-control:focus{border-color:var(--crcl);box-shadow:0 0 0 .2rem rgba(11,114,133,.2)}
+  .od-fields .form-control::placeholder{color:#8a949c}
+  .od-swap{flex:none;border:1px solid #cfd8dc;border-radius:50%;width:2.4rem;height:2.4rem;
+    padding:0;font-size:1.15rem;line-height:1;margin-top:1.3rem}
+  .od-swap:hover{border-color:var(--crcl);color:var(--crcl)}
+  #from-terminal:not(:empty),#to-terminal:not(:empty){margin-top:.5rem}
   /* autocomplete dropdown */
   .ac-wrap{position:relative}
   .aclist{position:absolute;top:100%;left:0;right:0;z-index:1000;margin:.1rem 0 0;max-height:14rem;overflow:auto}
@@ -85,53 +105,54 @@
 <div class="app flex-grow-1 d-flex flex-column flex-md-row" style="min-height:0">
   <aside class="panel p-3 border-end">
     
-    <h2 class="h5 fw-bold mb-2">Option A: Choose a predefined trip</h2>
+    <section class="trip-card mb-4" aria-labelledby="plan-heading">
+      <h2 id="plan-heading" class="h5 fw-bold mb-1">Plan your trip</h2>
+      <p class="small text-secondary mb-3">Type any address, place, or station in the Chicago area.</p>
+
+      <div class="od-box">
+        <div class="od-rail" aria-hidden="true">
+          <span class="od-dot"></span><span class="od-line"></span><span class="od-pin"></span>
+        </div>
+        <div class="od-fields">
+          <div class="ac-wrap">
+            <label for="from" class="od-label">From</label>
+            <input id="from" type="text" class="form-control" autocomplete="off" placeholder="Starting address, e.g. 71st &amp; Exchange">
+            <ul id="from-list" class="aclist list-group shadow-sm"></ul>
+            <div id="from-terminal"></div>
+          </div>
+          <div class="ac-wrap">
+            <label for="to" class="od-label">To</label>
+            <input id="to" type="text" class="form-control" autocomplete="off" placeholder="Destination, e.g. Chicago Botanic Garden">
+            <ul id="to-list" class="aclist list-group shadow-sm"></ul>
+            <div id="to-terminal"></div>
+          </div>
+        </div>
+        <button id="swap" class="btn btn-light od-swap" title="Swap origin and destination" aria-label="Swap origin and destination">&#8645;</button>
+      </div>
+      <div class="form-text small mb-3">You can also reach <b>O'Hare</b> terminals and <b>South Shore Line</b> stations in Indiana (Hammond, Gary, Michigan City, South Bend).</div>
+
+      <div class="mb-3">
+        <label for="slice" class="form-label small fw-semibold text-uppercase text-secondary mb-1">Depart</label>
+        <select id="slice" class="form-select"></select>
+      </div>
+      <div class="d-flex gap-2">
+        <button id="plan" class="btn btn-crcl btn-lg flex-grow-1">Plan trip</button>
+        <button id="reset" class="btn btn-outline-secondary" title="Clear the trip, map, and address bar">Reset</button>
+      </div>
+    </section>
+
+    <div id="results" class="d-flex flex-column gap-2 mb-4"></div>
+
+    <h2 class="h6 fw-bold mb-2">Or try an example trip</h2>
     <div id="predefined-trips" class="d-flex flex-column gap-2 mb-2">
       <!-- first few trips, populated from CFG.predefined_trips by app.js -->
     </div>
-    <details id="predefined-more-wrap" class="mb-4" hidden>
-      <summary class="small text-crcl" style="cursor:pointer">See more predefined trip options</summary>
+    <details id="predefined-more-wrap" class="mb-2" hidden>
+      <summary class="small text-crcl" style="cursor:pointer">See more example trips</summary>
       <div id="predefined-trips-more" class="d-flex flex-column gap-2 mt-2">
         <!-- overflow trips (beyond the first few) -->
       </div>
     </details>
-
-    <h2 class="h5 fw-bold mb-2">Option B: Choose your own trip</h2>
-    <div class="ac-wrap mb-2">
-      <h3 class="h6 fw-semibold mb-1">B1. Choose a starting location</h3>
-      <label for="from" class="form-label small fw-semibold text-uppercase text-secondary mb-1">From (address)</label>
-      <input id="from" type="text" class="form-control" autocomplete="off" placeholder="e.g. 71st &amp; Exchange, Chicago">
-      <ul id="from-list" class="aclist list-group shadow-sm"></ul>
-      <div id="from-terminal" class="mt-2"></div>
-    </div>
-
-    <div class="ac-wrap mb-2">
-      <h3 class="h6 fw-semibold mb-1">B2. Choose a destination</h3>
-      <label for="to" class="form-label small fw-semibold text-uppercase text-secondary mb-1">To (address)</label>
-      <input id="to" type="text" class="form-control" autocomplete="off" placeholder="e.g. Chicago Botanic Garden">
-      <ul id="to-list" class="aclist list-group shadow-sm"></ul>
-      <div id="to-terminal" class="mt-2"></div>
-      <div class="form-text small">Tip: you can also reach <b>O'Hare</b> terminals and <b>South Shore Line</b> stations in Indiana (Hammond, Gary, Michigan City, South Bend).</div>
-    </div>
-
-    <div class="d-flex justify-content-end mb-3">
-      <button id="swap" class="btn btn-sm btn-outline-secondary" title="Swap origin and destination">&#8646; Swap</button>
-    </div>
-
-    <div class="row g-2 align-items-end mb-3">
-      <div class="col">
-        <label for="slice" class="form-label small fw-semibold text-uppercase text-secondary mb-1">Depart</label>
-        <select id="slice" class="form-select"></select>
-      </div>
-      <div class="col-auto">
-        <button id="plan" class="btn btn-crcl">Plan trip</button>
-      </div>
-      <div class="col-auto">
-        <button id="reset" class="btn btn-outline-secondary" title="Clear the trip, map, and address bar">Reset</button>
-      </div>
-    </div>
-
-    <div id="results" class="d-flex flex-column gap-2"></div>
     
     <footer class="text-secondary small mt-4 pt-3 border-top">
       <p id="method-note" class="mb-2"><!-- per-trip methodology note, set by app.js after a plan --></p>
