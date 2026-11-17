@@ -4,7 +4,9 @@ CREATE TABLE IF NOT EXISTS emails (
   email      TEXT PRIMARY KEY,
   created_at TEXT NOT NULL,
   source     TEXT,
-  user_agent TEXT
+  user_agent TEXT,
+  bad_at     TEXT,   -- when the address was marked undeliverable (NULL = good)
+  bad_reason TEXT    -- why (e.g. the bounce message)
 );
 
 -- Feedback submissions. `trip` captures the trip the user was viewing (its share

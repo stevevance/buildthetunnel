@@ -36,7 +36,7 @@ The D1 database is **`planner_emails`** (binding `DB`) with three tables:
 
 | Table | Purpose | Key columns |
 |-------|---------|-------------|
-| `emails` | Advocacy email list; one row per address, re-submissions ignored | `email` (PK), `created_at`, `source`, `user_agent` |
+| `emails` | Advocacy email list; one row per address, re-submissions ignored. Dead addresses are marked, not deleted: skip rows where `bad_at` is set when emailing the list | `email` (PK), `created_at`, `source`, `user_agent`, `bad_at`, `bad_reason` |
 | `feedback` | User feedback; `trip` holds the share params for context | `id` (PK), `created_at`, `message`, `email` (optional), `trip`, `user_agent` |
 | `trips` | One row per planned trip (or failed search), for usage analytics | `origin`/`destination` (stations, not addresses), `today_min`/`scenario_min`, `transfers_*`, `x_route`, `result` (`ok`/`no_route`/…), `source`, `cid` (anonymous localStorage UUID), `ttoken`, `shared`, `device`, `ref_host`, `utm_*` |
 
