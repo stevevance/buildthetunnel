@@ -2,7 +2,7 @@
 /*
  * Render the film straight from three.js to MP4, without HyperFrames' screenshot capture.
  *
- *   node tools/direct-render.mjs [--output file.mp4] [--start 0] [--end 157] [--bitrate 30]
+ *   node tools/direct-render.mjs [--size 720|1080|2k|4k] [--output file.mp4] [--start 0] [--end 157] [--bitrate 30]
  *
  * Every frame of the film is a pure function of time (assets/cab-ride.js: render(t)), so this opens
  * index.html in Google Chrome (new headless mode, which draws on the GPU), steps t through the film a
@@ -11,8 +11,10 @@
  * under it with ffmpeg: the same clips, start times and volumes as the <audio> elements in index.html
  * (written by tools/place-audio.mjs).
  *
- * The frame size is whatever index.html is set to (build.py --size). HyperFrames still does the
- * previews and the check; this only replaces its render.
+ * The frame size is --size: 720 (1280 x 720, the default), 1080 (1920 x 1080), 2k (2560 x 1440) or 4k (3840 x 2160).
+ * It reaches the page as index.html?size=WxH and leaves index.html as it is (build.py --size sets that, for
+ * HyperFrames). The bitrate defaults to suit the size: 8, 12, 20 or 30 Mbit/s. HyperFrames still does the previews
+ * and the check; this only replaces its render.
  *
  * Where Chrome has no H.264 encoder for the frame size (Linux has none at 4K), or with RAW=1, each frame is sent back
  * as a JPEG (quality 0.97: raw pixels are 33 MB a frame at 4K, far too slow to send) and ffmpeg encodes them: on an
@@ -33,7 +35,11 @@ const EXTRA_ARGS = (process.env.CHROME_ARGS || "").split(" ").filter(Boolean);
 const FPS = 30;
 const arg = (name, fallback) => { const i = process.argv.indexOf("--" + name); return i > 0 ? process.argv[i + 1] : fallback; };
 const output = path.resolve(arg("output", path.join(ROOT, "cab-ride-direct.mp4")));
-const startT = +arg("start", 0), endArg = arg("end", null), bitrate = +arg("bitrate", 30) * 1e6;
+const SIZES = { 720: [1280, 720, 8], 1080: [1920, 1080, 12], "2k": [2560, 1440, 20], "4k": [3840, 2160, 30] };   // width, height, default Mbit/s
+const sizeArg = String(arg("size", "720")).toLowerCase().replace(/p$/, "");
+if (!SIZES[sizeArg]) { console.error(`--size must be one of: ${Object.keys(SIZES).join(", ")}`); process.exit(1); }
+const [frameW, frameH, defaultMbps] = SIZES[sizeArg];
+const startT = +arg("start", 0), endArg = arg("end", null), bitrate = +arg("bitrate", defaultMbps) * 1e6;
 const videoOnly = output.replace(/\.mp4$/, "") + ".video.mp4";
 
 /* ---- a small server: the project's files, and a place for the browser to send the encoded video ---- */
@@ -91,7 +97,7 @@ const page = await browser.newPage();
 await page.setViewport({ width: 1280, height: 720 });
 page.on("console", (m) => { const t = m.text(); if (t.startsWith("[direct]")) console.log(t.slice(9)); });
 page.on("pageerror", (e) => console.error("page error:", e.message));
-await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: "load" });
+await page.goto(`http://127.0.0.1:${port}/index.html?size=${frameW}x${frameH}`, { waitUntil: "load" });
 await page.waitForFunction(() => !!window.__cabRide, { timeout: 180000 });
 
 const t0 = Date.now();

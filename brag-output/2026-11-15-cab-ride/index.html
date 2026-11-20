@@ -111,7 +111,9 @@
       const humans = { male, female, skin: { male: maleSkin, female: femaleSkin }, hair: Object.fromEntries(HAIR.map((h, i) => [h, hairs[i]])), clone };
       // the Art Institute of Chicago's paintings for the station walls (public domain)
       const artwork = await Promise.all(art.map(async (a) => { const i = new Image(); i.src = a.file; await i.decode(); return { ...a, img: i }; }));
-      const ride = createCabRide(THREE, city, document.getElementById("cab"), 3840, 2160, { img, geo }, logos, captions, USE_HUMANS ? humans : null, artwork);
+      // ?size=WxH draws the film at another frame size without changing this file (tools/direct-render.mjs --size)
+      const [W, H] = (new URLSearchParams(location.search).get("size") || "3840x2160").split("x").map(Number);
+      const ride = createCabRide(THREE, city, document.getElementById("cab"), W, H, { img, geo }, logos, captions, USE_HUMANS ? humans : null, artwork);
       window.__cabRide = ride;
       window.addEventListener("hf-seek", (e) => ride.render(e.detail.time));
       ride.render(0);

@@ -3,6 +3,7 @@
 #
 #   ./build.py --no-render                  # first, on the Mac: the announcements (macOS `say`), timing and check
 #   tools/droplet-render.sh cab-ride-full-route-v18.mp4 [size] [region]
+#   FRAME=1080 tools/droplet-render.sh ...  # frame size for tools/direct-render.mjs --size (default 4k)
 #
 # Defaults: an RTX 6000 Ada (gpu-6000adax1-48gb, $1.57/hr) in tor1. Which GPU sizes a region has changes; see
 #   doctl compute size list --output json      (each size's "regions")
@@ -39,7 +40,7 @@ rsync -az -e "${SSH[*]}" --exclude node_modules --exclude '*.mp4' --exclude prev
 
 echo "Rendering..."
 "${SSH[@]}" root@"$IP" "cd /root/cab && export __EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/10_nvidia.json \
-  CHROME=/usr/bin/google-chrome CHROME_ARGS='--no-sandbox --use-angle=gl-egl' && node tools/direct-render.mjs --output '$OUT'"
+  CHROME=/usr/bin/google-chrome CHROME_ARGS='--no-sandbox --use-angle=gl-egl' && node tools/direct-render.mjs --size ${FRAME:-4k} --output '$OUT'"
 
 echo "Copying $OUT back..."
 rsync -az -e "${SSH[*]}" root@"$IP":/root/cab/"$OUT" "$HERE"/"$OUT"
