@@ -46,7 +46,8 @@ const KX = 111.32 * 1000 * Math.cos(LAT0 * Math.PI / 180), KY = 111.07 * 1000;
 const proj = ([lon, lat]) => [(lon - LON0) * KX, -(lat - LAT0) * KY];
 const unX = (x) => LON0 + x / KX, unZ = (z) => LAT0 - z / KY;
 // How far around the start of the route to keep, in metres.
-const EXTENT = WIDE ? { west: -4000, east: 1500, north: -5300, south: 1300 } : { west: -3100, east: 900, north: -4300, south: 1300 };
+// (--wide reaches north-west to Clybourn, where the film now ends: 41.917, -87.668 is about x -3980, z -5900)
+const EXTENT = WIDE ? { west: -4900, east: 1500, north: -6900, south: 1300 } : { west: -3100, east: 900, north: -4300, south: 1300 };
 const WATER_EAST = WIDE ? 5200 : EXTENT.east;                     // the lake runs on east past the buildings
 const inExtent = ([x, z]) => x > EXTENT.west && x < EXTENT.east && z > EXTENT.north && z < EXTENT.south;
 const r1 = (v) => Math.round(v * 10) / 10;
@@ -187,7 +188,7 @@ for (const b of buildings) delete b.aTop;
 
 /* ---- streets, where the line is on the surface ---- */
 const WIDTH = { motorway: 16, trunk: 15, primary: 14, secondary: 12, tertiary: 10, residential: 8, unclassified: 8, service: 5, living_street: 6 };
-const SURFACE = [[41.8560, -87.6330, 41.8720, -87.6090], [41.8870, -87.6540, 41.8990, -87.6370]];
+const SURFACE = [[41.8560, -87.6330, 41.8720, -87.6090], [41.8870, -87.6540, 41.8990, -87.6370], [41.8960, -87.6730, 41.9250, -87.6500]];   // the third: on to Clybourn
 const roads = [], seen = new Set();
 for (const [i, bb] of SURFACE.entries()) {
   const els = await overpass("roads" + i, `[out:json][timeout:120];way["highway"~"^(${Object.keys(WIDTH).join("|")})$"](${bb.join(",")});out body geom;`);

@@ -6,133 +6,193 @@ export default [
   "text": "This is an X1 train to Highland Park."
  },
  {
-  "start": 10.61,
-  "end": 11.94,
-  "text": "Next stop, Roosevelt."
+  "start": 6.95,
+  "end": 8.42,
+  "text": "Next stop, 18th Street."
  },
  {
-  "start": 11.99,
-  "end": 17.14,
-  "text": "Transfer to Red, Green, and Orange Line trains, and buses to the Museum Campus."
- },
- {
-  "start": 17.19,
-  "end": 19.46,
+  "start": 8.47,
+  "end": 10.77,
   "text": "Doors open on the right."
  },
  {
-  "start": 21.11,
-  "end": 23.06,
-  "text": "This is Roosevelt."
+  "start": 12.24,
+  "end": 14.19,
+  "text": "This is 18th Street."
  },
  {
-  "start": 23.11,
-  "end": 25.11,
+  "start": 14.24,
+  "end": 16.24,
   "text": "Doors closing."
  },
  {
-  "start": 33.37,
-  "end": 39.54,
+  "start": 23.85,
+  "end": 30.02,
   "text": "Eating, smoking, gambling, and drinking out of glass containers is prohibited on CrossTowner trains."
  },
  {
-  "start": 41.55,
-  "end": 43.23,
+  "start": 32,
+  "end": 33.33,
+  "text": "Next stop, Roosevelt."
+ },
+ {
+  "start": 33.38,
+  "end": 38.53,
+  "text": "Transfer to Red, Green, and Orange Line trains, and buses to the Museum Campus."
+ },
+ {
+  "start": 38.58,
+  "end": 40.86,
+  "text": "Doors open on the right."
+ },
+ {
+  "start": 42.51,
+  "end": 44.46,
+  "text": "This is Roosevelt."
+ },
+ {
+  "start": 44.51,
+  "end": 46.51,
+  "text": "Doors closing."
+ },
+ {
+  "start": 62.94,
+  "end": 64.63,
   "text": "Next stop, Taylor and Clinton."
  },
  {
-  "start": 43.28,
-  "end": 45.37,
+  "start": 64.68,
+  "end": 66.77,
   "text": "Doors open on the right."
  },
  {
-  "start": 47.02,
-  "end": 48.97,
+  "start": 68.42,
+  "end": 70.37,
   "text": "This is Taylor and Clinton."
  },
  {
-  "start": 49.02,
-  "end": 51.02,
+  "start": 70.42,
+  "end": 72.42,
   "text": "Doors closing."
  },
  {
-  "start": 53.52,
-  "end": 55.54,
+  "start": 74.92,
+  "end": 76.93,
   "text": "Next stop, Union Station."
  },
  {
-  "start": 55.59,
-  "end": 63.8,
+  "start": 76.98,
+  "end": 85.19,
   "text": "Transfer to Blue Line, X5, and X6 trains, the G, J, K, M, and P lines, Amtrak, and the O'Hare Flyer."
  },
  {
-  "start": 63.85,
-  "end": 66.53,
+  "start": 85.24,
+  "end": 87.93,
   "text": "Doors open on the right."
  },
  {
-  "start": 67.61,
-  "end": 69.56,
+  "start": 89.01,
+  "end": 90.96,
   "text": "This is Union Station."
  },
  {
-  "start": 69.61,
-  "end": 71.61,
+  "start": 91.01,
+  "end": 93.01,
   "text": "Doors closing."
  },
  {
-  "start": 76.62,
-  "end": 78.65,
+  "start": 98.01,
+  "end": 100.04,
   "text": "Next stop, Randolph and Clinton."
  },
  {
-  "start": 78.7,
-  "end": 82.94,
+  "start": 100.09,
+  "end": 104.34,
   "text": "Transfer to Green and Pink Line trains, and the A, C, and E lines."
  },
  {
-  "start": 82.99,
-  "end": 85.25,
+  "start": 104.39,
+  "end": 106.65,
   "text": "Doors open on the right."
  },
  {
-  "start": 86.9,
-  "end": 88.85,
+  "start": 108.3,
+  "end": 110.25,
   "text": "This is Randolph and Clinton."
  },
  {
-  "start": 88.9,
-  "end": 90.9,
+  "start": 110.3,
+  "end": 112.3,
   "text": "Doors closing."
  },
  {
-  "start": 96.48,
-  "end": 97.84,
-  "text": "This is a walkthrough train."
- },
- {
-  "start": 97.89,
-  "end": 100.54,
-  "text": "Please make use of all available space."
- },
- {
-  "start": 105.86,
-  "end": 107.76,
+  "start": 127.26,
+  "end": 129.16,
   "text": "Next stop, Chicago and Halsted."
  },
  {
-  "start": 107.81,
-  "end": 110.03,
+  "start": 129.21,
+  "end": 131.42,
   "text": "Doors open on the right."
  },
  {
-  "start": 111.68,
-  "end": 113.63,
+  "start": 133.07,
+  "end": 135.02,
   "text": "This is Chicago and Halsted."
  },
  {
-  "start": 113.68,
-  "end": 115.68,
+  "start": 135.07,
+  "end": 137.07,
+  "text": "Doors closing."
+ },
+ {
+  "start": 143.14,
+  "end": 144.5,
+  "text": "This is a walkthrough train."
+ },
+ {
+  "start": 144.55,
+  "end": 147.2,
+  "text": "Please make use of all available space."
+ },
+ {
+  "start": 152.98,
+  "end": 154.76,
+  "text": "Next stop, Division and Elston."
+ },
+ {
+  "start": 154.81,
+  "end": 156.93,
+  "text": "Doors open on the right."
+ },
+ {
+  "start": 158.58,
+  "end": 160.53,
+  "text": "This is Division and Elston."
+ },
+ {
+  "start": 160.58,
+  "end": 162.58,
+  "text": "Doors closing."
+ },
+ {
+  "start": 180.17,
+  "end": 181.39,
+  "text": "Next stop, Clybourn."
+ },
+ {
+  "start": 181.44,
+  "end": 183.67,
+  "text": "Doors open on the right."
+ },
+ {
+  "start": 185.32,
+  "end": 187.27,
+  "text": "This is Clybourn."
+ },
+ {
+  "start": 187.32,
+  "end": 189.32,
   "text": "Doors closing."
  }
 ];
