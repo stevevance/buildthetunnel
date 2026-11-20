@@ -114,6 +114,12 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
   const TRAIN_LONG = CARS * CAR_LEN + (CARS - 1) * CAR_GAP;        // nose to tail, 105.7 m
   const PLAT_IN = 3.65, PLAT_OUT = 8.6, PLAT_UP = 1.1, CEIL = 6.0;   // station box, relative to centreline / rail
   const EXIT_TO = ["Roosevelt Rd", "Taylor St", "Union Station", "Randolph St"];
+  // Union Station and Randolph/Clinton are tall vaulted halls instead of boxes, after the atrium of Wuhan Railway
+  // Station (all assumed): galleries along both sides at concourse level (GAL), joined by a bridge over the tracks
+  // ahead of the cab, under a scalloped vault of panels on white arch ribs whose crown is just under the street.
+  // The line drops a further DEEP metres between them to make room.
+  const HALLS = [2, 3], DEEP = 7, DEEP_RUN = 300;
+  const GAL = 6.8, HALL = 13, SPRING = 11, CROWN = 17, SAG = 1.2;
 
   /* ---- renderer: WebGL offscreen, accumulated into the visible 2D canvas ---- */
   const gl = document.createElement("canvas");
@@ -140,7 +146,11 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
   const pd = plan.map((p, i) => (planLen += i ? p.distanceTo(plan[i - 1]) : 0));
   // Down at the south end, up again at the north end.
   const RAMP1 = LEAD_IN + RAMP_FROM, RAMP2 = planLen - RUNOUT - 20 - RAMP_LEN;
-  const profile = (d) => -DEPTH * smooth((d - RAMP1) / RAMP_LEN) * (1 - smooth((d - RAMP2) / RAMP_LEN));
+  // the halls' stations along the plan (their boxes run from about 121 m behind to 40 m beyond)
+  const planD = (s) => { let best = Infinity, k = 0; plan.forEach((p, i) => { const q = Math.hypot(p.x - s.x, p.y - s.z); if (q < best) { best = q; k = i; } }); return pd[k]; };
+  const DEEP0 = planD(city.stations[HALLS[0]]) - 126, DEEP1 = planD(city.stations[HALLS[1]]) + 46;
+  const profile = (d) => -DEPTH * smooth((d - RAMP1) / RAMP_LEN) * (1 - smooth((d - RAMP2) / RAMP_LEN))
+    - DEEP * smooth((d - DEEP0 + DEEP_RUN) / DEEP_RUN) * (1 - smooth((d - DEEP1) / DEEP_RUN));
   const path = new THREE.CatmullRomCurve3(plan.map((p, i) => new THREE.Vector3(p.x, profile(pd[i]), p.y)), false, "centripetal");
   path.arcLengthDivisions = 14000;
   const LENGTH = path.getLength();
@@ -205,7 +215,18 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
     // The crowd keeps to the stretch it stood on before the platforms were lengthened to the train (crowdFrom).
     S.platFrom = S.stop + NOSE - TRAIN_LONG - 4; S.platTo = S.d + 34; S.crowdFrom = S.d + 34 - 95;
     S.boxFrom = S.platFrom - 6; S.boxTo = S.platTo + 6;
+    if (HALLS.includes(STN.indexOf(S))) {
+      S.hall = true; S.exitTop = GAL; S.stairRun = 14;
+      S.bay = (S.boxTo - S.boxFrom) / Math.round((S.boxTo - S.boxFrom) / 13);   // the vault's bays, a whole number in the hall
+      S.bridge = [S.d + 28, S.d + 34];                                             // the bridge over the tracks, ahead of the cab
+    }
   }
+  // Height of a hall's vault above the rail, `x` metres from the centreline: an ogee from the crown down to the
+  // springing at the back of the galleries, sagging between the ribs (one at each end of every bay).
+  const vaultY = (S, x, d) => {
+    const a = Math.min(Math.abs(x) / HALL, 1), s = Math.sin(Math.PI * (d - S.boxFrom) / S.bay);
+    return SPRING + (CROWN - SPRING) * (1 - smooth(a)) - SAG * s * s * (1 - a * a);
+  };
   // The East 18th Street Footbridge (OpenStreetMap way 56180317), [lon, lat]: up a switchback ramp on the west side,
   // across the Metra Electric on a span (points 3 to 5), and down a long ramp north beside Lake Shore Drive.
   const FOOTBRIDGE = [[-87.618197, 41.857672], [-87.618519, 41.858227], [-87.61844, 41.858253], [-87.618271, 41.857947],
@@ -780,8 +801,14 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
     const hangers = new THREE.InstancedMesh(new THREE.BoxGeometry(0.09, 1, 0.09), steel, hang.length * 2);
     const clamps = new THREE.InstancedMesh(new THREE.BoxGeometry(0.2, 0.16, 0.34),
       new THREE.MeshStandardMaterial({ color: 0x7a3b2a, roughness: 0.7 }), hang.length * 2);   // insulators
+    // in the halls, from a steel beam across the tracks between the galleries' edges
+    const inHall = (d) => STN.some((S) => S.hall && d > S.boxFrom + 2 && d < S.boxTo - 2 && !(d > S.bridge[0] - 1 && d < S.bridge[1] + 1));
+    const hallBeams = hang.filter(inHall), xBeams = new THREE.InstancedMesh(new THREE.BoxGeometry(PLAT_OUT * 2, 0.22, 0.16), new THREE.MeshBasicMaterial({ color: 0xc9cfd0 }), hallBeams.length);   // painted light, like the hall's steel
+    hallBeams.forEach((d, i) => place(xBeams, i, d, 0, GAL - 0.68));
+    scene.add(xBeams);
     hang.forEach((d, i) => {
-      const roof = STN.some((S) => d > S.boxFrom && d < S.boxTo) ? CEIL : BORE_ROOF;
+      const box = STN.find((S) => d > S.boxFrom && d < S.boxTo);
+      const roof = !box ? BORE_ROOF : !box.hall ? CEIL : inHall(d) ? GAL - 0.79 : box.bridge && d > box.bridge[0] - 1 && d < box.bridge[1] + 1 ? GAL - 0.8 : WIRE_IN + 0.2;
       [-OFF, OFF].forEach((c, k) => {
         upright(hangers, i * 2 + k, d, c, WIRE_IN + 0.2, roof);
         place(clamps, i * 2 + k, d, c, WIRE_IN + 0.13);
@@ -947,30 +974,166 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
   const handrail = new THREE.MeshBasicMaterial({ color: 0x59636a, side: THREE.DoubleSide });
   const daylight = new THREE.MeshBasicMaterial({ color: 0xfdfaf0, side: THREE.DoubleSide });
   const fitting = new THREE.MeshBasicMaterial({ color: 0xfffaf0 });
-  STN.forEach((S) => {
-    const F = S.boxFrom, T = S.boxTo;
+
+  /* ---- a hall (see HALLS): galleries and the bridge between them, the vault with its ribs and lights, and a
+          glazed screen, lit from behind, at each end above the tunnel mouth ---- */
+  const white = lit(0xeef0ee, 0.55);
+  const repeatTex = (w, h, draw, rx, ry) => { const t = textTexture(w, h, draw); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rx, ry); return t; };
+  // the vault's panels: aluminium slats, 3.2 m along by 1/22 of the way across, with dark joints
+  const vaultMat = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide, map: repeatTex(256, 256, (c) => {
+    c.fillStyle = "#c9cdcc"; c.fillRect(0, 0, 256, 256);
+    c.fillStyle = "#b1b6b5"; for (let y = 0; y < 256; y += 16) c.fillRect(0, y, 256, 5);
+    c.fillStyle = "#7d8486"; c.fillRect(0, 0, 256, 6); c.fillRect(0, 0, 6, 256);
+  }, 1 / 3.2, 22) });
+  // shopfronts and ticket windows along the back of each gallery, 6 m to a bay
+  const shopMat = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, map: repeatTex(512, 384, (c) => {
+    c.fillStyle = "#3b4246"; c.fillRect(0, 0, 512, 384);
+    c.fillStyle = "#15a3bb"; c.fillRect(0, 70, 512, 34);
+    const g = c.createLinearGradient(0, 120, 0, 384); g.addColorStop(0, "#fff3dc"); g.addColorStop(1, "#e8d2b0");
+    c.fillStyle = g; for (const x of [16, 180, 344]) c.fillRect(x, 120, 152, 264);
+  }, 1 / 6, 1) });
+  const starCore = new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false });
+  const starGlow = new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, toneMapped: false,
+    map: textTexture(128, 128, (c) => { const g = c.createRadialGradient(64, 64, 0, 64, 64, 64); g.addColorStop(0, "rgba(255,250,235,0.9)"); g.addColorStop(0.25, "rgba(255,245,225,0.35)"); g.addColorStop(1, "rgba(255,245,225,0)"); c.fillStyle = g; c.fillRect(0, 0, 128, 128); }) });
+  // A surface over the alignment from d0 to d1, every `step` metres: pt(d, v) -> [side, up] for v from 0 to 1 in nv steps.
+  // Its uv: metres along, and v; its vertex colours (if `shade`): shade(d, v).
+  const surface = (d0, d1, step, nv, pt, mat, shade = null) => {
+    const nd = Math.max(1, Math.ceil((d1 - d0) / step)), pos = [], uv = [], col = [], idx = [];
+    for (let i = 0; i <= nd; i++) {
+      const d = d0 + (i / nd) * (d1 - d0);
+      for (let j = 0; j <= nv; j++) {
+        const v = j / nv, [side, up] = pt(d, v), p = at(d, side, up).p;
+        pos.push(p.x, p.y, p.z); uv.push(d - d0, v);
+        if (shade) { const k = shade(d, v); col.push(k, k * 0.985, k * 0.96); }
+        if (i < nd && j < nv) { const k = i * (nv + 1) + j; idx.push(k, k + nv + 1, k + 1, k + 1, k + nv + 1, k + nv + 2); }
+      }
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
+    if (shade) g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+    g.setIndex(idx); g.computeVertexNormals();
+    scene.add(new THREE.Mesh(g, mat));
+  };
+  const tube = (pts, r, mat) => scene.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), pts.length * 3, r, 8, false), mat));
+  const ribMat = new THREE.MeshBasicMaterial({ color: 0xf2f4f3 }), latticeMat = new THREE.MeshBasicMaterial({ color: 0xb4babb });
+  function hall(S) {
+    const F = S.boxFrom, T = S.boxTo, L0 = S.stop + 17 + S.stairRun, [B0, B1] = S.bridge;
+    // the galleries: a floor out to the shopfronts, a white edge beam, and a glass balustrade, open where the stairs
+    // come up and where the bridge leaves
+    const spans = [[F, L0], [L0 + 1.5, B0], [B1, T]];
     for (const sg of [-1, 1]) {
-      along(F, T, sg * PLAT_OUT, PLAT_UP, sg * PLAT_OUT, CEIL, tile);                         // side wall
+      along(F, T, sg * PLAT_OUT, GAL, sg * HALL, GAL, floorMat);
+      along(F, T, sg * (PLAT_OUT - 0.04), GAL - 0.7, sg * (PLAT_OUT - 0.04), GAL + 0.02, white);
+      for (const [a, b] of spans) {
+        along(a, b, sg * (PLAT_OUT + 0.15), GAL, sg * (PLAT_OUT + 0.15), GAL + 1.1, glass);
+        along(a, b, sg * (PLAT_OUT + 0.15), GAL + 1.06, sg * (PLAT_OUT + 0.15), GAL + 1.16, handrail);
+      }
+      surface(F, T, 3, 1, (d, v) => [sg * HALL, GAL + v * (SPRING - GAL)], shopMat);
+    }
+    // the bridge over the tracks: deck, white soffit and faces, glass balustrades
+    along(B0, B1, -PLAT_OUT, GAL, PLAT_OUT, GAL, floorMat);
+    along(B0, B1, -PLAT_OUT, GAL - 0.8, PLAT_OUT, GAL - 0.8, white);
+    for (const d of [B0, B1]) {
+      ribbon((i) => [at(d, (i * 2 - 1) * PLAT_OUT, GAL - 0.8).p, at(d, (i * 2 - 1) * PLAT_OUT, GAL + 0.02).p], 1, white);
+      ribbon((i) => [at(d, (i * 2 - 1) * PLAT_OUT, GAL).p, at(d, (i * 2 - 1) * PLAT_OUT, GAL + 1.1).p], 1, glass);
+      ribbon((i) => [at(d, (i * 2 - 1) * PLAT_OUT, GAL + 1.06).p, at(d, (i * 2 - 1) * PLAT_OUT, GAL + 1.16).p], 1, handrail);
+    }
+    // the vault, brighter toward the crown and darker in the sag between ribs
+    const NV = 48, vx = (v) => (v * 2 - 1) * HALL;
+    surface(F, T, 1, NV, (d, v) => [vx(v), vaultY(S, vx(v), d)], vaultMat, (d, v) => {
+      const a = Math.abs(v * 2 - 1), s = Math.sin(Math.PI * (d - F) / S.bay);
+      return 0.5 + 0.26 * (1 - a) - 0.14 * s * s;
+    });
+    // a white arch rib at each end of every bay, down the back wall to the gallery floor, and between them a
+    // lattice of thinner ribs from the springing to the crown
+    const bays = Math.round((T - F) / S.bay);
+    for (let k = 0; k <= bays; k++) {
+      const d = F + k * S.bay, pts = [at(d, -(HALL - 0.35), GAL).p];
+      for (let i = 0; i <= 40; i++) { const x = -(HALL - 0.35) + (i / 40) * 2 * (HALL - 0.35); pts.push(at(d, x, vaultY(S, x, d) - 0.3).p); }
+      pts.push(at(d, HALL - 0.35, GAL).p);
+      tube(pts, 0.42, ribMat);
+      if (k === bays) break;
+      for (const sg of [-1, 1]) for (const end of [0, 1]) {
+        const lat = [];
+        for (let i = 0; i <= 16; i++) {
+          const t = i / 16, dd = d + (end ? S.bay * (1 - t / 2) : S.bay * t / 2), x = sg * HALL * (1 - t);
+          lat.push(at(dd, x, vaultY(S, x, dd) - 0.12).p);
+        }
+        tube(lat, 0.07, latticeMat);
+      }
+    }
+    // downlights scattered over the vault in staggered rows, each a bright point with a soft glow
+    const stars = [];
+    for (let k = 0; k < bays; k++) [0.25, 0.5, 0.75].forEach((f, r) => {
+      for (let x = -HALL + 2 + (r === 1 ? 1.6 : 0); x < HALL - 1.8; x += 3.2) stars.push([F + (k + f) * S.bay, x]);
+    });
+    const cores = new THREE.InstancedMesh(new THREE.BoxGeometry(0.2, 0.05, 0.2), starCore, stars.length);
+    const glows = new THREE.InstancedMesh(new THREE.PlaneGeometry(1.0, 1.0), starGlow, stars.length);
+    stars.forEach(([d, x], i) => {
+      const y = vaultY(S, x, d);
+      place(cores, i, d, x, y - 0.1);
+      const q = at(d, x, y - 0.14);
+      dummy.position.copy(q.p); dummy.lookAt(q.p.clone().add(q.tan)); dummy.rotateX(Math.PI / 2); dummy.updateMatrix(); glows.setMatrixAt(i, dummy.matrix);
+    });
+    scene.add(cores, glows);
+    // each end: a wall across the hall up to the vault, the tunnel mouth in its foot, tiled to the galleries and
+    // glazed above them, with the station's name across the glass (`back`: the end behind an arriving train)
+    const YT = CROWN + 0.3, W = 2048, ppm = W / (2 * HALL), H = Math.round((YT + 0.14) * ppm);
+    const px = (y) => H - (y + 0.14) * ppm;
+    const screen = textTexture(W, H, (c) => {
+      c.fillStyle = "#dfe4e3"; c.fillRect(0, 0, W, H);
+      c.fillStyle = "#15a3bb"; c.fillRect(0, px(2.75), W, 0.5 * ppm);
+      const g = c.createLinearGradient(0, px(YT), 0, px(GAL));
+      g.addColorStop(0, "#d6e3ee"); g.addColorStop(0.6, "#efe6e0"); g.addColorStop(1, "#f7d9bf");
+      c.fillStyle = g; c.fillRect(0, px(YT), W, px(GAL) - px(YT));
+      c.fillStyle = "#6b7478";
+      for (let i = 0, x = 0; x <= HALL; i++, x += 1.3) for (const sx of [-x, x]) { const w = i % 3 ? 3 : 8; c.fillRect((sx + HALL) * ppm - w / 2, px(YT), w, px(GAL) - px(YT)); }
+      for (let i = 1, y = GAL + 1.45; y < YT; i++, y += 1.45) { const w = i % 3 ? 3 : 7; c.fillRect(0, px(y) - w / 2, W, w); }
+      c.fillStyle = "#2b3135"; c.textAlign = "center"; c.textBaseline = "middle";
+      const name = S.name.toUpperCase();
+      fitFont(c, name, 14 * ppm, 1.5 * ppm, "700 %px Helvetica, Arial, sans-serif"); c.fillText(name, W / 2, px(GAL + 5.0));
+      c.fillStyle = "#0B7285"; c.fillRect(W / 2 - 4.5 * ppm, px(GAL + 8.2), 9 * ppm, 1.6 * ppm);
+      c.fillStyle = "#fff"; c.font = `italic 700 ${0.9 * ppm}px Helvetica, Arial, sans-serif`; c.fillText("CrossTowner", W / 2, px(GAL + 7.4));
+      c.fillStyle = "#eef0ee"; c.fillRect(0, px(GAL), W, 0.7 * ppm);
+    });
+    screen.repeat.set(1 / (2 * HALL), 1 / (YT + 0.14)); screen.offset.set(0.5, 0.14 / (YT + 0.14));
+    const screenMat = new THREE.MeshBasicMaterial({ map: screen, side: THREE.DoubleSide });
+    for (const [d, back] of [[F, true], [T, false]]) {
+      const sh = new THREE.Shape([V2(-HALL, -0.14), V2(HALL, -0.14)]);
+      for (let i = 0; i <= 48; i++) { const x = HALL - (i / 48) * 2 * HALL; sh.lineTo(x, vaultY(S, x, d) + 0.05); }
+      const hole = new THREE.Path(); hole.absarc(0, CY, R - 0.04, 0, Math.PI * 2, true); sh.holes.push(hole);
+      const q = at(d), m = new THREE.Mesh(new THREE.ShapeGeometry(sh, 48), screenMat);
+      m.position.copy(q.p); m.lookAt(back ? q.p.clone().add(q.tan) : q.p.clone().sub(q.tan)); scene.add(m);
+    }
+  }
+  STN.forEach((S) => {
+    const F = S.boxFrom, T = S.boxTo, WALL = S.hall ? GAL : CEIL;
+    for (const sg of [-1, 1]) {
+      along(F, T, sg * PLAT_OUT, PLAT_UP, sg * PLAT_OUT, WALL, tile);                         // side wall
       along(F, T, sg * PLAT_IN, PLAT_UP, sg * PLAT_OUT, PLAT_UP, floorMat);                   // platform
       along(F, T, sg * PLAT_IN, -0.12, sg * PLAT_IN, PLAT_UP, darkMat);                       // platform face
       along(F, T, sg * (PLAT_IN + 0.08), PLAT_UP + 0.012, sg * (PLAT_IN + 0.68), PLAT_UP + 0.012, yellow);   // tactile edge
       along(F, T, sg * (PLAT_OUT - 0.03), 2.25, sg * (PLAT_OUT - 0.03), 2.75, teal);          // CrossTowner-teal band
     }
-    along(F, T, -PLAT_OUT, CEIL, PLAT_OUT, CEIL, ceilMat);
-    boreWall(F, PLAT_OUT, -0.14, CEIL, tile);
-    boreWall(T, PLAT_OUT, -0.14, CEIL, tile);
-    // The bore's crown is higher than the station's ceiling, and the platforms are hollow: close both
-    // at each end, or a train in the tunnel sees over the ceiling to the street and under the platforms.
+    // The platforms are hollow: close them at each end, or a train in the tunnel sees under them.
     for (const d of [F + 0.04, T - 0.04]) {
-      ribbon((i) => [at(d, (i ? 1 : -1) * (R + 0.4), CEIL - 0.03).p, at(d, (i ? 1 : -1) * (R + 0.4), CY + R + 0.8).p], 1, ceilMat);
       for (const sg of [-1, 1]) ribbon((i) => [at(d, sg * (i ? PLAT_OUT : PLAT_IN), -0.14).p, at(d, sg * (i ? PLAT_OUT : PLAT_IN), PLAT_UP).p], 1, darkMat);
     }
-    // light fittings over each platform and between the tracks
-    for (const [side, w] of [[-5.2, 0.5], [5.2, 0.5], [0, 0.3]]) {
-      const n = Math.floor((T - F - 4) / 4);
-      const m = new THREE.InstancedMesh(new THREE.BoxGeometry(w, 0.07, 2.6), fitting, n);
-      for (let i = 0; i < n; i++) place(m, i, F + 3 + i * 4, side, CEIL - 0.06);
-      scene.add(m);
+    if (S.hall) hall(S);
+    else {
+      along(F, T, -PLAT_OUT, CEIL, PLAT_OUT, CEIL, ceilMat);
+      boreWall(F, PLAT_OUT, -0.14, CEIL, tile);
+      boreWall(T, PLAT_OUT, -0.14, CEIL, tile);
+      // The bore's crown is higher than the station's ceiling: close it at each end, or a train in the tunnel sees over the ceiling to the street.
+      for (const d of [F + 0.04, T - 0.04]) ribbon((i) => [at(d, (i ? 1 : -1) * (R + 0.4), CEIL - 0.03).p, at(d, (i ? 1 : -1) * (R + 0.4), CY + R + 0.8).p], 1, ceilMat);
+      // light fittings over each platform and between the tracks
+      for (const [side, w] of [[-5.2, 0.5], [5.2, 0.5], [0, 0.3]]) {
+        const n = Math.floor((T - F - 4) / 4);
+        const m = new THREE.InstancedMesh(new THREE.BoxGeometry(w, 0.07, 2.6), fitting, n);
+        for (let i = 0; i < n; i++) place(m, i, F + 3 + i * 4, side, CEIL - 0.06);
+        scene.add(m);
+      }
     }
     const nameTex = textTexture(1024, 256, (c) => {
       c.fillStyle = "#0B7285"; c.fillRect(0, 0, 1024, 256);
@@ -999,13 +1162,17 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
     // and one each side hung across the platform for arriving trains: over its back half, clear of the edge, on rods from the ceiling
     for (const [d, sg] of [[S.platFrom + 20, 1], [S.stop + 12, -1]]) {
       board(nameTex, 3.0, 0.75, d, sg * 7.0, 4.6, "train");
-      for (const lat of [5.8, 8.2]) { const q = at(d, sg * lat, (4.95 + CEIL) / 2), m = new THREE.Mesh(new THREE.BoxGeometry(0.04, CEIL - 4.95, 0.04), handrail); m.position.copy(q.p); scene.add(m); }
+      // (in a hall: from an arm off the wall below the gallery)
+      const top = S.hall ? 5.6 : CEIL;
+      for (const lat of [5.8, 8.2]) { const q = at(d, sg * lat, (4.95 + top) / 2), m = new THREE.Mesh(new THREE.BoxGeometry(0.04, top - 4.95, 0.04), handrail); m.position.copy(q.p); scene.add(m); }
+      if (S.hall) along(d - 0.03, d + 0.03, sg * 5.75, top, sg * PLAT_OUT, top, handrail, 1);
     }
 
     // The exits: a stair up from each platform to the street, against the
     // wall, just ahead of where the cab stops.
-    const EX0 = S.stop + 17, RUN = 11.5, STEPS = 26, IN = 6.1, OUT = PLAT_OUT - 0.1;
-    const TOP = CEIL + 0.6, rise = (TOP - PLAT_UP) / STEPS, going = RUN / STEPS;
+    // (In a hall the stair comes up onto the gallery.)
+    const EX0 = S.stop + 17, RUN = S.stairRun || 11.5, STEPS = 26, IN = 6.1, OUT = PLAT_OUT - 0.1;
+    const TOP = S.exitTop ?? CEIL + 0.6, rise = (TOP - PLAT_UP) / STEPS, going = RUN / STEPS;
     for (const sg of [1, -1]) {
       const steps = new THREE.InstancedMesh(new THREE.BoxGeometry(OUT - IN, rise, going), stepMat, STEPS);
       for (let i = 0; i < STEPS; i++) place(steps, i, EX0 + (i + 0.5) * going, sg * (IN + OUT) / 2, PLAT_UP + (i + 0.5) * rise);
@@ -1016,10 +1183,15 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
       }, 1, mat);
       slope(0, 1.0, glass); slope(1.0, 1.08, handrail);
       // the opening in the ceiling above the stair, bright with daylight from the street
-      along(EX0 + RUN * 0.42, EX0 + RUN + 1.5, sg * IN, CEIL - 0.03, sg * OUT, CEIL - 0.03, daylight, 20);
+      if (!S.hall) along(EX0 + RUN * 0.42, EX0 + RUN + 1.5, sg * IN, CEIL - 0.03, sg * OUT, CEIL - 0.03, daylight, 20);
+      else {                                                       // the landing at the top, open to the gallery
+        along(EX0 + RUN, EX0 + RUN + 1.5, sg * IN, TOP, sg * PLAT_OUT, TOP, floorMat, 1);
+        along(EX0 + RUN, EX0 + RUN + 1.5, sg * IN, TOP, sg * IN, TOP + 1.1, glass, 1);
+      }
       // a wall behind the top of the stair, and the signs: each arrow points up the stair,
       // which from the track is to the left on the right-hand wall and to the right on the left-hand one
-      ribbon((i) => [at(EX0 + RUN + 1.5, sg * (i ? OUT : IN), PLAT_UP).p, at(EX0 + RUN + 1.5, sg * (i ? OUT : IN), CEIL).p], 1, tile);
+      ribbon((i) => [at(EX0 + RUN + 1.5, sg * (i ? OUT : IN), PLAT_UP).p, at(EX0 + RUN + 1.5, sg * (i ? OUT : IN), WALL).p], 1, tile);
+      if (S.hall) ribbon((i) => [at(EX0 + RUN + 1.5, sg * (i ? PLAT_OUT : IN), TOP).p, at(EX0 + RUN + 1.5, sg * (i ? PLAT_OUT : IN), TOP + 1.1).p], 1, glass);
       board(sg > 0 ? exitRight : exitLeft, 3.0, 0.75, EX0 - 1.2, sg * ((IN + OUT) / 2 - 0.2), 3.75, "train");
       board(sg > 0 ? exitLeft : exitRight, 2.4, 0.6, EX0 - 9, sg * (PLAT_OUT - 0.07), 2.5, "track");
     }
