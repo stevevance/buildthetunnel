@@ -1,0 +1,16 @@
+{
+  "slug": "crosstowner-cab-ride",
+  "streams": "streams.json",
+  "map": {
+    "streets": "streets.geojson",
+    "parks": "osm_parks.geojson",
+    "water": "osm_water.geojson",
+    "rail": "osm_rail.geojson",
+    "places": "osm_places.geojson",
+    "rail_major_re": "Metra",
+    "plate": "minimap.png",
+    "geo": "minimap.json",
+    "win_px": 375,
+    "win_ground_m": 1100
+  }
+}

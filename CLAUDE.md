@@ -83,6 +83,11 @@ with captions from `build.py` / `tools/place-audio.mjs`. Renders are
 in announcements, ward outlines on the minimap; see its `NOTES.md`). It has its
 **own diverged copy** of `assets/cab-ride.js`, so port scene changes by hand.
 
+`brag-output/2026-11-22-cab-ride-reel/` is the vertical (1080x1920) Instagram reel: an intro in big type over
+the aerial shot, the cab through Union Station, and the Foundry Park → Soldier Field payoff (see its
+`NOTES.md`). It too has its own diverged `assets/cab-ride.js`; render it with
+`node tools/direct-render.mjs --size 720 --vertical`.
+
 | Task | Command (run in the film's folder) |
 |------|-------------------------------------|
 | Still frames (fast, GPU Chrome) | `node tools/stills.mjs <out-dir> 86.5 89 p6@3` (seconds, or preview view `p<i>@<stop>`; stops are 0 = 18th … 3 = Union Station, 4 = Randolph/Clinton) |
