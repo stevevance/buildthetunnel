@@ -46,6 +46,8 @@ brag-output/**/*.mp3
 brag-output/**/*.ogg
 brag-output/**/*.wav
 brag-output/**/*.m4a
+# render logs (tools/droplet-render.sh writes one beside each video)
+brag-output/**/*.log
 # HyperFrames render caches and Python bytecode in the launch-video projects
 brag-output/**/.hyperframes/
 brag-output/**/__pycache__/
