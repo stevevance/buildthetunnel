@@ -22,247 +22,247 @@ export default [
  },
  {
   "start": 11.56,
-  "end": 14.09,
+  "end": 14.1,
   "text": "Doors open on the right."
  },
  {
   "start": 16.81,
-  "end": 19.11,
+  "end": 19.16,
   "text": "Next stop, 51st and 53rd Streets."
  },
  {
-  "start": 19.16,
-  "end": 21.58,
+  "start": 19.21,
+  "end": 21.66,
   "text": "Doors open on the right."
  },
  {
-  "start": 27.56,
-  "end": 29.85,
+  "start": 27.52,
+  "end": 29.82,
   "text": "Next stop, 47th Street, Kenwood."
  },
  {
-  "start": 29.9,
+  "start": 29.87,
   "end": 32.27,
   "text": "Doors open on the left."
  },
  {
-  "start": 42.44,
-  "end": 44.23,
+  "start": 42.38,
+  "end": 44.19,
   "text": "Next stop, Oakwood Boulevard."
  },
  {
-  "start": 44.28,
+  "start": 44.24,
   "end": 46.43,
   "text": "Doors open on the left."
  },
  {
-  "start": 58.14,
-  "end": 59.77,
+  "start": 58.05,
+  "end": 59.72,
   "text": "Next stop, 27th Street."
  },
  {
-  "start": 59.82,
+  "start": 59.77,
   "end": 62.2,
   "text": "Doors open on the left."
  },
  {
-  "start": 67.26,
-  "end": 68.91,
+  "start": 67.21,
+  "end": 68.87,
   "text": "Next stop, McCormick Place."
  },
  {
-  "start": 68.96,
-  "end": 71.18,
+  "start": 68.92,
+  "end": 71.16,
   "text": "Transfer to South Shore Line trains."
  },
  {
-  "start": 71.23,
-  "end": 73.37,
+  "start": 71.21,
+  "end": 73.36,
   "text": "Doors open on the left."
  },
  {
-  "start": 81.23,
-  "end": 82.75,
+  "start": 81.16,
+  "end": 82.68,
   "text": "Next stop, 18th Street."
  },
  {
-  "start": 82.8,
-  "end": 85.06,
+  "start": 82.73,
+  "end": 85.01,
   "text": "Doors open on the left."
  },
  {
-  "start": 95.82,
-  "end": 101.99,
+  "start": 95.78,
+  "end": 102.03,
   "text": "Eating, smoking, gambling, and drinking out of glass containers is prohibited on CrossTowner trains."
  },
  {
-  "start": 103.98,
-  "end": 105.31,
+  "start": 104.02,
+  "end": 105.37,
   "text": "Next stop, Roosevelt."
  },
  {
-  "start": 105.36,
-  "end": 110.51,
+  "start": 105.42,
+  "end": 110.63,
   "text": "Transfer to Red, Green, and Orange Line trains, and buses to the Museum Campus."
  },
  {
-  "start": 110.56,
-  "end": 112.84,
+  "start": 110.68,
+  "end": 112.97,
   "text": "Doors open on the right."
  },
  {
-  "start": 131.92,
-  "end": 133.6,
+  "start": 132.02,
+  "end": 133.72,
   "text": "Next stop, Taylor and Clinton."
  },
  {
-  "start": 133.65,
-  "end": 135.74,
+  "start": 133.77,
+  "end": 135.87,
   "text": "Doors open on the right."
  },
  {
-  "start": 141.32,
-  "end": 143.34,
+  "start": 141.42,
+  "end": 143.44,
   "text": "Next stop, Union Station."
  },
  {
-  "start": 143.39,
-  "end": 151.6,
+  "start": 143.49,
+  "end": 151.73,
   "text": "Transfer to Blue Line, X5, and X6 trains, the G, J, K, M, and P lines, Amtrak, and the O'Hare Flyer."
  },
  {
-  "start": 151.65,
-  "end": 154.33,
+  "start": 151.78,
+  "end": 154.47,
   "text": "Doors open on the right."
  },
  {
-  "start": 154.98,
-  "end": 156.93,
+  "start": 155.12,
+  "end": 157.07,
   "text": "This is Union Station."
  },
  {
-  "start": 156.98,
-  "end": 158.98,
+  "start": 157.12,
+  "end": 159.12,
   "text": "Doors closing."
  },
  {
-  "start": 163.99,
-  "end": 166.03,
+  "start": 164.11,
+  "end": 166.14,
   "text": "Next stop, Randolph and Clinton."
  },
  {
-  "start": 166.08,
-  "end": 170.32,
+  "start": 166.19,
+  "end": 170.44,
   "text": "Transfer to Green and Pink Line trains, and the A, C, and E lines."
  },
  {
-  "start": 170.37,
-  "end": 172.63,
+  "start": 170.49,
+  "end": 172.76,
   "text": "Doors open on the right."
  },
  {
-  "start": 190.23,
-  "end": 192.14,
+  "start": 190.28,
+  "end": 192.23,
   "text": "Next stop, Chicago and Halsted."
  },
  {
-  "start": 192.19,
-  "end": 194.4,
+  "start": 192.28,
+  "end": 194.53,
   "text": "Doors open on the right."
  },
  {
-  "start": 196.05,
-  "end": 198,
+  "start": 196.18,
+  "end": 198.13,
   "text": "This is Chicago and Halsted."
  },
  {
-  "start": 198.05,
-  "end": 200.05,
+  "start": 198.18,
+  "end": 200.18,
   "text": "Doors closing."
  },
  {
-  "start": 215.92,
-  "end": 217.75,
+  "start": 208.64,
+  "end": 210.51,
   "text": "Next stop, Division and Elston."
  },
  {
-  "start": 217.8,
-  "end": 219.89,
+  "start": 210.56,
+  "end": 212.69,
   "text": "Doors open on the left."
  },
  {
-  "start": 237.37,
-  "end": 238.61,
+  "start": 219.72,
+  "end": 220.98,
   "text": "Next stop, Clybourn."
  },
  {
-  "start": 238.66,
-  "end": 241.4,
+  "start": 221.03,
+  "end": 223.8,
   "text": "Transfer to Union Pacific Northwest trains."
  },
  {
-  "start": 241.45,
-  "end": 243.64,
+  "start": 223.85,
+  "end": 226.07,
   "text": "Doors open on the left."
  },
  {
-  "start": 252.4,
-  "end": 253.76,
+  "start": 235.67,
+  "end": 237.07,
   "text": "This is a walkthrough train."
  },
  {
-  "start": 253.81,
-  "end": 256.46,
+  "start": 237.12,
+  "end": 239.82,
   "text": "Please make use of all available space."
  },
  {
-  "start": 261.87,
-  "end": 263.59,
+  "start": 245.99,
+  "end": 247.75,
   "text": "Next stop, Addison and Lincoln."
  },
  {
-  "start": 263.64,
-  "end": 265.66,
+  "start": 247.8,
+  "end": 249.84,
   "text": "Doors open on the left."
  },
  {
-  "start": 278.09,
-  "end": 279.46,
+  "start": 262.23,
+  "end": 263.62,
   "text": "Next stop, Ravenswood."
  },
  {
-  "start": 279.51,
-  "end": 281.69,
+  "start": 263.67,
+  "end": 265.88,
   "text": "Doors open on the left."
  },
  {
-  "start": 294.1,
-  "end": 295.89,
+  "start": 278.19,
+  "end": 280.03,
   "text": "Next stop, Peterson and Ridge."
  },
  {
-  "start": 295.94,
-  "end": 298.05,
+  "start": 280.08,
+  "end": 282.24,
   "text": "Doors open on the left."
  },
  {
-  "start": 308.6,
-  "end": 310.09,
+  "start": 292.72,
+  "end": 294.24,
   "text": "Next stop, Rogers Park."
  },
  {
-  "start": 310.14,
-  "end": 312.38,
+  "start": 294.29,
+  "end": 296.57,
   "text": "Doors open on the left."
  },
  {
-  "start": 314.03,
-  "end": 315.98,
+  "start": 298.22,
+  "end": 300.17,
   "text": "This is Rogers Park."
  },
  {
-  "start": 316.03,
-  "end": 318.03,
+  "start": 300.22,
+  "end": 302.22,
   "text": "Doors closing."
  }
 ];

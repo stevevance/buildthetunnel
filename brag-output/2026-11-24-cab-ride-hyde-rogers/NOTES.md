@@ -111,10 +111,15 @@ Today: ME to Museum Campus, 10-min walk, Red Line Roosevelt to Morse. CrossTowne
 7. Done: music. "This Time With Soul!" by laerlooper (EJG), https://ccmixter.org/files/laerlooper/4570, CC BY 2.5,
    credited on the closing screen. Chosen over "Perpetual Motion (AndyPop Mix)" (andrewwainwright) and "Our Generation"
    (MartynJoseph2000). `tools/place-audio.mjs` loops it once (4 s crossfade), keeps it low under the train, dips it under
-   every announcement, fades it in and out into the credits, and writes `assets/audio/music.wav`. The repo ignores
+   every announcement, fades it in and out into the credits, and writes `assets/audio/music.m4a`. The repo ignores
    audio: copy the MP3 from `~/Music/CCmixter/` to `assets/music/`.
 
 ## Open questions
 
 - Platform sides: settled from OSM's platforms (see step 2). Worth a glance at aerials when building them.
 - Loyola is on the Red Line, not at Rogers Park Metra; "campus to campus" is approximate at the north end.
+
+## Audio files
+
+All the film's audio is AAC (`.m4a`, 192 kbit/s), written by `build.py` and `tools/place-audio.mjs`: as WAV the train
+sound and the music bed were 64 MB each, over half of what goes to a render droplet (the folder is now ~20 MB).

@@ -74,7 +74,7 @@ STOPS = [
     ("Peterson and Ridge", "", "left"),
     ("Rogers Park", "", "left"),
 ]
-# File name (in assets/audio, without .wav) -> what is said.
+# File name (in assets/audio, without .m4a) -> what is said.
 # next1..next18 play on the approach to each stop, this1..this18 once the doors open (only at the stops shown in full:
 # tools/place-audio.mjs decides).
 ANNOUNCEMENTS = {"welcome": "This is an X1 train to Highland Park."}
@@ -89,6 +89,9 @@ ANNOUNCEMENTS.update({
 })
 # Words the voice needs spelled differently to say them right (the captions keep the real spelling).
 SAY_AS = {"CrossTowner": "Cross Towner"}
+# The film's audio files are AAC (.m4a): uncompressed WAV made the train sound and the music 64 MB each, over half
+# of what goes to a render droplet.
+AAC = ["-c:a", "aac", "-b:a", "192k"]
 # Frame sizes for --size.
 SIZES = {"720p": (1280, 720), "1080p": (1920, 1080), "4k": (3840, 2160)}
 
@@ -116,13 +119,13 @@ def make_announcements():
     os.makedirs(AUDIO, exist_ok=True)
     for name, text in ANNOUNCEMENTS.items():
         aiff = os.path.join(AUDIO, name + ".aiff")
-        wav = os.path.join(AUDIO, name + ".wav")
+        out = os.path.join(AUDIO, name + ".m4a")
         for word, spoken in SAY_AS.items():
             text = text.replace(word, spoken)
         run(["say", "-v", VOICE, "-o", aiff, text])
-        # even out the loudness, and convert to the 48 kHz stereo WAV the film uses
+        # even out the loudness, and convert to the 48 kHz stereo AAC the film uses
         run(["ffmpeg", "-v", "error", "-y", "-i", aiff, "-af", "loudnorm=I=-16:TP=-1.5",
-             "-ar", "48000", "-ac", "2", wav])
+             "-ar", "48000", "-ac", "2"] + AAC + [out])
         os.remove(aiff)
     print(f"  spoke {len(ANNOUNCEMENTS)} announcements with {VOICE}")
 
@@ -140,8 +143,8 @@ def make_chimes():
         fade_at = c["length"] - c["fade"]
         run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi",
              "-i", f"aevalsrc='{expr}':d={c['length']}:s=48000",
-             "-af", f"afade=t=in:d=0.008,afade=t=out:st={fade_at}:d={c['fade']},aformat=channel_layouts=stereo",
-             os.path.join(AUDIO, name + ".wav")])
+             "-af", f"afade=t=in:d=0.008,afade=t=out:st={fade_at}:d={c['fade']},aformat=channel_layouts=stereo"]
+            + AAC + [os.path.join(AUDIO, name + ".m4a")])
     print(f"  made {len(CHIMES)} chimes")
 
 
@@ -178,7 +181,7 @@ def make_rumble():
     mono = os.path.join(AUDIO, "rumble-mono.wav")
     with wave.open(mono, "wb") as f:
         f.setnchannels(1); f.setsampwidth(2); f.setframerate(RATE); f.writeframes(bytes(frames))
-    run(["ffmpeg", "-v", "error", "-y", "-i", mono, "-ar", "48000", "-ac", "2", os.path.join(AUDIO, "rumble.wav")])
+    run(["ffmpeg", "-v", "error", "-y", "-i", mono, "-ar", "48000", "-ac", "2"] + AAC + [os.path.join(AUDIO, "rumble.m4a")])
     os.remove(mono)
     print(f"  made the train sound ({length} s)")
 

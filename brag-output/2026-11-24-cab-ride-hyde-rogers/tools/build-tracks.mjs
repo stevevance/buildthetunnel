@@ -22,24 +22,25 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { execFileSync } from "node:child_process";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const CACHE = process.argv[2] || path.join(os.tmpdir(), "cab-ride-tracks-cache");
 fs.mkdirSync(CACHE, { recursive: true });
 
+// Overpass, through the Chicago Cityscape CLI (cli/overpass.php: the paid Overspan endpoint, then the public servers;
+// CITYSCAPE_CLI to point elsewhere). Overspan caps a query at 60 seconds. Cached by name.
+const CLI = process.env.CITYSCAPE_CLI || path.join(os.homedir(), "Sites", "Chicago Cityscape", "cli", "overpass.php");
 async function overpass(name, query) {
   const file = path.join(CACHE, name + ".json");
   if (fs.existsSync(file)) return JSON.parse(fs.readFileSync(file, "utf8")).elements;
-  for (let attempt = 0; attempt < 6; attempt++) {
-    for (const ep of ["https://overpass-api.de/api/interpreter", "https://lz4.overpass-api.de/api/interpreter", "https://z.overpass-api.de/api/interpreter"]) {
-      const res = await fetch(ep, { method: "POST", headers: { "User-Agent": "buildthetunnel-cab-ride/1.0", "Content-Type": "application/x-www-form-urlencoded" },
-        body: "data=" + encodeURIComponent(query) });
-      const text = res.ok ? await res.text() : "";
-      if (text[0] !== "{") { console.warn(ep, res.status); continue; }
-      fs.writeFileSync(file, text);
-      return JSON.parse(text).elements;
-    }
-    await new Promise((r) => setTimeout(r, 5000 * 2 ** attempt));   // the servers are often busy: back off
+  query = query.replace(/\[timeout:\d+\]/, "[timeout:55]");
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const text = execFileSync("php", [CLI, "--json"], { input: query, encoding: "utf8", maxBuffer: 1 << 30 });
+      if (text.trimStart()[0] === "{") { fs.writeFileSync(file, text); return JSON.parse(text).elements; }
+    } catch (e) { console.warn(name, "failed:", (e.stderr || e.message || "").toString().slice(0, 300)); }
+    await new Promise((r) => setTimeout(r, 10000 * 2 ** attempt));
   }
   throw new Error("Overpass failed for " + name);
 }
@@ -122,14 +123,22 @@ const guide = resample(meChain.filter(([, lat]) => lat > FROM_LAT - 0.002 && lat
 // 59th to 18th: the island between the middle two tracks at 18th, McCormick Place and 47th, and the eastern pair's
 // island at 51st/53rd, 55th-56th-57th and 59th. The line is OFF metres west of it, so the train (OFF to the line's
 // right) runs on it.
+// Alongside, the other three tracks' offsets from ours (the two to the west, w1 the outer and w2 the inner, beside the
+// island at McCormick Place and 18th; and the one to the east, e2), at each sample of the real track.
 let centre = [];
+const real = [];                                                   // { p: our track, sides: [w1, w2, e2] from it }
 for (let i = 0; i < guide.length - 1; i++) {
   const o = guide[i], q = guide[i + 1], L = dist(o, q), t = [(q[0] - o[0]) / L, (q[1] - o[1]) / L];
-  const own = crossings(o, t).reduce((b, v) => (Math.abs(v) < Math.abs(b) ? v : b), Infinity);
+  const offs = crossings(o, t, 24), own = offs.reduce((b, v) => (Math.abs(v) < Math.abs(b) ? v : b), Infinity);
   if (Math.abs(own) > 1.5) continue;                               // not on a track here (a gap in OSM's ways)
   centre.push([o[0] - t[1] * (own - OFF), o[1] + t[0] * (own - OFF)]);
+  const west = offs.filter((v) => v < own - 2.5).sort((u, v) => v - u), east = offs.filter((v) => v > own + 2.5);
+  real.push({ p: [o[0] - t[1] * own, o[1] + t[0] * own], sides: [west[1] ?? null, west[0] ?? null, east[0] ?? null].map((v) => (v === null ? null : v - own)) });
 }
-centre = movingAverage(movingAverage(resample(centre, 10), 5), 5);  // ~50 m windows: OSM's jitter, not its curves
+// Smoothed over ~300 m: OSM's kinks made the S-curve north of McCormick Place two tight bends (310 and 370 m radius;
+// now ~950 m). That moves the line up to ~15 m off the real track mid-curve, so the other tracks and the platforms are
+// placed by their offsets from our real track (above), and the whole corridor moves with it.
+centre = movingAverage(movingAverage(resample(centre, 10), 15), 15);
 const zFrom = loc([ORIGIN[0], FROM_LAT])[1], sigE = sigma(loc(BRIDGE)) + 15;
 let me = centre.filter((p) => p[1] < zFrom && sigma(p) < sigE);    // the real track, from FROM_LAT to the footbridge
 const easeFrom = me.at(-1), lam0 = lambda(easeFrom), sig0 = sigma(easeFrom);
@@ -143,15 +152,14 @@ for (let s = sig0 + 10; s < JOIN_SIGMA + 5; s += 10) {
   me.push([planStart[0] + dir1[0] * s + perp1[0] * lam, planStart[1] + dir1[1] * s + perp1[1] * lam]);
 }
 me[me.length - 1] = [planStart[0] + dir1[0] * JOIN_SIGMA, planStart[1] + dir1[1] * JOIN_SIGMA];
-// The other three tracks, as offsets (metres, + to the right) from the line at each of its points on the real track
-// (null on the ease): the two to the west (w1 the outer, w2 the inner, beside the island at McCormick Place and 18th) and
-// the one to the east (e2). Ours is at +OFF.
+// The other three tracks as offsets from the line (metres, + to the right) at each of its points on the real track:
+// their offsets from our real track (nearest sample), plus ours from the line (OFF).
 const nReal = centre.filter((p) => p[1] < zFrom && sigma(p) < sigE).length;
 let sides = me.map((p, i) => {
   if (i >= nReal) return null;
-  const a = me[Math.max(0, i - 2)], b = me[Math.min(me.length - 1, i + 2)], L = dist(a, b), t = [(b[0] - a[0]) / L, (b[1] - a[1]) / L];
-  const offs = crossings(p, t, 22), west = offs.filter((v) => v < OFF - 2.5).sort((u, v) => v - u), east = offs.filter((v) => v > OFF + 2.5);
-  return [west[1] ?? null, west[0] ?? null, east[0] ?? null];
+  let best = real[0], bd = Infinity;
+  for (const r of real) { const q = dist(r.p, p); if (q < bd) { bd = q; best = r; } }
+  return best.sides.map((v) => (v === null ? null : v + OFF));
 });
 // fill each column's gaps by interpolation, then smooth it (~50 m)
 for (let k = 0; k < 3; k++) {
@@ -173,11 +181,41 @@ const [upRel] = await overpass("upn-relation", "[out:json][timeout:90];relation(
 const up = chain(upRel), LOW_END = [-87.672230, 41.926337];
 const k0 = up.findIndex((p) => dist(loc(p), loc(LOW_END)) < 0.5);
 if (k0 < 0) throw new Error("LOW_LINE's end isn't on relation 3117572 any more");
-const ROGERS_PARK = [-87.675533, 42.008999], PAST = 2600;          // the CrossTowner GTFS's stop; past it, room for the film's ending
+const ROGERS_PARK = [-87.675533, 42.008999], PAST = 4000;          // the CrossTowner GTFS's stop; past it, room for the film's ending
 let kEnd = k0, best = Infinity;
 up.forEach((p, k) => { const q = dist(loc(p), loc(ROGERS_PARK)); if (k > k0 && q < best) { best = q; kEnd = k; } });
 for (let run = 0; kEnd < up.length - 1 && run < PAST; kEnd++) run += dist(loc(up[kEnd]), loc(up[kEnd + 1]));
-const upn = up.slice(k0 + 1, kEnd + 1);
+// Straightened: OSM's nodes wander a metre or two on the long straights between the north side stations, which the
+// cab shows as soft bends. Douglas-Peucker at TOL metres keeps the real curves and drops the wander (buildPlan smooths
+// the corners that are left).
+const TOL = 2.0;
+const simplify = (pts) => {
+  if (pts.length < 3) return pts;
+  const a = loc(pts[0]), b = loc(pts.at(-1)), L = dist(a, b);
+  let far = 0, k = 0;
+  for (let i = 1; i < pts.length - 1; i++) {
+    const p = loc(pts[i]), off = Math.abs((b[0] - a[0]) * (a[1] - p[1]) - (a[0] - p[0]) * (b[1] - a[1])) / L;
+    if (off > far) { far = off; k = i; }
+  }
+  return far < TOL ? [pts[0], pts.at(-1)] : [...simplify(pts.slice(0, k + 1)).slice(0, -1), ...simplify(pts.slice(k))];
+};
+const upn = simplify(up.slice(k0, kEnd + 1)).slice(1);
+
+/* ---- the Brown Line (CTA's Ravenswood Branch), on its elevated structure over the UP North just south of
+        Addison/Lincoln: its two tracks within BROWN_REACH metres of the crossing, as OSM's ways ---- */
+const BROWN_REACH = 450;
+const brownWays = (await overpass("brown-line", '[out:json][timeout:55];way["railway"="subway"]["name"="Ravenswood Branch"](41.936,-87.690,41.952,-87.655);out tags geom;'))
+  .filter((w) => w.tags.service !== "crossover").map((w) => w.geometry.map((g) => [g.lon, g.lat]));
+// where it crosses the UP North: the nearest approach of any of its points to the UP North's line
+const upLine = [up[k0], ...upn].map(loc);
+let cross = null, cd = Infinity;
+for (const w of brownWays) for (const q of w) for (let i = 1; i < upLine.length; i++) {
+  const a = upLine[i - 1], b = upLine[i], p = loc(q), dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz;
+  const f = L2 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / L2)) : 0;
+  const dd = Math.hypot(p[0] - a[0] - f * dx, p[1] - a[1] - f * dz);
+  if (dd < cd) { cd = dd; cross = p; }
+}
+const brown = brownWays.map((w) => w.filter((q) => dist(loc(q), cross) < BROWN_REACH)).filter((w) => w.length >= 2);
 
 const fmt = (line) => "[" + line.map(([lon, lat]) => `[${lon.toFixed(6)}, ${lat.toFixed(6)}]`).join(",\n  ") + "]";
 fs.writeFileSync(path.join(HERE, "..", "assets", "tracks.js"),
@@ -190,5 +228,7 @@ export const JOIN_SIGMA = ${JOIN_SIGMA};
 export const ME_SIDES = ${JSON.stringify(sides.slice(0, nReal))};
 // UPN_LINE: the UP North, on from where LOW_LINE ends to ~${PAST} m past Rogers Park, [lon, lat] (OSM's nodes).
 export const UPN_LINE = ${fmt(upn)};
+// BROWN_LINE: the Brown Line's tracks (OSM's ways) within ${BROWN_REACH} m of where it crosses over the UP North, [lon, lat].
+export const BROWN_LINE = [${brown.map(fmt).join(",\n ")}];
 `);
-console.log(`ME_LINE ${me.length} points (${(me.length * 10 / 1609).toFixed(2)} mi), ease from ${unloc(easeFrom)} (${lam0.toFixed(1)} m off the straight); UPN_LINE ${upn.length} points to ${upn.at(-1)}`);
+console.log(`ME_LINE ${me.length} points (${(me.length * 10 / 1609).toFixed(2)} mi), ease from ${unloc(easeFrom)} (${lam0.toFixed(1)} m off the straight); UPN_LINE ${upn.length} points to ${upn.at(-1)}; BROWN_LINE ${brown.length} ways, crossing at ${unloc(cross)}`);

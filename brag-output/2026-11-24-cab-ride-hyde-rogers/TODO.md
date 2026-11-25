@@ -19,3 +19,20 @@ and the alders' cut.
 - **#2:** `meetTrain` (a new lit train; `oncoming` stays as the dark shot's stand-in) brakes into Union Station's far platform
   0.8 s after ours stops, its tail at the platform's north end (`MEET_D`) so the cab sees it, and stays until ours has gone.
   The far platform's riders board it at the dissolve (`farBoarders`).
+
+## Notes on preview v1 (2026-11-24), for v2
+
+| # | Note | Status |
+|---|------|--------|
+| 1 | South Shore trains are stainless with orange accents (not red). | Done |
+| 2 | People in wheelchairs can't go down stairs: keep wheeled riders off the island stairs (27th and the other islands). | Done |
+| 3 | Two sharp bends in the track ~1:18 (McCormick Place to 18th). | Done |
+| 4 | A sharp bend ~1:20 where a track seems to vanish for a short stretch (approaching 18th). | Done |
+| 5 | 18th's stair up to the footbridge has a weird wall in it. | Done |
+| 6 | After Chicago/Halsted, 8x between stations, as south of 18th. | Done |
+| 7 | The Brown Line's elevated tracks overhead just before Addison/Lincoln, on their OSM alignment. | Done |
+| 8 | Peterson/Ridge: stairs down to an underpass (draw the openings, not the underpass), no footbridge. | Done |
+| 9 | Fade out entirely before the end of the track can be seen. | Done |
+| 10 | The minimap's line keeps going up past the map's edge at the end. | Done |
+| 11 | Straighten the soft bends (from the OSM data) on the straights between the north side stations. | Done |
+| 12 | The UP North's bridge over the river at Webster Ave (drawn by a Haiku 5.5 subtask); cut to an overhead shot there, back to the cab once the whole train is over it. | Done |

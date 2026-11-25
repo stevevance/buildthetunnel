@@ -41,7 +41,7 @@ const clips = [];
 const said = JSON.parse(fs.readFileSync(path.join(ROOT, "assets/audio/announcements.json"), "utf8"));
 const captions = [];
 const caption = (file, start) => {
-  const text = said[file.replace(".wav", "")];
+  const text = said[file.replace(".m4a", "")];
   if (!text) return;
   const parts = text.split(/(?<=[.!?])\s+/), total = parts.reduce((n, p) => n + p.length, 0), len = dur(file) - 0.25;
   let at = start + 0.05;
@@ -53,8 +53,8 @@ const add = (id, file, start, track, volume) => {
   clips.push(`      <audio id="${id}" class="clip" src="assets/audio/${file}" data-start="${start.toFixed(2)}" data-duration="${dur(file).toFixed(2)}" data-track-index="${track}" data-volume="${volume}"></audio>`);
   caption(file, start);
 };
-if (fs.existsSync(path.join(ROOT, "assets/audio/rumble.wav"))) add("rumble", "rumble.wav", 0, 3, 0.45);   // the train itself, under everything
-// The notices (notice1.wav, notice2.wav, ...) are played once each between stations, at "random": which
+if (fs.existsSync(path.join(ROOT, "assets/audio/rumble.m4a"))) add("rumble", "rumble.m4a", 0, 3, 0.45);   // the train itself, under everything
+// The notices (notice1.m4a, notice2.m4a, ...) are played once each between stations, at "random": which
 // gap each gets, and where in it, come from a fixed seed, so every build places them the same way.
 // Change NOTICE_SEED for a different draw. A gap is the quiet between one stop's doors closing and the
 // chime before the next stop's announcement; only a gap with room for the whole notice is used.
@@ -63,36 +63,36 @@ const rand = (() => { let a = NOTICE_SEED >>> 0; return () => { a = (a + 0x6D2B7
 const gaps = [];                                                  // [from, to] in film seconds, filled in below
 // 59th, where the film opens standing: the welcome, then the doors close
 const first = info.arrivals[0];
-add("prechime0", "prechime.wav", 0.2, 2, 0.8);
-add("welcome", "welcome.wav", 1.5, 1, 1);
-add("closing0", "closing.wav", first.dwell - 2.1, 1, 1);
-add("closechime0", "closechime.wav", first.dwell - 1.1, 2, 0.7);
+add("prechime0", "prechime.m4a", 0.2, 2, 0.8);
+add("welcome", "welcome.m4a", 1.5, 1, 1);
+add("closing0", "closing.m4a", first.dwell - 2.1, 1, 1);
+add("closechime0", "closechime.m4a", first.dwell - 1.1, 2, 0.7);
 info.arrivals.slice(1).forEach(({ t, name, dwell }, k) => {
   // "Next stop…" ends just before the train stops, after the doors have closed at the stop before. Where the run is too
   // short for the chime before it as well, it goes without.
   // (free: once the stop before's doors-closing chime has finished: at a short stop it runs to just after the doors close)
-  const i = k + 1, prev = info.arrivals[k], free = prev.t + prev.dwell + (prev.dwell >= 6 ? -0.3 : 0.15), len = dur(`next${i}.wav`);
+  const i = k + 1, prev = info.arrivals[k], free = prev.t + prev.dwell + (prev.dwell >= 6 ? -0.3 : 0.15), len = dur(`next${i}.m4a`);
   let chimed = true, gap = Math.max(0.2, Math.min(1.2, t - free - 1.7 - len)), next = t - gap - len;
   if (next - 1.7 < free - 0.05) { chimed = false; next = Math.max(free, t - 0.2 - len); }
   if (next < free - 0.05) console.warn(`  note: the announcement before ${name} overlaps the doors closing by ${(free - next).toFixed(1)} s`);
   gaps.push([free + 1.0, (chimed ? next - 1.7 : next) - 0.6]);
-  if (chimed) add(`prechime${i}`, "prechime.wav", next - 1.7, 2, 0.8);
-  add(`next${i}`, `next${i}.wav`, next, 1, 1);
-  add(`chime${i}`, "chime.wav", t + 0.1, 2, 0.7);                 // doors open
+  if (chimed) add(`prechime${i}`, "prechime.m4a", next - 1.7, 2, 0.8);
+  add(`next${i}`, `next${i}.m4a`, next, 1, 1);
+  add(`chime${i}`, "chime.m4a", t + 0.1, 2, 0.7);                 // doors open
   if (dwell >= 6) {                                               // a stop shown in full: "This is…", then "Doors closing"
-    add(`this${i}`, `this${i}.wav`, t + 0.9, 1, 1);
-    add(`closing${i}`, "closing.wav", t + dwell - 3.1, 1, 1);
-    add(`closechime${i}`, "closechime.wav", t + dwell - 2.1, 2, 0.7);
-  } else add(`closechime${i}`, "closechime.wav", t + dwell - 1.6, 2, 0.6);
+    add(`this${i}`, `this${i}.m4a`, t + 0.9, 1, 1);
+    add(`closing${i}`, "closing.m4a", t + dwell - 3.1, 1, 1);
+    add(`closechime${i}`, "closechime.m4a", t + dwell - 2.1, 2, 0.7);
+  } else add(`closechime${i}`, "closechime.m4a", t + dwell - 1.6, 2, 0.6);
 });
 {
-  const notices = fs.readdirSync(path.join(ROOT, "assets/audio")).filter((f) => /^notice\d+\.wav$/.test(f)).sort();
+  const notices = fs.readdirSync(path.join(ROOT, "assets/audio")).filter((f) => /^notice\d+\.m4a$/.test(f)).sort();
   for (let i = notices.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [notices[i], notices[j]] = [notices[j], notices[i]]; }
   for (const file of notices) {
     const fits = gaps.filter(([a, b]) => b - a >= dur(file));
     if (!fits.length) { console.warn(`  note: no gap between stations is long enough for ${file}; it was left out`); continue; }
     const g = fits[Math.floor(rand() * fits.length)], start = g[0] + rand() * (g[1] - g[0] - dur(file));
-    add(file.replace(".wav", ""), file, start, 1, 1);
+    add(file.replace(".m4a", ""), file, start, 1, 1);
     gaps.splice(gaps.indexOf(g), 1);                              // one notice to a gap
     console.log(`  ${file} at ${start.toFixed(1)} s`);
   }
@@ -114,9 +114,9 @@ if (fs.existsSync(MUSIC)) {
     const g = (BED + (DUCK - BED) * d) * sm(t / FADE_IN) * (1 - sm((t - OUT_FROM) / (OUT_TO - OUT_FROM)));
     x[2 * i] *= g; x[2 * i + 1] *= g;
   }
-  execFileSync("ffmpeg", ["-v", "error", "-y", "-f", "f32le", "-ar", String(RATE), "-ac", "2", "-i", "-", "-c:a", "pcm_s16le",
-    path.join(ROOT, "assets/audio/music.wav")], { input: Buffer.from(x.buffer, x.byteOffset, x.byteLength) });
-  clips.push(`      <audio id="music" class="clip" src="assets/audio/music.wav" data-start="0.00" data-duration="${info.duration.toFixed(2)}" data-track-index="4" data-volume="1"></audio>`);
+  execFileSync("ffmpeg", ["-v", "error", "-y", "-f", "f32le", "-ar", String(RATE), "-ac", "2", "-i", "-", "-c:a", "aac", "-b:a", "192k",
+    path.join(ROOT, "assets/audio/music.m4a")], { input: Buffer.from(x.buffer, x.byteOffset, x.byteLength) });
+  clips.push(`      <audio id="music" class="clip" src="assets/audio/music.m4a" data-start="0.00" data-duration="${info.duration.toFixed(2)}" data-track-index="4" data-volume="1"></audio>`);
   console.log("  music: laerlooper, This Time With Soul!");
 } else console.warn("  note: no music (put laerlooper_-_This_Time_With_Soul_.mp3 in assets/music/)");
 // keep each caption up long enough to read: at least 2 s, and 0.7 s after the words end, unless the next one is due

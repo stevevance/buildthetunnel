@@ -44,7 +44,7 @@ const videoOnly = output.replace(/\.mp4$/, "") + ".video.mp4";
 
 /* ---- a small server: the project's files, and a place for the browser to send the encoded video ---- */
 const TYPES = { ".html": "text/html", ".js": "text/javascript", ".mjs": "text/javascript", ".json": "application/json",
-  ".png": "image/png", ".jpg": "image/jpeg", ".wav": "audio/wav", ".gltf": "model/gltf+json", ".bin": "application/octet-stream" };
+  ".png": "image/png", ".jpg": "image/jpeg", ".wav": "audio/wav", ".m4a": "audio/mp4", ".gltf": "model/gltf+json", ".bin": "application/octet-stream" };
 let fd = null, enc = null;                                        // enc: ffmpeg, taking JPEG frames on stdin (raw mode)
 const held = new Map(); let nextFrame = 0;                        // frames that arrived ahead of their turn
 const server = http.createServer((req, res) => {

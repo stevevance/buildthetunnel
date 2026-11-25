@@ -32,7 +32,8 @@
 // there missed the curve between them); past 18th it eases onto the main film's straight JOIN_SIGMA metres from that
 // film's first frame (planStart), and from there to LOW_LINE's end it is the main film's line. D0 in createCabRide
 // is where planStart would be along the plan, so a point s metres along the straight is D0 + s.
-import { ME_LINE, JOIN_SIGMA, ME_SIDES, UPN_LINE } from "./tracks.js";
+import { ME_LINE, JOIN_SIGMA, ME_SIDES, UPN_LINE, BROWN_LINE } from "./tracks.js";
+import { buildRiverBridge } from "./webster-bridge.js";
 // metres of Metra Electric before the route's own start: back to just north of McCormick Place station,
 // which the film's first frame has just left (MED_LINE, carried straight on south, passes within ~20 m of it).
 const LEAD_IN = 1400;
@@ -48,7 +49,7 @@ const JOIN_AFTER_CH = 100;
 const UPN_SHIFT = 2.15;
 export const CLYBOURN = [-87.668152, 41.917096];   // the CrossTowner GTFS's Clybourn stop
 export const ROGERS_PARK = [-87.675533, 42.008999];   // and its Rogers Park stop, the film's last
-export const MAP_PAST_END = 1000;                  // how far past Rogers Park the minimap's line goes: off the edge of its window
+export const MAP_PAST_END = 1000;                  // how far past Rogers Park the minimap's plate goes (tools/export-route.mjs)
 const LOW_LINE = [[-87.651300, 41.897030], [-87.651600, 41.897292], [-87.651881, 41.897507], [-87.652158, 41.897685], [-87.652511, 41.897879],
   [-87.652784, 41.898003], [-87.653160, 41.898151], [-87.653554, 41.898271], [-87.653840, 41.898341], [-87.654482, 41.898476], [-87.655161, 41.898616], [-87.655518, 41.898700], [-87.655794, 41.898772], [-87.656034, 41.898845],
   [-87.656498, 41.899007], [-87.656751, 41.899108], [-87.656997, 41.899214], [-87.657216, 41.899316], [-87.657510, 41.899470], [-87.657769, 41.899619],
@@ -380,8 +381,31 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
     S.bridge = S.stop + 24; S.platTo = S.bridge + 6; S.crowdFrom = S.platTo - 95;
   }
   ALL.push(...NORTH_STOPS, ...SOUTH_STOPS);
-  const MAP_END = Math.min(LAST.d + MAP_PAST_END, LENGTH);          // how far the minimap's line goes
-  const START = FIRST.stop, END = Math.min(LAST.stop + 150, LENGTH - 60);   // standing at 59th to pulling out of Rogers Park
+  const MAP_END = LENGTH;                                          // the minimap's line goes on to the end, off the map's top edge
+  // standing at 59th to pulling out of Rogers Park (500 m out, the ending's cards over it: see speedupAt)
+  const START = FIRST.stop, END = Math.min(LAST.stop + 500, LENGTH - 60);
+  // The UP North's bridge over the North Branch at Webster Ave, just past Clybourn: where the line crosses the river
+  // (city.water), and 8 m either side for the banks. assets/webster-bridge.js draws it (its design assumed).
+  const BRIDGE = (() => {
+    const polys = city.water.map((p) => {
+      let b = [Infinity, Infinity, -Infinity, -Infinity];
+      for (let i = 0; i < p.length; i += 2) b = [Math.min(b[0], p[i]), Math.min(b[1], p[i + 1]), Math.max(b[2], p[i]), Math.max(b[3], p[i + 1])];
+      return { p, b };
+    });
+    const wet = (x, z) => polys.some(({ p, b }) => {
+      if (x < b[0] || x > b[2] || z < b[1] || z > b[3]) return false;
+      let hit = false;
+      for (let i = 0, j = p.length - 2; i < p.length; j = i, i += 2) if ((p[i + 1] > z) !== (p[j + 1] > z) && x < (p[j] - p[i]) * (z - p[i + 1]) / (p[j + 1] - p[i + 1]) + p[i]) hit = !hit;
+      return hit;
+    });
+    let d0 = null;
+    for (let d = CLY.d; d < CLY.d + 1500; d += 1) {
+      const p = at(d).p, w = wet(p.x, p.z);
+      if (w && d0 === null) d0 = d;
+      if (!w && d0 !== null) return { d0: d0 - 8, d1: d + 8 };
+    }
+    throw new Error("no river crossing found past Clybourn");
+  })();
   // The Metra Electric's other three tracks, d metres along (k: 0 the outer west track, 1 the inner, 2 the east one):
   // where they really are (ME_SIDES), to the footbridge at 18th; then, as the line eases onto the main film's straight,
   // the inner one closes in to become our other track (-OFF) by the join, and the outer two settle at -11 and 11, where
@@ -484,7 +508,10 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
   // as Clybourn) is to the west, so there the corridor's east side narrows to just past the platforms, and the buildings
   // beside it stay.
   const northFrom = PORTAL2 - 40;
-  const NORTH = curvedCorridor(northFrom, LENGTH, -15, 15, (s) => 15 - 5 * smooth((northFrom + s - JOIN_D) / 60));
+  // (in two, either side of the Webster Ave bridge, so the river runs on under it)
+  const NORTH_A = curvedCorridor(northFrom, BRIDGE.d0, -15, 15, (s) => 15 - 5 * smooth((northFrom + s - JOIN_D) / 60));
+  const NORTH_B = curvedCorridor(BRIDGE.d1, LENGTH, -15, 10);
+  const NORTH = { has: (x, z, m) => NORTH_A.has(x, z, m) || NORTH_B.has(x, z, m) };
   const nearRailway = (x, z, m) => SOUTH.has(x, z, m) || NORTH.has(x, z, m);
 
   /* ---- sky (the dome is kept centred on whichever camera is in use: see drawScene) ---- */
@@ -527,13 +554,18 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
     // the ground: at least the main film's rectangle, and out past every point of the plan (its holes must lie inside it)
     let x0 = -12000, x1 = 9000, y0 = -9000, y1 = 12000;            // shape coordinates: x, -z
     for (const p of plan) { x0 = Math.min(x0, p.x - 3000); x1 = Math.max(x1, p.x + 3000); y0 = Math.min(y0, -p.y - 3000); y1 = Math.max(y1, -p.y + 3000); }
-    flatShape([V2(x0, y0), V2(x1, y0), V2(x1, y1), V2(x0, y1)], 0, 0x8d928c, [SOUTH.outline(), NORTH.outline()], BELOW_RIVER);
+    flatShape([V2(x0, y0), V2(x1, y0), V2(x1, y1), V2(x0, y1)], 0, 0x8d928c, [SOUTH.outline(), NORTH_A.outline(), NORTH_B.outline()], BELOW_RIVER);
   }
   flatShape(SOUTH.outline(), -0.16, 0x6b6660, [trenchOutline(...TRENCH1)]);
-  flatShape(NORTH.outline(), -0.16, 0x6b6660, [trenchOutline(...TRENCH2)]);
+  flatShape(NORTH_A.outline(), -0.16, 0x6b6660, [trenchOutline(...TRENCH2)]);
+  flatShape(NORTH_B.outline(), -0.16, 0x6b6660);
 
   /* ---- water and parks: flat polygons, kept clear of the railway ---- */
-  const flatPolys = (list, y, color, material = null) => {
+  // (the water is kept off the railway too, except under the Webster Ave bridge, where it runs on beneath the line:
+  // its polygons there are big triangles, and dropping those took out half the river)
+  const BRIDGE_MID = at((BRIDGE.d0 + BRIDGE.d1) / 2).p, BRIDGE_REACH = (BRIDGE.d1 - BRIDGE.d0) / 2 + 60;
+  const offRailway = (x, z, m) => nearRailway(x, z, m) && Math.hypot(x - BRIDGE_MID.x, z - BRIDGE_MID.z) > BRIDGE_REACH;
+  const flatPolys = (list, y, color, material = null, near = nearRailway) => {
     const pos = [];
     for (const p of list) {
       const contour = [];
@@ -541,7 +573,7 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
       if (contour.length < 3) continue;
       for (const t of THREE.ShapeUtils.triangulateShape(contour, [])) {
         const v = t.map((k) => contour[k]);
-        if (v.some((q) => nearRailway(q.x, q.y, 2)) || nearRailway((v[0].x + v[1].x + v[2].x) / 3, (v[0].y + v[1].y + v[2].y) / 3, 2)) continue;
+        if (v.some((q) => near(q.x, q.y, 2)) || near((v[0].x + v[1].x + v[2].x) / 3, (v[0].y + v[1].y + v[2].y) / 3, 2)) continue;
         for (const q of v) pos.push(q.x, y, q.y);
       }
     }
@@ -553,9 +585,9 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
   flatPolys(city.parks, 0.02, 0, new THREE.MeshBasicMaterial({ color: 0x7fa56a, side: THREE.DoubleSide, ...BELOW_RIVER }));
   // The water, 8 ft (2.44 m) below the street, with a wall down to it along every bank
   const RIVER_DOWN = 2.44;
-  flatPolys(city.water, -RIVER_DOWN, 0x5d8fc0);
+  flatPolys(city.water, -RIVER_DOWN, 0x5d8fc0, null, offRailway);
   flatPolys(city.water, 0, 0, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, colorWrite: false, depthWrite: false,
-    stencilWrite: true, stencilRef: 1, stencilFunc: THREE.AlwaysStencilFunc, stencilZPass: THREE.ReplaceStencilOp })).renderOrder = -1;
+    stencilWrite: true, stencilRef: 1, stencilFunc: THREE.AlwaysStencilFunc, stencilZPass: THREE.ReplaceStencilOp }), offRailway).renderOrder = -1;
   {
     // The water comes in pieces, cut at map-tile edges and overlapping a little there. A bank is an edge with
     // land beyond it: a point just outside the edge that is in no piece of water, and not at the edge of the
@@ -583,7 +615,7 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
       const mx = (ax + bx) / 2, mz = (az + bz) / 2, nx = (bz - az) / len, nz = -(bx - ax) / len;
       const sg = inPoly(mx + nx * 0.5, mz + nz * 0.5, q) ? -1 : 1;  // which way is out of this piece
       const ox = mx + sg * nx * 1.5, oz = mz + sg * nz * 1.5;
-      if (wet(ox, oz) || ox < all[0] + 5 || ox > all[2] - 5 || oz < all[1] + 5 || oz > all[3] - 5 || nearRailway(mx, mz, 2)) continue;
+      if (wet(ox, oz) || ox < all[0] + 5 || ox > all[2] - 5 || oz < all[1] + 5 || oz > all[3] - 5 || offRailway(mx, mz, 2)) continue;
       pos.push(ax, -RIVER_DOWN - 0.1, az, bx, -RIVER_DOWN - 0.1, bz, bx, 0, bz, ax, -RIVER_DOWN - 0.1, az, bx, 0, bz, ax, 0, az);
     }
     const g = new THREE.BufferGeometry();
@@ -1004,7 +1036,7 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
   // ...and beside it to the west, the UP Northwest's two tracks, until they curve away north-west at Clybourn (in OSM they
   // are 4 m apart, right beside the UP North's; here moved out past the platforms, assumed). North of Clybourn the UP North
   // is its own two tracks.
-  const UPNW_END = CLY.d + 320;
+  const UPNW_END = Math.min(CLY.d + 320, BRIDGE.d0 - 10);          // (it has its own bridge over the river, further west)
   const upnwAway = (s) => 30 * smooth((JOIN_D + s - CLY.platTo) / 300);
   surfaceTracks(curvedCorridor(JOIN_D, UPNW_END, -15, 10), [(s) => -10.5 - upnwAway(s), (s) => -14.5 - upnwAway(s)], false);
 
@@ -1060,7 +1092,7 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
     // on posts beside the ramp walls until the ramp is deep enough to span wall to wall
     const frames = [];
     for (let d = RAMP_START + 30; d < PORTAL - 6; d += 30) frames.push(d);
-    for (let d = PORTAL2 + 12; d < LENGTH; d += 30) frames.push(d);
+    for (let d = PORTAL2 + 12; d < LENGTH; d += 30) if (d < BRIDGE.d0 - 3 || d > BRIDGE.d1 + 3) frames.push(d);   // (none on the bridge)
     const LIFT = 1.0, POST = TRENCH + 0.25;                       // beam above the wire; posts just outside the walls
     const fBeams = new THREE.InstancedMesh(new THREE.BoxGeometry(POST * 2 + 0.3, 0.26, 0.26), steel, frames.length);
     const fPosts = new THREE.InstancedMesh(new THREE.BoxGeometry(0.28, 1, 0.28), steel, frames.length * 2);
@@ -1639,7 +1671,7 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
         strip(EX0, EX0 + RUN, e, e, PLAT_UP + 1.05, PLAT_UP + 1.12, handrail);
       }
     }
-    if (stair.reach) strip(EX0 + 0.8, EX0 + RUN, sL, sR, PLAT_UP - 0.4, TOP - 0.4, conc);   // soffit
+    if (stair.reach) ribbon((i) => { const d = EX0 + 0.8 + i * (RUN - 0.8) / 8; return [at(d, sL(d), yAt(d) - 0.4).p, at(d, sR(d), yAt(d) - 0.4).p]; }, 8, conc);   // soffit, sloping with the stair
     else {                                                         // the far end's wall, and the dark mouth of the tunnel below
       ribbon((i) => { const d = EX0 + RUN, lat = i ? sR(d) : sL(d); return [at(d, lat, -0.12).p, at(d, lat, PLAT_UP).p]; }, 1, dim);
       strip(EX0 + RUN * PLAT_UP / (PLAT_UP - TOP), EX0 + RUN, off(sL, 0.02), off(sR, -0.02), -0.06, -0.06, dim);
@@ -1662,7 +1694,9 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
   // Clybourn's: stairs down from each platform to a pedestrian tunnel under the tracks (assumed)
   openStation(CLY, { top: -3.6, down: true, reach: () => CLY.bridge });
   // (and the new stops on the UP North, all assumed, likewise)
-  for (const S of [DIV, ...NORTH_STOPS]) {
+  // Peterson/Ridge's: stairs down from each platform to an underpass (the openings only, as at Clybourn)
+  openStation(NORTH_STOPS[2], { top: -3.6, down: true, reach: () => NORTH_STOPS[2].bridge });
+  for (const S of [DIV, ...NORTH_STOPS.filter((S) => S !== NORTH_STOPS[2])]) {
     openStation(S, { top: BRIDGE_DECK, reach: () => S.bridge - BRIDGE_W / 2 });
     const std = (color, rough = 0.9) => new THREE.MeshStandardMaterial({ color, roughness: rough, side: THREE.DoubleSide });
     const deckMat = std(0x9da19c), sideMat = std(0xb8bbb5), towerMat = std(0x9fa6a8, 0.6);
@@ -1682,6 +1716,44 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
       band.position.copy(q.p).setY(TOP + 2.4); band.lookAt(band.position.clone().add(q.tan)); scene.add(band);
     }
   }
+
+  /* ---- the Brown Line (CTA's Ravenswood Branch) overhead just south of Addison/Lincoln, on OSM's alignment (BROWN_LINE):
+          each track on a steel deck with side girders, ties and rails, on a column every 15 m, none on our railway. Its
+          rail is BROWN_UP above ours, clear of our wires (assumed: in reality the UP North is on an embankment there,
+          and the 'L' crosses over it) ---- */
+  {
+    const BROWN_UP = 8.8, HALF = 1.9, GIRDER = 1.3, structural = new THREE.MeshStandardMaterial({ color: 0x47524c, roughness: 0.75, metalness: 0.2, side: THREE.DoubleSide });
+    for (const way of BROWN_LINE) {
+      // the way every 3 m, and its sideways direction at each point
+      const raw = way.map(([lon, lat]) => { const q = lonLat(lon, lat); return new THREE.Vector3(q.x, BROWN_UP, q.z); }), pts = [raw[0]];
+      for (let i = 1; i < raw.length; i++) { const n = Math.max(1, Math.round(raw[i].distanceTo(raw[i - 1]) / 3)); for (let k = 1; k <= n; k++) pts.push(raw[i - 1].clone().lerp(raw[i], k / n)); }
+      const side = pts.map((p, i) => { const t = pts[Math.min(i + 1, pts.length - 1)].clone().sub(pts[Math.max(i - 1, 0)]).setY(0).normalize(); return new THREE.Vector3(-t.z, 0, t.x); });
+      const band = (lat0, y0, lat1, y1, mat) => ribbon((i) => [pts[i].clone().addScaledVector(side[i], lat0).setY(y0), pts[i].clone().addScaledVector(side[i], lat1).setY(y1)], pts.length - 1, mat);
+      band(-HALF, BROWN_UP - 0.35, HALF, BROWN_UP - 0.35, structural);                                    // deck
+      for (const sg of [-1, 1]) band(sg * HALF, BROWN_UP - GIRDER, sg * HALF, BROWN_UP - 0.2, structural);   // side girders
+      band(-HALF, BROWN_UP - GIRDER, HALF, BROWN_UP - GIRDER, structural);                                // their bottom flange
+      for (const r of [-0.7175, 0.7175]) {
+        const c = new THREE.CatmullRomCurve3(pts.map((p, i) => p.clone().addScaledVector(side[i], r).setY(BROWN_UP)));
+        scene.add(new THREE.Mesh(new THREE.TubeGeometry(c, pts.length * 2, 0.05, 5, false), railMat));
+      }
+      const ties = new THREE.InstancedMesh(new THREE.BoxGeometry(2.5, 0.14, 0.24), tieMat, pts.length * 4);
+      let n = 0;
+      for (let i = 0; i < pts.length - 1; i++) for (let k = 0; k < 4; k++) {
+        const p = pts[i].clone().lerp(pts[i + 1], k / 4).setY(BROWN_UP - 0.25), t = pts[i + 1].clone().sub(pts[i]).setY(0).normalize();
+        setInst(ties, n++, p, t, 0);
+      }
+      ties.count = n; scene.add(ties);
+      for (let i = 0; i < pts.length; i += 5) {                     // columns, every 15 m, but none on our railway
+        const p = pts[i];
+        if (nearRailway(p.x, p.z, 3)) continue;
+        const col = new THREE.Mesh(new THREE.BoxGeometry(0.5, BROWN_UP - GIRDER, 0.5), structural);
+        col.position.set(p.x, (BROWN_UP - GIRDER) / 2, p.z); scene.add(col);
+      }
+    }
+  }
+
+  /* ---- the UP North's bridge over the North Branch at Webster Ave (assets/webster-bridge.js; its design assumed) ---- */
+  { const mid = (BRIDGE.d0 + BRIDGE.d1) / 2; buildRiverBridge({ THREE, scene, at, d0: BRIDGE.d0, d1: BRIDGE.d1, trackLats: [otherAt(mid), sideAt(mid)] }); }
 
   /* ---- the East 18th St footbridge, from OpenStreetMap: a concrete deck with glass parapets, on piers kept clear
           of the railway. It rises from the ground at each end to BRIDGE_DECK over the span (the heights between
@@ -2065,8 +2137,16 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
       // one (5), so every other station keeps the crowd it had before 18th was in the film.
       const pi = si === 0 ? 5 : si <= 5 ? si - 1 : si;              // (Division/Elston and Clybourn, added after, take 6 and 7)
       const sw = pi % 2 ? -1 : 1, K = pi * 100;              // alternate which platform each of the fixed ones is on
+      // An island's stair is down its middle (from SPAN[0] to SPAN[1]): nobody on wheels waits beside it (they wait
+      // behind it), and anyone else there keeps to the strip between its opening and the platform edge.
+      const SPAN = S.island && S.stairLat ? [S.exits[1] - 1.5, S.exits[1] + S.stairRun + 1] : null, WHEELS = ["wheelchair", "stroller", "bike"];
+      const besideStair = (d) => SPAN && d > SPAN[0] && d < SPAN[1];
+      const strip = (d) => { const [lo, hi] = S.island.edges(d); return (Math.abs(hi - lo) - 2.6) / 2 - 0.35; };
       // someone waiting at d, x metres back from the edge of platform sg
-      const wait = (g, kind, d, sg, x, yaw, face) => stand(g, kind, si, d, platAt(S, sg, x, d), yaw, face, PLAT_UP, true, sg);
+      const wait = (g, kind, d, sg, x, yaw, face) => {
+        if (besideStair(d)) { if (WHEELS.includes(kind)) d = SPAN[0] - 1 - 2.5 * WHEELS.indexOf(kind); else x = Math.min(x, strip(d)); }
+        stand(g, kind, si, d, platAt(S, sg, x, d), yaw, face, PLAT_UP, true, sg);
+      };
       wait(wheelchairUser(look(K + 1)), "wheelchair", S.stop + 9 + pi, sw, 1.7, 0.25);
       // where that one waits across the tracks, a second on the train's own platform, so someone using a wheelchair boards at every stop
       if (sw !== S.our) wait(wheelchairUser(look(K + 7)), "wheelchair", S.stop + 10.5, S.our, 1.7, 0.25);
@@ -2083,6 +2163,7 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
         let x = 1.2 + hash(k + 0.31) * 3.0;
         const EX0 = S.exits ? S.exits[sg] : S.stop + 17, RUN = S.stairRun || 12;   // the stairs: keep their foot clear
         if (d > EX0 - 1.5 && d < EX0 + RUN + 2 && x > 1.65) x = 1.2 + hash(k + 0.31) * 0.5;
+        if (besideStair(d)) x = Math.min(x, strip(d));
         const pos = at(d, platAt(S, sg, x, d), PLAT_UP).p;
         if (peopleSpots.some((o) => o.station === si && o.pos.distanceTo(pos) < (kind === "standing" ? 1.5 : 2.2))) continue;
         const f = hash(k + 0.41), face = f < 0.6 ? "track" : f < 0.85 ? "behind" : "ahead", yaw = (hash(k + 0.51) - 0.5) * 1.1;
@@ -2107,9 +2188,11 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
         const k = K + 220 + i, d = EXL + f * RUNL;
         leaveAt(walker(k), d, stairLat(d, hash(k + 0.2)), "ahead", 0, PLAT_UP + f * (TOPL - PLAT_UP) + 0.1);
       });
-      leave(withBike(look(K + 231)), S.stop + 6, 1.6, "behind");
-      leave(wheelchairUser(look(K + 232)), S.stop + 9.5, 1.5, "behind", 0.1);
-      leave(withStroller(look(K + 233), pick(SKIN, K + 233.5)), S.stop + 13.5, 1.7, "behind");
+      // (on an island, behind its stair: they're off to a lift, not down the stair)
+      const offStair = (d, k) => (SPAN && d > SPAN[0] - 1 ? SPAN[0] - 1.5 - 2.5 * k : d);
+      leave(withBike(look(K + 231)), offStair(S.stop + 6, 0), 1.6, "behind");
+      leave(wheelchairUser(look(K + 232)), offStair(S.stop + 9.5, 1), 1.5, "behind", 0.1);
+      leave(withStroller(look(K + 233), pick(SKIN, K + 233.5)), offStair(S.stop + 13.5, 2), 1.7, "behind");
     });
   }
 
@@ -2304,11 +2387,19 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
   const CANT_IN = 6, DEFICIENCY_IN = 3;                           // each curve's elevation (assumed) and the cant deficiency any vehicle may use, inches
   const ARRIVE_59 = 7 * 3600 + 41 * 60;                           // at 59th from 7:41 AM, leaving at 7:42 (trip X1_NB, one of every 30 minutes; the main film's 7:53 from McCormick Place)
   const END_CREDITS = 9;                                          // seconds of black, with the credits, after the ride
-  const REVEAL_TAIL = 18;                                         // seconds the film runs on after the ride's own end, the train pulling out of Rogers Park under the ending's cards
+  const REVEAL_TAIL = 14;                                         // seconds the film runs on after the ride's own end (the train 500 m out of Rogers Park), under the ending's cards
   const McC = SOUTH_STOPS[SOUTH_STOPS.length - 1];
-  // the speed-up at d metres along: SPEEDUP_ENDS, easing to SPEEDUP after McCormick Place and back after Clybourn
-  const speedupAt = (d) => SPEEDUP + (SPEEDUP_ENDS - SPEEDUP)
-    * (1 - smooth((d - (McC.stop + 60)) / (M18.platFrom - 80 - (McC.stop + 60))) + smooth((d - (CLY.stop + 60)) / 400));
+  // the speed-up at d metres along: SPEEDUP_ENDS, easing to SPEEDUP after McCormick Place and back once the train has
+  // left Chicago/Halsted (its aerial shot is played at SPEEDUP)
+  // ...slowed to BRIDGE_K for the overhead shot of the Webster Ave bridge, and after Rogers Park easing to END_K under the
+  // ending's cards, so the train doesn't run out of track before the film fades
+  const BRIDGE_K = 3, END_K = 2;
+  const speedupAt = (d) => {
+    let k = SPEEDUP + (SPEEDUP_ENDS - SPEEDUP)
+      * (1 - smooth((d - (McC.stop + 60)) / (M18.platFrom - 80 - (McC.stop + 60))) + smooth((d - (CH.stop + 60)) / 400));
+    k += (BRIDGE_K - k) * smooth((d - (BRIDGE.d0 - 450)) / 250) * (1 - smooth((d - (BRIDGE.d1 + TRAIN_LONG + 30)) / 250));
+    return k + (END_K - k) * smooth((d - (LAST.stop + 40)) / 400);
+  };
   // Each curve of the plan, and the speed it allows: Vmax (mph) = sqrt((Ea + Eu) / (0.0007 D)), D the degree
   // of curvature. It holds from the cab entering the curve until the tail of the train has left it.
   const curveLimits = [];
@@ -2670,10 +2761,13 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
     { from: timeAtDist(PORTAL - 165), to: timeAtDist(PORTAL + 135) },
     { from: FRONT_IN, to: FRONT_IN + FRONT_LEN, dark: true },
     { from: timeAtDist(PORTAL2 - 120), to: HERO_END, fadeOut: HERO_FADE },
+    // 3: the Webster Ave bridge from above, cut to as the train nears it and cut away once its tail is over
+    { from: timeAtDist(BRIDGE.d0 - 140), to: timeAtDist(BRIDGE.d1 + TRAIN_LONG + 15), cut: true },
   ];
   const shotAt = (t) => SHOTS.findIndex((s) => t > s.from && t < s.to);
   const airWeight = (t) => {
     const s = SHOTS[shotAt(t)], out = s && s.fadeOut || AIR_FADE;
+    if (s && s.cut) return 1;
     return s ? smooth((t - s.from) / AIR_FADE) * (1 - smooth((t - (s.to - out)) / out)) : 0;
   };
   MEET_T = arrive(STN[2]) + 0.8;                                  // a moment after ours has stopped
@@ -2681,7 +2775,7 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
 
   /* ---- the other railways' trains, met at our stops (at 8x a train passing on the open line is gone in a blink). Their
           looks are assumed, from the real fleets: the Metra Electric's Highliners (four stainless bilevel EMU cars), a
-          South Shore Line train (six single-level stainless EMU cars with a red stripe) and a UP North push-pull train
+          South Shore Line train (six single-level stainless EMU cars with orange accents) and a UP North push-pull train
           (a cab car leading south, four gallery cars, and a Metra-blue diesel pushing at the north end) ---- */
   const makeConsist = (kind) => {
     const g = new THREE.Group(); g.visible = false; scene.add(g);
@@ -2715,7 +2809,7 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
     };
     const L = 25.9;
     if (kind === "highliner") for (let i = 0; i < 4; i++) g.add(car({ len: L, h: 4.85, rows: [2.25, 3.75], cab: i === 0 ? 1 : i === 3 ? -1 : 0, pan: true, doors: [-0.17, 0.17] }));
-    if (kind === "southshore") for (let i = 0; i < 6; i++) g.add(car({ len: L, h: 4.15, rows: [2.75], stripe: { y: 1.75, color: 0xb3202a }, cab: i === 0 ? 1 : i === 5 ? -1 : 0, pan: true, doors: [-0.42, 0.42] }));
+    if (kind === "southshore") for (let i = 0; i < 6; i++) g.add(car({ len: L, h: 4.15, rows: [2.75], stripe: { y: 1.75, color: 0xe8731c }, cab: i === 0 ? 1 : i === 5 ? -1 : 0, pan: true, doors: [-0.42, 0.42] }));
     if (kind === "upnorth") {
       for (let i = 0; i < 5; i++) g.add(car({ len: L, h: 4.8, rows: [2.2, 3.7], cab: i === 0 ? 1 : 0, doors: [0] }));
       g.add(car({ len: 21, h: 4.6, body: mat(0x1d4a8c, { metalness: 0.3 }), rows: [3.7], stripe: { y: 2.2, color: 0xc6cbce }, cab: -1 }));
@@ -2820,6 +2914,12 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
         airCam.lookAt(at(front - 1.5, OFF, 2.5).p);
         placeTrain(oncoming, front, OFF, 1);
         oncoming.userData.glass.envMapRotation.y = dist / 26;     // the lamps' reflections cross the glass as the train moves
+      } else if (shot === 3) {
+        // high over the east bank, a little south of the bridge, drifting toward it as the train crosses
+        const u = (t - S.from) / (S.to - S.from), mid = (BRIDGE.d0 + BRIDGE.d1) / 2;
+        airCam.fov = 42;
+        airCam.position.copy(at(mid - 70 + 25 * u, 62 - 8 * u).p).setY(58 - 6 * u);
+        airCam.lookAt(at(mid + 10, 0, 2).p);
       } else {
         const e = ease((t - PULL_FROM) / (PULL_TO - PULL_FROM));
         // beside the ramp, drifting from near the portal toward the platforms as the train comes by
@@ -3025,7 +3125,7 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
       text: "Like the Chicago & North Western lines it was built as, the UP North runs on the left-hand track." },
     // 18th (by Soldier Field) to Clybourn (by Foundry Park), on the film's own clock, against today's fastest trip in the
     // CrossTowner Trip Planner (8 AM, two transfers)
-    { from: arrive(CLY) + 0.4, to: arrive(CLY) + DWELL + 3.4, kicker: WHOLE_RIDE < 20 ? "UNDER 20 MINUTES" : "THE WHOLE RIDE", color: GOLD,
+    { from: arrive(CLY) + 0.4, to: Math.min(arrive(CLY) + DWELL + 3.4, SHOTS[3].from - 0.2), kicker: WHOLE_RIDE < 20 ? "UNDER 20 MINUTES" : "THE WHOLE RIDE", color: GOLD,
       trip: { from: "Foundry Park", to: "Soldier Field", today: 51, with: WHOLE_RIDE },
       note: "Today: Trip Planner, 2 transfers \u00b7 CrossTowner: this ride" },
     // The ending, as the train pulls out of Rogers Park: the whole trip (the Trip Planner's 8 AM figures, station to
