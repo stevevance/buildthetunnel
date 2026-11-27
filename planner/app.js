@@ -557,11 +557,24 @@
   }
 
   /* ---- render ----------------------------------------------------------- */
+  // Once a trip is planned, bring its results up to the top of the panel (on a phone, where the page itself
+  // scrolls, to the top of the window), leaving a sliver of the form above them.
+  function scrollToResults(el) {
+    var behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+    var panel = el.closest(".panel");
+    if (panel && window.matchMedia("(min-width: 768px)").matches) {
+      panel.scrollTo({ top: panel.scrollTop + el.getBoundingClientRect().top - panel.getBoundingClientRect().top - 12, behavior: behavior });
+    } else {
+      window.scrollTo({ top: window.scrollY + el.getBoundingClientRect().top - 12, behavior: behavior });
+    }
+  }
+
   function renderResults(slice, today, scen) {
     showMapLoading(false);
     var el = document.getElementById("results");
     if (!today && !scen) {
       el.innerHTML = noRouteHtml();
+      scrollToResults(el);
       return;
     }
     function card(title, accent, r, net) {
@@ -731,6 +744,7 @@
       'network, so the steps add up to the total; the walk between your address and a station is a straight-line ' +
       'estimate. The line you board reflects a representative departure at this time.';
     drawRoute(today, scen);
+    scrollToResults(el);
   }
 
   // A prominent, specific "no trip" explanation. Names the end(s) whose nearest
