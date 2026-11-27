@@ -13,8 +13,9 @@ const TYPES = { mp4: "video/mp4", vtt: "text/vtt", jpg: "image/jpeg" };
 
 export default {
   async fetch(request, env) {
-    const origin = request.headers.get("Origin") || "";
-    const cors = (env.ALLOWED_ORIGINS || "").split(",").includes(origin) ? { "Access-Control-Allow-Origin": origin, Vary: "Origin" } : {};
+    // Public media, so any origin may read it. Always sending the header matters: a copy fetched without CORS (a plain
+    // <img> or a prefetch) is cached for a year, and a reply that varied by origin would leave that copy without it.
+    const cors = { "Access-Control-Allow-Origin": "*" };
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: { ...cors, "Access-Control-Allow-Methods": "GET, HEAD", "Access-Control-Allow-Headers": "Range", "Access-Control-Max-Age": "86400" } });
     }

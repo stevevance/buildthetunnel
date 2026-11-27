@@ -48,4 +48,5 @@ export const KINDS = {
   destination: { label: "Destination", color: "#0b7f93", ink: "#ffffff" },
   job: { label: "Jobs", color: "#7048e8", ink: "#ffffff" },
   bus: { label: "Bus", color: "#1c64c4", ink: "#ffffff" },
+  station: { label: "X1 station", color: "#0b7285", ink: "#ffffff" },
 };

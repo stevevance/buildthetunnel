@@ -149,6 +149,36 @@
    "yaw": 150.09,
    "pitch": -22.46,
    "dist": 900
+  },
+  {
+   "id": "division-elston",
+   "name": "Division/Elston",
+   "kind": "station",
+   "lon": -87.660303,
+   "lat": 41.903372,
+   "y": 6,
+   "views": [
+    "hero"
+   ],
+   "text": "The X1's next stop, at Division St and Elston Ave, about 1.4 km up the line.",
+   "yaw": 270.51,
+   "pitch": -30.65,
+   "dist": 631
+  },
+  {
+   "id": "clybourn",
+   "name": "Clybourn",
+   "kind": "station",
+   "lon": -87.668029,
+   "lat": 41.917074,
+   "y": 6,
+   "views": [
+    "hero"
+   ],
+   "text": "Metra's Clybourn station, the stop after Division/Elston, where the X1 runs on the UP North's tracks. Transfer to Union Pacific Northwest trains.",
+   "yaw": 320.23,
+   "pitch": -10.66,
+   "dist": 1987
   }
  ]
 }

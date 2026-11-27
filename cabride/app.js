@@ -364,8 +364,8 @@ for (const s of film.stops.filter(inCut)) {
   new maplibregl.Marker({ element: wrap, anchor: "left", offset: [-6.5, 0] }).setLngLat(s.lonlat).addTo(map);
 }
 
-// the places, as small dots
-for (const p of places) {
+// the places, as small dots (not the stations: the map has its stops already)
+for (const p of places.filter((q) => q.kind !== "station")) {
   const k = kindOf(p), wrap = el("div", "place-marker");
   const b = el("button", "place-dot", `<span class="place-label">${esc(p.name)}</span>`);
   b.type = "button";
@@ -510,8 +510,10 @@ function ensureViewer() {
 // above its place (or below it, near the top edge), centered or off to one side; a crowded place gets a longer stem.
 // The pills keep clear of the buttons over the top-left corner and of the viewer's navbar along the bottom.
 const measure = document.createElement("canvas").getContext("2d");
+// the hotspots a view shows: every place, unless the place names its views (stations hidden from the platform)
+const targetsOf = (key) => META[key].targets.filter((tg) => !placeById[tg.id]?.views || placeById[tg.id].views.includes(key));
 function labelLayout(key) {
-  const { look, targets } = META[key];
+  const { look } = META[key], targets = targetsOf(key);
   const psv = $("psv"), w = psv.clientWidth || 960, h = psv.clientHeight || 540;
   const small = narrow.matches, font = small ? 11 : 13, pad = small ? 17 : 23, pillH = font + (small ? 11 : 13);
   measure.font = `600 ${font}px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
@@ -572,7 +574,7 @@ function labelLayout(key) {
 function setHotspots(key) {
   const layout = labelLayout(key);
   placeEls.pano = {};
-  markersPlugin.setMarkers(META[key].targets.map((tg) => {
+  markersPlugin.setMarkers(targetsOf(key).map((tg) => {
     const p = placeById[tg.id] || tg, k = kindOf(p);
     const node = el("div", "hs", `<span class="hs-pill">${esc(p.name)}</span><span class="hs-stem"></span>`);
     node.style.setProperty("--k", k.color);
@@ -590,7 +592,7 @@ function setHotspots(key) {
   const list = $("hotspot-list");
   list.replaceChildren();
   placeEls.list = {};
-  for (const tg of META[key].targets) {
+  for (const tg of targetsOf(key)) {
     const p = placeById[tg.id] || tg, k = kindOf(p);
     const b = el("button", "hs-btn", `<span class="kdot" aria-hidden="true"></span>${esc(p.name)}`);
     b.type = "button";
@@ -657,7 +659,8 @@ async function open360() {
   $("hotspots").hidden = false;
   $("psv").focus({ preventScroll: true });
   // fetch the platform's faces now, so the switch is quick
-  for (const src of Object.values(facePaths("platform"))) new Image().src = src;
+  // (with CORS, as the viewer will ask for them: a copy cached without it can't be used for a texture)
+  for (const src of Object.values(facePaths("platform"))) { const im = new Image(); im.crossOrigin = "anonymous"; im.src = src; }
 }
 
 function close360({ play = true } = {}) {

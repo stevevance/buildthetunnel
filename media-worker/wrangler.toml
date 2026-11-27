@@ -3,9 +3,6 @@ name = "buildthetunnel-media"
 main = "src/index.js"
 compatibility_date = "2026-11-01"
 
-[vars]
-ALLOWED_ORIGINS = "https://tunnel.stevevance.net,https://buildthetunnel.ngrok.io,http://localhost:8890,http://127.0.0.1:8890"
-
 [[r2_buckets]]
 binding = "MEDIA"
 bucket_name = "cabride-media"
