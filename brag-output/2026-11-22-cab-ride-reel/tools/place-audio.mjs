@@ -98,7 +98,7 @@ fs.writeFileSync(path.join(ROOT, "assets/captions.js"), "// Written by tools/pla
 // so each is cut to the cab part and moved to the cut's own clock. Under the intro, the train's sound from the
 // stretch of ride it shows (shot 2, from outside, so quieter); none of its announcements.
 const F = info.film, tag = (id, file, start, len, from, track, volume, fades = "") =>
-  `      <audio id="${id}" class="clip" src="assets/audio/${file}" data-start="${start.toFixed(2)}" data-duration="${len.toFixed(2)}" data-media-start="${from.toFixed(2)}" data-track-index="${track}" data-volume="${volume}"${fades}></audio>`;
+  `      <audio id="${id}" class="clip" src="${file.startsWith("assets/") ? file : "assets/audio/" + file}" data-start="${start.toFixed(2)}" data-duration="${len.toFixed(2)}" data-media-start="${from.toFixed(2)}" data-track-index="${track}" data-volume="${volume}"${fades}></audio>`;
 const placed = [];
 if (clips.some((c) => c.id === "rumble")) placed.push(tag("rumble-intro", "rumble.wav", 0, F.intro, F.introFrom, 3, 0.25, ` data-fade-in="0.8" data-fade-out="0.9"`));
 for (const c of clips) {
@@ -106,6 +106,13 @@ for (const c of clips) {
   if (b - a < 0.3 || c.start > F.cabTo - 3) continue;            // nothing that would only start under the payoff
   const fades = c.id === "rumble" ? ` data-fade-in="0.9" data-fade-out="2"` : c.start + dur(c.file) > F.cabTo ? ` data-fade-out="1.5"` : "";
   placed.push(tag(c.id, c.file, F.intro + a - F.cabFrom, b - a, a - c.start, c.track, c.volume, fades));
+}
+// Music under the intro, from the top until just before the first chime of the cab part ("Next stop, Union Station"):
+// "Video Movie Game" by geoffpeters, ccmixter.org, CC BY 3.0 (credited on the closing screen; see drawClosing).
+{
+  const MUSIC = "assets/music/geoffpeters_-_Video_Movie_Game.mp3";
+  const firstChime = Math.min(...placed.filter((t) => !/id="rumble/.test(t)).map((t) => +/data-start="([\d.]+)"/.exec(t)[1]));
+  placed.unshift(tag("music", MUSIC, 0, firstChime - 0.15, 0, 4, 0.6, ` data-fade-in="0.2" data-fade-out="2.2"`));
 }
 const file = path.join(ROOT, "index.html");
 const html = fs.readFileSync(file, "utf8");

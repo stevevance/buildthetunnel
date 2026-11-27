@@ -52,7 +52,7 @@ echo "Installing Node 22, ffmpeg and Chrome..."
   apt-get install -y -q nodejs ffmpeg /tmp/chrome.deb >/tmp/apt.log 2>&1'
 
 echo "Copying the project..."
-rsync -az -e "${SSH[*]}" --exclude node_modules --exclude '*.mp4' --exclude '*.log' --exclude previews --exclude assets/people-src --exclude .git \
+rsync -az -e "${SSH[*]}" --exclude node_modules --exclude '*.mp4' --exclude '*.log' --exclude previews --exclude assets/people-src --exclude .git --exclude .linode-token \
   "$HERE"/ root@"$IP":/root/cab/
 "${SSH[@]}" root@"$IP" 'cd /root/cab && npm install --no-audit --no-fund >/dev/null 2>&1'
 

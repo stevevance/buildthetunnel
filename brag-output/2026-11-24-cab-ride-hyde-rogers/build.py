@@ -53,23 +53,24 @@ HYPERFRAMES = ["npx", "--yes", "hyperframes@0.9.52"]   # same pinned version as 
 VOICE = "Zoe (Enhanced)"
 
 # The stops after 59th, in order: how the announcer says each, what you can change to there, and the side the doors
-# open on (as in assets/cab-ride.js: islands on the Metra Electric, the left on the UP North).
+# open on (as in assets/cab-ride.js, S.doors: the train keeps to the left-hand track the whole way, so the left, but
+# for the islands from 47th to 18th, which are on its right).
 STOPS = [
-    ("55th, 56th, and 57th Streets", "Transfer to South Shore Line trains.", "right"),
-    ("51st and 53rd Streets", "", "right"),
-    ("47th Street, Kenwood", "", "left"),
-    ("Oakwood Boulevard", "", "left"),
-    ("27th Street", "", "left"),
-    ("McCormick Place", "Transfer to South Shore Line trains.", "left"),
-    ("18th Street", "", "left"),
-    ("Roosevelt", "Transfer to Red, Green, and Orange Line trains, and buses to the Museum Campus.", "right"),
-    ("Taylor and Clinton", "", "right"),
-    ("Union Station", "Transfer to Blue Line, X5, and X6 trains, the G, J, K, M, and P lines, Amtrak, and the O'Hare Flyer.", "right"),
-    ("Randolph and Clinton", "Transfer to Green and Pink Line trains, and the A, C, and E lines.", "right"),
-    ("Chicago and Halsted", "", "right"),
+    ("55th, 56th, and 57th Streets", "Transfer to South Shore Line trains.", "left"),
+    ("51st and 53rd Streets", "", "left"),
+    ("47th Street, Kenwood", "", "right"),
+    ("Oakwood Boulevard", "", "right"),
+    ("27th Street", "", "right"),
+    ("McCormick Place", "Transfer to South Shore Line trains.", "right"),
+    ("18th Street", "", "right"),
+    ("Roosevelt", "Transfer to Red, Green, and Orange Line trains, and buses to the Museum Campus.", "left"),
+    ("Taylor and Clinton", "", "left"),
+    ("Union Station", "Transfer to Blue Line, X5, and X6 trains, the G, J, K, M, and P lines, Amtrak, and the O'Hare Flyer.", "left"),
+    ("Randolph and Clinton", "Transfer to Green and Pink Line trains, and the A, C, and E lines.", "left"),
+    ("Chicago and Halsted", "", "left"),
     ("Division and Elston", "", "left"),
     ("Clybourn", "Transfer to Union Pacific Northwest trains.", "left"),
-    ("Addison and Lincoln", "", "left"),
+    ("Addison and Lincoln", "Transfer to Brown Line trains.", "left"),
     ("Ravenswood", "", "left"),
     ("Peterson and Ridge", "", "left"),
     ("Rogers Park", "", "left"),

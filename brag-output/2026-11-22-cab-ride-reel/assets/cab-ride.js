@@ -3204,7 +3204,7 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
     ctx.fillText("Today: Trip Planner, 8 AM, 2 transfers \u00b7 CrossTowner: this ride", L, y + H - 28 * K);
     ctx.restore();
   };
-  // the last 3 seconds: plan your own trip, and where
+  // the last 3 seconds: where to learn more
   const drawClosing = (v) => {
     if (v <= 0) return;
     const K = UI, f = (d) => ease((v - d) / 0.5), cx = width / 2, cy = height * 0.45;
@@ -3216,13 +3216,15 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
       ctx.drawImage(im, cx - LW / 2, cy - 190 * K + (1 - f(0)) * 16 * K, LW, LH);
     }
     ctx.globalAlpha = f(0.1);
-    ctx.letterSpacing = `${3 * K}px`; ctx.font = `700 ${18 * K}px ${SANS_I}`; ctx.fillStyle = TEAL; ctx.fillText("YOUR TURN", cx, cy - 52 * K); ctx.letterSpacing = "0px";
-    ctx.font = `800 ${62 * K}px ${SANS_I}`; ctx.fillStyle = "#fff"; ctx.fillText("Plan your own trip", cx, cy + 6 * K + (1 - f(0.1)) * 14 * K);
+    ctx.font = `800 ${62 * K}px ${SANS_I}`; ctx.fillStyle = "#fff"; ctx.fillText("Learn more at", cx, cy + 6 * K + (1 - f(0.1)) * 14 * K);
     ctx.globalAlpha = f(0.35);
-    const url = "tunnel.stevevance.net";
+    const url = "buildthetunnelchicago.org";
     ctx.font = `700 ${30 * K}px ${SANS_I}`; const wu = ctx.measureText(url).width + 60 * K, hu = 60 * K;
     ctx.fillStyle = "#a8dcff"; ctx.beginPath(); ctx.roundRect(cx - wu / 2, cy + 96 * K - hu / 2, wu, hu, hu / 2); ctx.fill();
     ctx.fillStyle = "#06202e"; ctx.fillText(url, cx, cy + 97 * K);
+    ctx.globalAlpha = f(0.5) * 0.7;                               // the music's credit (CC BY 3.0)
+    ctx.font = `500 ${15 * K}px ${SANS_I}`; ctx.fillStyle = "#fff";
+    ctx.fillText("Music: \u201cVideo Movie Game\u201d by geoffpeters (ccmixter.org), CC BY 3.0", cx, cy + 168 * K);
     ctx.restore();
   };
   const filmCanvas = document.createElement("canvas");

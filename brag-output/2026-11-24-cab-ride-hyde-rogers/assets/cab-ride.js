@@ -32,8 +32,27 @@
 // there missed the curve between them); past 18th it eases onto the main film's straight JOIN_SIGMA metres from that
 // film's first frame (planStart), and from there to LOW_LINE's end it is the main film's line. D0 in createCabRide
 // is where planStart would be along the plan, so a point s metres along the straight is D0 + s.
-import { ME_LINE, JOIN_SIGMA, ME_SIDES, UPN_LINE, BROWN_LINE } from "./tracks.js";
+import { ME_LINE, JOIN_SIGMA, ME_SIDES, UPN_LINE, BROWN_LINE, BROWN_ADDISON } from "./tracks.js";
 import { buildRiverBridge } from "./webster-bridge.js";
+import { buildCrossTowner, TRAIN_LENGTH, FLIRT_CAB } from "./crosstowner-train.js";
+import { buildKiss, KISS_LENGTH } from "./kiss-train/index.js";
+import { ballysPlan } from "./ballys-chicago.js";
+import { buildBallysResort } from "./ballys-resort/index.js";
+import { peopleKit } from "./people.js";
+import { buildObamaCenter, obamaSite } from "./obama-center.js";
+import { buildMSI, msiSite } from "./msi.js";
+import { LAKE_SHORE } from "./lake.js";
+import { buildMuseumPark, museumParkSite } from "./museum-park.js";
+import { buildHalstedPointe, halstedPointeSite } from "./halsted-pointe.js";
+import { buildFoundryPark, foundryParkSite } from "./foundry-park.js";
+import { buildSoldierField, soldierFieldSite } from "./soldier-field.js";
+import { buildWillisTower, willisTowerSite } from "./willis-tower.js";
+import { buildPrairieMaterial, prairieMaterialSite } from "./prairie-material.js";
+import { buildTargetDivision, targetDivisionSite } from "./target-division.js";
+import { buildSolstice, solsticeSite } from "./solstice-on-the-park.js";
+import { buildNorthMichigan875, northMichigan875Site } from "./875-north-michigan.js";
+import { buildElizabeth410, elizabeth410Site } from "./elizabeth-410.js";
+import { buildMarcey1840, marcey1840Site } from "./marcey-1840.js";
 // metres of Metra Electric before the route's own start: back to just north of McCormick Place station,
 // which the film's first frame has just left (MED_LINE, carried straight on south, passes within ~20 m of it).
 const LEAD_IN = 1400;
@@ -45,7 +64,7 @@ const LEAD_IN = 1400;
 const JOIN_AFTER_CH = 100;
 // OSM's UP North track (LOW_LINE, UPN_LINE) is its northbound one, the west track: the UP North runs on the left, as the
 // Chicago & North Western did. The line is UPN_SHIFT metres east of it, between the two tracks, and there the train runs
-// on the left-hand one (see sideAt in createCabRide), on that real track.
+// on the left-hand one (see sideAt in createCabRide), on that real track, as it keeps to the left the whole way.
 const UPN_SHIFT = 2.15;
 export const CLYBOURN = [-87.668152, 41.917096];   // the CrossTowner GTFS's Clybourn stop
 export const ROGERS_PARK = [-87.675533, 42.008999];   // and its Rogers Park stop, the film's last
@@ -83,6 +102,23 @@ const LEG_SPANS = [[0, 183], [0, 200], [510, 570], [700, 1800], [2250, 4100], [4
 // starts 16 m west of it and heads due north instead, which leaves the real tracks.
 const MED_LINE = [[-87.618507, 41.859466], [-87.620690, 41.866669]];
 const CURVES = [500, 190, 400, 175, 1000];
+// From the Ohio St feeder to Chicago Ave the straight would run 4-11 m east of the railroad's land, across the Bally's
+// site and its new Jefferson St. The line keeps instead to the middle of that railroad strip (Cook County's 2025 parcels
+// of class RR, 25-40 m wide between the site and Halsted St; read against the county's 2025 orthophoto and OSM), so the
+// north ramp, its trench and Chicago/Halsted's platforms stand on it; at the platforms' north end, where the strip
+// narrows under the Halsted St viaduct, it comes back toward the straight to keep clear of 734 N Halsted (7 storeys,
+// on the corner of Chicago Ave). RR_STRIP: [metres along the line from abreast of
+// the Chicago/Halsted stop, metres to its left], eased in and out (a cubic through them) over 430 m in the bore south
+// of the feeder, and back along the curve onto the UP North (so neither eases the curves there much).
+// (From 200 m before the stop to 100 m past it the points lie on one smoothstep, -25 m to -4.5 m: a reverse curve of
+// about 730 m radius at its tightest, through the platforms.)
+// Past the stop, the curve onto the UP North keeps to the industrial spur it follows (OSM way 927810930), which runs up
+// to 14.7 m inside the plain curve: the plain curve put the track through the silos of Prairie Material's Yard 32
+// (assets/prairie-material.js), which stand 6-16 m off the real spur. (Offsets measured from the plain curve every 30 m,
+// November 2026.)
+const RR_STRIP = [[-1000, 0], [-566, -15.5], [-466, -17], [-366, -21], [-266, -24.5], [-200, -25], [-150, -23.5],
+  [-100, -19.7], [-50, -14.75], [0, -9.8], [50, -6], [100, -6.5], [130, -7.1], [160, -9.5], [190, -12.4], [220, -14.3],
+  [250, -14.7], [280, -13.9], [310, -12.5], [340, -10.6], [370, -8.0], [400, -4.9], [430, -1.1], [480, 0]];
 
 // The alignment in plan: straight legs joined by circular arcs, as 2D points
 // (x east, z south) every ~2.5 m. Also used by tools/export-route.mjs, so the
@@ -165,7 +201,9 @@ export function buildPlan(THREE, city, curves = CURVES) {
     const s0 = L.p.clone().addScaledVector(dirN, local([-87.647364, 41.895754]).sub(L.p).dot(dirN) + JOIN_AFTER_CH);
     lineTo(endPt, s0);
     // joining it where the chord makes the same angle with the straight as with the UP North, so the curve is nearly a circular arc
-    const osm = LOW_LINE.concat(UPN_LINE).map(local), ang = (a, b) => Math.atan2(a.x * b.y - a.y * b.x, a.dot(b));
+    // LOW_LINE as far as UPN_LINE's first point (just north of Clybourn), then UPN_LINE, straightened
+    const cut = LOW_LINE.reduce((k, q, i) => (Math.hypot(q[0] - UPN_LINE[0][0], q[1] - UPN_LINE[0][1]) < Math.hypot(LOW_LINE[k][0] - UPN_LINE[0][0], LOW_LINE[k][1] - UPN_LINE[0][1]) ? i : k), 0);
+    const osm = LOW_LINE.slice(0, cut).concat(UPN_LINE).map(local), ang = (a, b) => Math.atan2(a.x * b.y - a.y * b.x, a.dot(b));
     const all = osm.map((p, k) => {                               // UPN_SHIFT to the right (east, northbound) of OSM's track
       const t = osm[Math.min(k + 3, osm.length - 1)].clone().sub(osm[Math.max(k - 3, 0)]).normalize();
       return p.clone().add(V2(-t.y, t.x).multiplyScalar(UPN_SHIFT));
@@ -187,15 +225,51 @@ export function buildPlan(THREE, city, curves = CURVES) {
     const sm = smoothed(tail, (i, n, W) => Math.min(1, i / 40) * (i < n - W ? 1 : 0));
     for (let i = 0; i < sm.length; i++) if (sm[i].distanceTo(plan[plan.length - 1]) > 1.5) plan.push(sm[i]);
   }
+  {                                                               // over onto the railroad's strip by Bally's (RR_STRIP)
+    const ch = local([-87.647364, 41.895754]), cum = [0];
+    for (let i = 1; i < plan.length; i++) cum.push(cum[i - 1] + plan[i].distanceTo(plan[i - 1]));
+    let ich = 0;
+    plan.forEach((p, i) => { if (p.distanceTo(ch) < plan[ich].distanceTo(ch)) ich = i; });
+    const off = (s) => {                                          // a cubic Hermite through RR_STRIP, its slopes from the neighbours
+      const R = RR_STRIP, k = R.findIndex((q, j) => j < R.length - 1 && s >= q[0] && s <= R[j + 1][0]);
+      if (k < 0) return 0;
+      const slope = (j) => (j <= 0 || j >= R.length - 1 ? 0 : (R[j + 1][1] - R[j - 1][1]) / (R[j + 1][0] - R[j - 1][0]));
+      const h = R[k + 1][0] - R[k][0], u = (s - R[k][0]) / h, u2 = u * u, u3 = u2 * u;
+      return (2 * u3 - 3 * u2 + 1) * R[k][1] + (u3 - 2 * u2 + u) * h * slope(k) + (-2 * u3 + 3 * u2) * R[k + 1][1] + (u3 - u2) * h * slope(k + 1);
+    };
+    const right = plan.map((p, i) => { const t = plan[Math.min(i + 2, plan.length - 1)].clone().sub(plan[Math.max(i - 2, 0)]).normalize(); return V2(-t.y, t.x); });
+    plan.forEach((p, i) => { const o = off(cum[i] - cum[ich]); if (o) p.addScaledVector(right[i], o); });
+  }
+  // Every curve eased in and out: the arcs above meet their straights with a step in curvature (no transition), which
+  // made the train lurch where the camera watches it at 4x (by the south portal, at the UP North join). The same
+  // smoothing as the rest (two passes of a 50 m moving average) turns each step into a ramp about 100 m long and moves
+  // the line by under a metre; the two ends stay where they are.
+  {
+    const sm = smoothed(plan, (i, n, W) => Math.min(1, i / 40, (n - 1 - i) / 40));
+    for (let i = 0; i < plan.length; i++) plan[i].copy(sm[i]);
+  }
   return { plan, planStart, joinIndex, dir1, dirN, routeEnd, join };
 }
 
 // `captions`: [{ start, end, text }] in film seconds (assets/captions.js, written by tools/place-audio.mjs)
-// `humans`: the Quaternius Universal Base Characters, loaded (see index.html): { male, female, hair: { name: gltf },
-// skin: { male, female } (the light skin textures), clone (SkeletonUtils.clone) }. Without it the people are the
-// older figures made of rounded primitives.
+// `humans`: no longer used. The people are assets/people.js; the Quaternius Universal Base Characters that index.html
+// can still load (USE_HUMANS, off) were too slow to render, and their posing code is in the git history.
 // `art`: the Art Institute of Chicago's paintings for the station walls (assets/art.js), each with its loaded `img`.
-export function createCabRide(THREE, city, out, width, height, mini = null, logos = null, captions = null, humans = null, art = null) {
+// `opts`: which overlays the picture carries. `cards` (the story cards, and the dimming under the ending's), `minimap`
+// and `captions` (the announcements'), all on by default; `web: true` turns all three off, for the cut on the web page
+// (tunnel.stevevance.net/cabride/), which shows them beside the video.
+export function createCabRide(THREE, city, out, width, height, mini = null, logos = null, captions = null, humans = null, art = null, opts = {}) {
+  const WEB = !!opts.web, CARDS = opts.cards ?? !WEB, MINIMAP = opts.minimap ?? !WEB, CAPTIONS = opts.captions ?? !WEB;
+  // Lake Michigan out to the horizon: the map tiles' water stops at the edges of the areas they cover, which left a
+  // straight edge in the lake with bare ground beyond. One more piece of water, OSM's shore (assets/lake.js) closed
+  // LAKE_OUT metres out in the lake; where it overlaps the tiles' water the two are the same colour at the same level.
+  {
+    const LAKE_OUT = 40000, kx = 111320 * Math.cos(city.origin[1] * Math.PI / 180), ky = 111070;
+    const shore = LAKE_SHORE.map(([lon, lat]) => [(lon - city.origin[0]) * kx, (city.origin[1] - lat) * ky]);
+    const s0 = shore[0], s1 = shore[shore.length - 1];
+    const ring = [...shore, [s1[0] + LAKE_OUT, s1[1]], [s0[0] + LAKE_OUT, s0[1]], s0].flat();
+    city = { ...city, water: [...city.water, ring] };
+  }
   const FPS = 30, SUBFRAMES = 8, SHUTTER = 0.6;   // motion blur: 8 samples over 60% of a frame
   const RES = Math.max(1, Math.round(height / 1080));   // drawn textures (facades, signs, the cab's screens) get this many times the pixels: 2 at 4K
   // A canvas `w` x `h` in drawing units, RES times as many pixels, its context scaled to match.
@@ -206,8 +280,9 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
   const TRENCH = 5.65;                       // half-width between a ramp's retaining walls
   const BED = 4.45;                          // half-width of the track bed inside the bore
   const LIGHT_EVERY = 9, RIB_EVERY = 4.5, TIE_EVERY = 0.65;
-  const CAR_LEN = 25.9, CAR_GAP = 0.7, CARS = 4, NOSE = 1.2;     // the train's cars; the nose is this far ahead of the operator's eye
-  const TRAIN_LONG = CARS * CAR_LEN + (CARS - 1) * CAR_GAP;        // nose to tail, 105.7 m
+  const NOSE = 1.2;                                               // the nose is this far ahead of the operator's eye
+  const TRAIN_LONG = TRAIN_LENGTH;                                 // nose to tail, 74.8 m: a four-car FLIRT (assets/crosstowner-train.js)
+  const PLAT_LONG = 105.7;                                         // the platforms are sized for a longer train than ours, with room to spare
   const PLAT_IN = 3.65, PLAT_OUT = 8.6, PLAT_UP = 1.1, CEIL = 6.0;   // station box, relative to centreline / rail
   const EXIT_TO = ["Roosevelt Rd", "Taylor St", "Union Station", "Randolph St"];
   // Union Station and Randolph/Clinton are tall vaulted halls instead of boxes, after the atrium of Wuhan Railway
@@ -246,8 +321,19 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
   // the halls' stations along the plan (their boxes run from about 121 m behind to 40 m beyond)
   const planD = (s) => { let best = Infinity, k = 0; plan.forEach((p, i) => { const q = Math.hypot(p.x - s.x, p.y - s.z); if (q < best) { best = q; k = i; } }); return pd[k]; };
   const DEEP0 = planD(city.stations[HALLS[0]]) - 126, DEEP1 = planD(city.stations[HALLS[1]]) + 46;
+  // The embankments: the track bed's height above the streets that pass under it, from Cook County's 2022 LiDAR (see
+  // NOTES.md). On the Metra Electric 5.3 m from 59th to 47th (the streets under it are 4.5-6.3 m down), easing down to
+  // the surface by about 43rd (Oakwood and 27th are at grade). On the UP North it rises from Chicago/Halsted (at grade,
+  // under the Chicago Ave and Halsted St viaducts) to 4.4 m at Division/Elston (Division St 4.4 m down, North Ave 4.2 m) and 5.0 m from
+  // Clybourn to Rogers Park (Ashland 5.5 m; Sunnyside, Wilson, Leland, Lawrence and Winnemac 4.4-5.7 m).
+  const pdLL = (lon, lat) => planD({ x: (lon - city.origin[0]) * 111320 * Math.cos(city.origin[1] * Math.PI / 180), z: (city.origin[1] - lat) * 111070 });
+  const E47 = pdLL(-87.591333, 41.80974), ECH = pdLL(-87.647364, 41.895754), EDIV = pdLL(-87.660335, 41.903426), ECLY = pdLL(...CLYBOURN);
+  const EMB_ME = 5.3, EMB_DIV = 4.4, EMB_NORTH = 5.0;
+  const EMB = (d) => d < (E47 + ECH) / 2
+    ? EMB_ME * (1 - smooth((d - (E47 + 150)) / 750))
+    : EMB_DIV * smooth((d - (ECH + 130)) / (EDIV - 120 - (ECH + 130))) + (EMB_NORTH - EMB_DIV) * smooth((d - (EDIV + 300)) / (ECLY - 150 - (EDIV + 300)));
   const profile = (d) => -DEPTH * smooth((d - RAMP1) / RAMP_LEN) * (1 - smooth((d - RAMP2) / RAMP_LEN))
-    - DEEP * smooth((d - DEEP0 + DEEP_RUN) / DEEP_RUN) * (1 - smooth((d - DEEP1) / DEEP_RUN));
+    - DEEP * smooth((d - DEEP0 + DEEP_RUN) / DEEP_RUN) * (1 - smooth((d - DEEP1) / DEEP_RUN)) + EMB(d);
   const path = new THREE.CatmullRomCurve3(plan.map((p, i) => new THREE.Vector3(p.x, profile(pd[i]), p.y)), false, "centripetal");
   path.arcLengthDivisions = Math.ceil(planLen / 0.6);
   const LENGTH = path.getLength();
@@ -263,6 +349,13 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
     const c = Math.cos(b), sn = Math.sin(b);
     const r2 = right.clone().multiplyScalar(c).addScaledVector(UP, sn), u2 = UP.clone().multiplyScalar(c).addScaledVector(right, -sn);
     return { p: p.addScaledVector(r2, side).addScaledVector(u2, up), tan, right: r2 };
+  }
+  // the same beyond the alignment's ends (at() stops at them), carried on straight: for the opening's camera, south of
+  // where the plan begins
+  function atFar(d, side = 0, up = 0) {
+    if (d >= 0 && d <= LENGTH) return at(d, side, up);
+    const end = at(d < 0 ? 0 : LENGTH), k = d < 0 ? d : d - LENGTH;
+    return { p: end.p.clone().addScaledVector(end.tan, k).addScaledVector(end.right, side).addScaledVector(UP, up), tan: end.tan, right: end.right };
   }
   // Bank (radians, positive in a left-hand curve) from the alignment's curvature,
   // eased in and out over a train length or so. Assumed: about 1.5 degrees per 1/1000 m of curvature, 5.5 degrees at most.
@@ -300,14 +393,14 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
   const M18 = { name: "18th (Soldier Field)", exitTo: "18th St & Soldier Field", outdoor: true, d: 0, best: Infinity,
     x: (-87.618198 - city.origin[0]) * 111320 * Math.cos(city.origin[1] * Math.PI / 180), z: (city.origin[1] - 41.858502) * 111070 };
   // Division/Elston and Clybourn: the X1's next two stops, on the UP North (positions from the CrossTowner GTFS). Open-air,
-  // Division/Elston with a footbridge over the tracks just ahead of the cab, Clybourn with a pedestrian tunnel under them (all assumed).
+  // each with stairs down from its platforms to the street under the line (all assumed).
   const lonLat = (lon, lat) => ({ x: (lon - city.origin[0]) * 111320 * Math.cos(city.origin[1] * Math.PI / 180), z: (city.origin[1] - lat) * 111070 });
   const DIV = { name: "Division/Elston", exitTo: "Division St & Elston Ave", outdoor: true, d: 0, best: Infinity, ...lonLat(-87.660335, 41.903426) };
   const CLY = { name: "Clybourn", exitTo: "Ashland Ave & Cortland St", outdoor: true, d: 0, best: Infinity, ...lonLat(...CLYBOURN) };
   const ALL = [M18, ...STN, CH, DIV, CLY];                          // STN: the four underground; ALL: the stops with platforms (this film's new ones join it below)
   // Hyde Park to Rogers Park: the X1's other stops in this film (positions from the CrossTowner GTFS). Open-air. On the
   // Metra Electric each is an island platform (see ISLANDS); on the UP North, side platforms like Division/Elston's.
-  const stopAt = (name, lon, lat, exitTo, doors = "right") => ({ name, exitTo, doors, outdoor: true, d: 0, best: Infinity, ...lonLat(lon, lat) });
+  const stopAt = (name, lon, lat, exitTo) => ({ name, exitTo, outdoor: true, d: 0, best: Infinity, ...lonLat(lon, lat) });
   const SOUTH_STOPS = [
     stopAt("59th (University of Chicago)", -87.58863, 41.788049, "59th St & the Midway Plaisance"),
     stopAt("55th-56th-57th", -87.587643, 41.79336, "55th, 56th & 57th Sts"),
@@ -338,9 +431,9 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
   }
   for (const S of STN) {
     S.stop = S.d - 6;                                             // where the cab stops
-    // The platform runs from a little behind the tail of the stopped train to 40 m ahead of the cab.
+    // The platform runs from a little behind the tail of a stopped 105.7 m train (PLAT_LONG) to 40 m ahead of the cab.
     // The crowd keeps to the stretch it stood on before the platforms were lengthened to the train (crowdFrom).
-    S.platFrom = S.stop + NOSE - TRAIN_LONG - 4; S.platTo = S.d + 34; S.crowdFrom = S.d + 34 - 95;
+    S.platFrom = S.stop + NOSE - PLAT_LONG - 4; S.platTo = S.d + 34; S.crowdFrom = S.d + 34 - 95;
     S.boxFrom = S.platFrom - 6; S.boxTo = S.platTo + 6;
     if (HALLS.includes(STN.indexOf(S))) {
       S.hall = true; S.exitTop = GAL; S.stairRun = 14;
@@ -355,9 +448,10 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
     return SPRING + (CROWN - SPRING) * (1 - smooth(a)) - SAG * s * s * (1 - a * a);
   };
   // The East 18th Street Footbridge (OpenStreetMap way 56180317), [lon, lat]: up a switchback ramp on the west side,
-  // across the Metra Electric on a span (points 3 to 5), and down a long ramp north beside Lake Shore Drive.
+  // across the Metra Electric on a span (points 3 to 5), and down a long ramp north beside Lake Shore Drive. (OSM's
+  // ramp turns back west over the outer track; here it is moved east, to run down just clear of it: points 6 and 7.)
   const FOOTBRIDGE = [[-87.618197, 41.857672], [-87.618519, 41.858227], [-87.61844, 41.858253], [-87.618271, 41.857947],
-    [-87.617965, 41.858018], [-87.617771, 41.858065], [-87.617953, 41.858553], [-87.617952, 41.859035]]
+    [-87.617965, 41.858018], [-87.617771, 41.858065], [-87.6177, 41.858553], [-87.6177, 41.859035]]
     .map(([lon, lat]) => V2((lon - city.origin[0]) * 111320 * Math.cos(city.origin[1] * Math.PI / 180), (city.origin[1] - lat) * 111070));
   const BRIDGE_W = 4.0, BRIDGE_DECK = 8.4;                        // deck width and its top above the rail (assumed), over the Metra Electric's wires
   // where a line `side` metres from the centreline crosses the span's centreline
@@ -369,15 +463,15 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
   };
   const D_BRIDGE = bridgeCross(0);
   // The cab stops 24 m short of the bridge, so the stairs up to it rise just ahead; the platforms end under it.
-  M18.d = D_BRIDGE - 18; M18.stop = M18.d - 6; M18.platFrom = M18.stop + NOSE - TRAIN_LONG - 4; M18.platTo = D_BRIDGE + 6; M18.crowdFrom = M18.platTo - 95;
-  CH.stop = CH.d - 6; CH.platFrom = CH.stop + NOSE - TRAIN_LONG - 4; CH.platTo = CH.d + 62; CH.crowdFrom = CH.d - 48;   // its platforms run on under the Halsted St viaduct
+  M18.d = D_BRIDGE - 18; M18.stop = M18.d - 6; M18.platFrom = M18.stop + NOSE - PLAT_LONG - 4; M18.platTo = D_BRIDGE + 6; M18.crowdFrom = M18.platTo - 95;
+  CH.stop = CH.d - 6; CH.platFrom = CH.stop + NOSE - PLAT_LONG - 4; CH.platTo = CH.d + 62; CH.crowdFrom = CH.d - 48;   // its platforms run on under the Halsted St viaduct
   for (const S of [DIV, CLY]) {                                     // the cab stops 24 m short of the footbridge (Clybourn: its tunnel), as at 18th
-    S.bridge = S.d + 18; S.stop = S.d - 6; S.platFrom = S.stop + NOSE - TRAIN_LONG - 4; S.platTo = S.bridge + 6; S.crowdFrom = S.platTo - 95;
+    S.bridge = S.d + 18; S.stop = S.d - 6; S.platFrom = S.stop + NOSE - PLAT_LONG - 4; S.platTo = S.bridge + 6; S.crowdFrom = S.platTo - 95;
   }
   // The new stops: the train stands centred on the GTFS's position (its cab ~50 m past it), the platform running from just
-  // behind its tail to 30 m ahead of the cab. They join ALL (after the main film's, so its crowds keep their seeds).
+  // behind where a 105.7 m train's tail would be to 30 m ahead of the cab. They join ALL (after the main film's, so its crowds keep their seeds).
   for (const S of [...SOUTH_STOPS, ...NORTH_STOPS]) {
-    S.stop = S.d + 50; S.platFrom = S.stop + NOSE - TRAIN_LONG - 4;
+    S.stop = S.d + 50; S.platFrom = S.stop + NOSE - PLAT_LONG - 4;
     S.bridge = S.stop + 24; S.platTo = S.bridge + 6; S.crowdFrom = S.platTo - 95;
   }
   ALL.push(...NORTH_STOPS, ...SOUTH_STOPS);
@@ -406,10 +500,15 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
     }
     throw new Error("no river crossing found past Clybourn");
   })();
-  // The Metra Electric's other three tracks, d metres along (k: 0 the outer west track, 1 the inner, 2 the east one):
-  // where they really are (ME_SIDES), to the footbridge at 18th; then, as the line eases onto the main film's straight,
-  // the inner one closes in to become our other track (-OFF) by the join, and the outer two settle at -11 and 11, where
-  // the main film had them.
+  // The Metra Electric's four tracks, d metres along. The line was laid OFF metres west of the one OSM's route relation
+  // follows (the eastern of the middle two), which is our right-hand track (+OFF): the trains the other way's. meSide(k, d)
+  // gives the other three (k: 0 the outer west track, 1 the inner west, 2 the east one): where they really are
+  // (ME_SIDES), to the footbridge at 18th; then, as the line eases onto the main film's straight, the outer two settle at
+  // -11 and 11, where the main film had them. The inner west track is the X1's own, our left-hand one: it leaves the real
+  // one where that starts to swing away west, 75 m short of the footbridge (by the north end of 18th's island), and
+  // closes in to -OFF by the join (assumed). All three are smoothed, two passes of an 80 m moving average: read straight
+  // between OSM's points every 10 m, the X1's path had a small kink at each, and the western tracks' swing between
+  // McCormick Place and 18th had bends of about 330 m radius.
   const D_JOIN = pd[joinIndex];
   const meSide = (() => {
     const ds = [0];
@@ -417,39 +516,62 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
       const a = lonLat(...ME_LINE[i - 1]), b = lonLat(...ME_LINE[i]);
       ds.push(ds[i - 1] + Math.hypot(b.x - a.x, b.z - a.z));
     }
-    const dReal = ds[ds.length - 1], last = ME_SIDES[ME_SIDES.length - 1], target = [-11, -OFF, 11];
-    return (k, d) => {
-      if (d >= dReal) return last[k] + (target[k] - last[k]) * smooth((d - dReal) / (D_JOIN - dReal));
+    const dReal = ds[ds.length - 1], target = [-11, -OFF, 11];
+    const real = (k, d) => {
       let lo = 0, hi = ds.length - 1;
       while (hi - lo > 1) { const m = (lo + hi) >> 1; if (ds[m] <= d) lo = m; else hi = m; }
       const f = Math.min(Math.max((d - ds[lo]) / (ds[hi] - ds[lo]), 0), 1);
       return ME_SIDES[lo][k] + (ME_SIDES[hi][k] - ME_SIDES[lo][k]) * f;
     };
+    // each eases over from where it leaves the real track to EASE_TO, and holds there, so that after the smoothing it is
+    // exactly at its place by the join
+    const D_W2 = D_BRIDGE - 75, EASE_TO = D_JOIN - 100;
+    const raw = (k, d) => {
+      const from = k === 1 ? D_W2 : dReal, v = real(k, from);
+      return d < from ? real(k, d) : v + (target[k] - v) * smooth((d - from) / (EASE_TO - from));
+    };
+    const STEP = 2.5, W = 16, n = Math.ceil(D_JOIN / STEP) + 2;
+    const table = [0, 1, 2].map((k) => {
+      let a = Float64Array.from({ length: n }, (_, i) => raw(k, i * STEP));
+      for (let pass = 0; pass < 2; pass++) {
+        const o = new Float64Array(n);
+        for (let i = 0; i < n; i++) { let s = 0; for (let j = -W; j <= W; j++) s += a[Math.min(Math.max(i + j, 0), n - 1)]; o[i] = s / (2 * W + 1); }
+        a = o;
+      }
+      return a;
+    });
+    return (k, d) => {
+      if (d >= D_JOIN) return target[k];
+      const f = Math.max(d, 0) / STEP, i = Math.min(Math.floor(f), n - 2);
+      return table[k][i] + (table[k][i + 1] - table[k][i]) * (f - i);
+    };
   })();
-  // Which side of the line each of our two tracks is on, d metres along: the Metra Electric and the tunnel run on the right,
-  // the UP North on the left, so past Chicago/Halsted's platforms (before the line joins the UP North) the tracks swap
-  // sides through a diamond crossing (assumed; a flyover would avoid the conflict). k = 1: the one the X1 runs on.
-  // On the Metra Electric our other track is its real southbound local (w2 below), until it closes in to -OFF by the join.
-  const XO_FROM = CH.platTo + 20, XO_LEN = 180;
-  const trackAt = (k, d) => {
-    if (!k && d < D_JOIN) return meSide(1, d);
-    return (k ? 1 : -1) * OFF * (1 - 2 * smooth((d - XO_FROM) / XO_LEN));
-  };
-  const sideAt = (d) => trackAt(1, d), otherAt = (d) => trackAt(0, d);
-  for (const S of CALLS) S.our = Math.sign(sideAt(S.stop));       // the side of the line the train stands on at each stop
-  for (const S of [DIV, CLY, ...NORTH_STOPS]) S.doors = "left";
-  // The Metra Electric's island platforms (OpenStreetMap's; Oakwood Blvd's assumed): at 51st/53rd, 55th-56th-57th and
-  // 59th the eastern pair's own, to our right (with the western pair's across the tracks); from 47th to 18th one between
-  // the middle two tracks, to our left. An island's edges, `side` of our track, d metres along: 1.7 m from each track's
-  // centre, and no more than 7.5 m wide (at 18th the western tracks are already swinging away).
-  const ISLANDS = [[SOUTH_STOPS[0], 1], [SOUTH_STOPS[1], 1], [SOUTH_STOPS[2], 1], [SOUTH_STOPS[3], -1], [SOUTH_STOPS[4], -1],
-    [SOUTH_STOPS[5], -1], [SOUTH_STOPS[6], -1], [M18, -1]];
+  // Every train keeps to the left-hand track, the whole way (Steven, 2026-11-27: on the Metra Electric, to match the UP
+  // North and UP Northwest, which run on the left as the Chicago & North Western did; and so in the tunnel too). Our two
+  // tracks stay parallel, both under the wires, the whole way: railAt(0) the west one, the X1's (on the Metra Electric
+  // the inner west track, meSide(1), until it closes in to -OFF by the join), and railAt(1) the east one, at +OFF, for
+  // the trains the other way, on their own left.
+  const railAt = (k, d) => (k ? OFF : d < D_JOIN ? meSide(1, d) : -OFF);
+  const sideAt = (d) => railAt(0, d), otherAt = (d) => railAt(1, d);   // the X1's path, and the trains' the other way
+  for (const S of CALLS) S.our = Math.sign(sideAt(S.stop));       // the side of the line the train stands on at each stop (the left, at every one)
+  // The Metra Electric's island platforms (OpenStreetMap's; Oakwood Blvd's assumed): at 59th, 55th-56th-57th and
+  // 51st/53rd the western pair's own, to our left (with the eastern pair's across the tracks, for the trains the other
+  // way); from 47th to 18th one between the middle two tracks, to our right. An island `side` of track `near`, out to
+  // track `far`: its edges d metres along, 1.7 m from each track's centre, and no more than 7.5 m wide.
+  const islandEdges = (side, near, far) => side < 0
+    ? (d) => { const hi = near(d) - 1.7; return [Math.max(far(d) + 1.7, hi - 7.5), hi]; }
+    : (d) => { const lo = near(d) + 1.7; return [lo, Math.min(far(d) - 1.7, lo + 7.5)]; };
+  const ISLANDS = [[SOUTH_STOPS[0], -1], [SOUTH_STOPS[1], -1], [SOUTH_STOPS[2], -1], [SOUTH_STOPS[3], 1], [SOUTH_STOPS[4], 1],
+    [SOUTH_STOPS[5], 1], [SOUTH_STOPS[6], 1], [M18, 1]];
   for (const [S, side] of ISLANDS) {
-    S.doors = side > 0 ? "right" : "left";
-    S.island = side < 0
-      ? { side, far: otherAt, edges: (d) => { const hi = sideAt(d) - 1.7; return [Math.max(otherAt(d) + 1.7, hi - 7.5), hi]; } }
-      : { side, far: (d) => meSide(2, d), edges: (d) => { const lo = sideAt(d) + 1.7; return [lo, Math.min(meSide(2, d) - 1.7, lo + 7.5)]; } };
+    // its far edge's track: at the Hyde Park stops the outer west one, whose trains run north like ours (farDir 1); from
+    // 47th, the trains' the other way (assumed: the western pair northbound, the eastern southbound)
+    const far = side < 0 ? (d) => meSide(0, d) : otherAt;
+    S.island = { side, far, farDir: side < 0 ? 1 : -1, edges: islandEdges(side, sideAt, far) };
   }
+  // the side the doors open on at each stop (the cab's display says it; build.py's announcements must match): the
+  // platform's, or the island's
+  for (const S of CALLS) S.doors = (S.island ? S.island.side : S.our) > 0 ? "right" : "left";
   // Where someone stands on a platform: x metres back from its edge beside the track they are waiting for. sg is the
   // platform's side for side platforms; on an island, sg === S.our is the edge by our track, the other its far edge.
   const platAt = (S, sg, x, d) => {
@@ -477,8 +599,8 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
     const GRID = 50, cells = new Map(), key = (i, j) => i * 100003 + j;
     for (const c of cs) { const k = key(Math.floor(c[0] / GRID), Math.floor(c[1] / GRID)); if (!cells.has(k)) cells.set(k, []); cells.get(k).push(c); }
     return {
-      len, latL, latR,
-      pt: (s, lat, up = 0) => at(d0 + s, lat).p.setY(up),
+      d0, len, latL, latR, latRAt,
+      pt: (s, lat, up = 0) => at(d0 + s, lat).p.setY(up + EMB(d0 + s)),     // (up from the top of any embankment)
       dirAt: (s) => { const t = at(d0 + s).tan; return new THREE.Vector3(t.x, 0, t.z).normalize(); },
       has: (x, z, m) => {
         const pad = Math.max(latR, -latL) + m + 20;
@@ -491,7 +613,7 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
         if (!best) return false;                                    // no part of the line within reach
         const tl = Math.hypot(best[2], best[3]), rx = x - best[0], rz = z - best[1];
         const s = best[4] + (rx * best[2] + rz * best[3]) / tl, lat = (-rx * best[3] + rz * best[2]) / tl;
-        return s > -20 && s < len + 20 && lat > latL - m && lat < latRAt(s) + m;
+        return s > -20 && s < len + 20 && lat > latL - m && lat < latRAt(s) + m && { d: d0 + s, lat };
       },
       outline() {
         const c = [];
@@ -513,6 +635,48 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
   const NORTH_B = curvedCorridor(BRIDGE.d1, LENGTH, -15, 10);
   const NORTH = { has: (x, z, m) => NORTH_A.has(x, z, m) || NORTH_B.has(x, z, m) };
   const nearRailway = (x, z, m) => SOUTH.has(x, z, m) || NORTH.has(x, z, m);
+  // Where the line is on an embankment, a bridge over each street that crosses it (not the service roads), as [d0, d1, k]:
+  // the street's width at its angle to the line plus a sidewalk each side, on the line's centre; k is the skew, how many
+  // metres further along the street crosses for each metre to the right, so that the bridge is cut square to the street.
+  const EMB_GAP = 2.5;                                            // lower than this the streets are taken to cross at grade
+  const lineAt = (x, z, m) => SOUTH.has(x, z, m) || NORTH_A.has(x, z, m) || NORTH_B.has(x, z, m);
+  const GAPS = (() => {
+    const g = [];
+    for (const rd of city.roads || []) {
+      if (rd.w <= 5 && rd.w !== 4.8) continue;                     // service roads (5, or 3 one-way) and living streets
+      for (let i = 0; i + 3 < rd.p.length; i += 2) {
+        const a = lineAt(rd.p[i], rd.p[i + 1], 150), b = lineAt(rd.p[i + 2], rd.p[i + 3], 150);
+        if (!a || !b || Math.sign(a.lat) === Math.sign(b.lat) || Math.abs(a.d - b.d) > 120) continue;
+        const d = a.d + (b.d - a.d) * a.lat / (a.lat - b.lat);
+        if (EMB(d) < EMB_GAP) continue;
+        const k = Math.max(-2.5, Math.min(2.5, (b.d - a.d) / (b.lat - a.lat))), half = rd.w / 2 * Math.hypot(1, k) + 2.5;
+        g.push([d - half, d + half, k]);
+      }
+    }
+    g.sort((p, q) => p[0] - q[0]);
+    return g.reduce((m, q) => { const l = m[m.length - 1]; if (l && q[0] <= l[1] + 3) l[1] = Math.max(l[1], q[1]); else m.push([...q]); return m; }, []);
+  })();
+  // Over the Metra Electric between 47th and 27th (OpenStreetMap ways, [lon, lat]): the 43rd St and 41st St footbridges,
+  // each with blue masts and stays, the 35th St footbridge, and the Oakwood Blvd and 31st St road bridges (the bridge
+  // sections only: their approaches are assumed walled ramps). d: where each crosses the line.
+  const OVERS = [
+    { name: "43rd St", foot: true, blue: true, ll: [[-87.597106,41.816684],[-87.597058,41.816645],[-87.596987,41.816619],[-87.596887,41.816609],[-87.596807,41.816624],[-87.596723,41.816669],[-87.596524,41.816827],[-87.59646,41.816883],[-87.596378,41.816954],[-87.596262,41.817027],[-87.596156,41.817081],[-87.596058,41.817121],[-87.595946,41.817155],[-87.595823,41.817191],[-87.595604,41.817252],[-87.595457,41.817308],[-87.595321,41.817383],[-87.595194,41.817466],[-87.595127,41.81752],[-87.595068,41.817569],[-87.595002,41.817603],[-87.59494,41.81762],[-87.594847,41.817624],[-87.594762,41.817601],[-87.594701,41.817572],[-87.594656,41.817533],[-87.594622,41.817487],[-87.594574,41.817392]] },
+    { name: "41st St", foot: true, blue: true, ll: [[-87.597837,41.821635],[-87.597808,41.82157],[-87.59779,41.821499],[-87.597789,41.821427],[-87.597797,41.821373],[-87.597821,41.821313],[-87.597871,41.82124],[-87.597927,41.821178],[-87.597991,41.821123],[-87.598082,41.821065],[-87.598167,41.82102],[-87.598279,41.820971],[-87.598406,41.820927],[-87.598583,41.820882],[-87.598824,41.820809],[-87.598924,41.820774],[-87.598985,41.82075],[-87.599073,41.820709],[-87.599136,41.820677],[-87.599176,41.820654],[-87.599226,41.820622],[-87.599278,41.82058],[-87.5993,41.820558],[-87.59933,41.820519],[-87.599359,41.820468],[-87.599374,41.820399],[-87.599371,41.820323],[-87.59935,41.820259],[-87.599311,41.820195]] },
+    { name: "35th St", foot: true, ll: [[-87.605366,41.831549],[-87.605474,41.831547],[-87.605636,41.831546],[-87.605845,41.831536],[-87.605994,41.831517],[-87.606154,41.831489],[-87.606312,41.831455],[-87.606542,41.831385],[-87.606678,41.831344],[-87.606792,41.83132],[-87.606894,41.8313],[-87.607011,41.831285],[-87.607139,41.831269],[-87.60728,41.831257],[-87.607596,41.831252]] },
+    { name: "Oakwood Blvd", ll: [[-87.601661,41.82499],[-87.602417,41.824671]] },
+    { name: "31st St", ll: [[-87.610242,41.838546],[-87.611248,41.83852]] },
+  ].map((o) => {
+    const pts = o.ll.map(([lon, lat]) => lonLat(lon, lat));
+    let d = null;
+    for (let i = 1; i < pts.length && d === null; i++) {
+      const a = lineAt(pts[i - 1].x, pts[i - 1].z, 200), b = lineAt(pts[i].x, pts[i].z, 200);
+      if (a && b && Math.sign(a.lat) !== Math.sign(b.lat)) d = a.d + (b.d - a.d) * a.lat / (a.lat - b.lat);
+    }
+    return { ...o, pts, d };
+  });
+  const OVER_DECK = 8.8;                                          // their deck above the rail (assumed): clear of the wires
+  const nearOver = (d, m) => OVERS.some((o) => o.d !== null && Math.abs(d - o.d) < m);
+  const inGap = (d, lat = 0) => GAPS.some(([a, b, k]) => d > a + k * lat - 1 && d < b + k * lat + 1);
 
   /* ---- sky (the dome is kept centred on whichever camera is in use: see drawScene) ---- */
   let sky;
@@ -629,7 +793,10 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
     for (const rd of city.roads || []) {
       for (let i = 0; i + 3 < rd.p.length; i += 2) {
         const x0 = rd.p[i], z0 = rd.p[i + 1], x1 = rd.p[i + 2], z1 = rd.p[i + 3], len = Math.hypot(x1 - x0, z1 - z0);
-        if (len < 0.5 || nearRailway((x0 + x1) / 2, (z0 + z1) / 2, 3)) continue;   // the railway passes under them
+        const under = lineAt((x0 + x1) / 2, (z0 + z1) / 2, 3);
+        if (len < 0.5 || under && !inGap(under.d, under.lat)) continue;      // the railway passes under them, or (on an embankment) over them
+        const mx = (x0 + x1) / 2, mz = (z0 + z1) / 2;
+        if (mx > -2312 && mx < -2290 && mz > -3815 && mz < -3730) continue;  // Halsted St over the North Branch: up on its bridge (see the viaducts)
         const nx = (z1 - z0) / len * rd.w / 2, nz = -(x1 - x0) / len * rd.w / 2, e = rd.w * 0.4 / len;   // run on a little so corners close
         const ax = x0 - (x1 - x0) * e, az = z0 - (z1 - z0) * e, bx = x1 + (x1 - x0) * e, bz = z1 + (z1 - z0) * e;
         const y = 0.012;
@@ -649,7 +816,112 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
     scene.add(new THREE.Mesh(gs, new THREE.MeshBasicMaterial({ color: 0x3e4245, side: THREE.DoubleSide })));
   }
 
-  let ballysSite = null;                                  // set once the casino is built, for its signs
+  /* ---- in the opening's area, south of 59th (city.introArea): a sidewalk along each side of every street (not Lake
+          Shore Drive or the service roads), past a parkway; and the park paths (city.paths), pale ribbons on the grass,
+          each that stops short of a street (OSM ends them on sidewalks of their own, not drawn here) carried on to the
+          sidewalk ---- */
+  const SIDEWALK = [3.0, 4.6];                                    // from the curb: where the sidewalk begins and ends (the parkway between)
+  const walked = (w) => w >= 6 && w < 15 && Math.abs(w - 9) > 0.05 && Math.abs(w - 9.6) > 0.05;   // (not the drive's carriageways, nor service roads)
+  {
+    const pos = [], y = 0.026;
+    const ribbon = (x0, z0, x1, z1, w, from = 0, to = 0) => {     // a strip w wide (or from..to to one side) along a segment
+      const len = Math.hypot(x1 - x0, z1 - z0); if (len < 0.3) return;
+      const ux = (x1 - x0) / len, uz = (z1 - z0) / len, nx = uz, nz = -ux, e = (to - from ? 0.3 : w * 0.4);
+      const a0 = to - from ? from : -w / 2, a1 = to - from ? to : w / 2;
+      const ax = x0 - ux * e, az = z0 - uz * e, bx = x1 + ux * e, bz = z1 + uz * e;
+      pos.push(ax + nx * a0, y, az + nz * a0, ax + nx * a1, y, az + nz * a1, bx + nx * a1, y, bz + nz * a1,
+               ax + nx * a0, y, az + nz * a0, bx + nx * a1, y, bz + nz * a1, bx + nx * a0, y, bz + nz * a0);
+    };
+    const area = city.introArea, inArea = (x, z) => area && x > area[0] && x < area[2] && z > area[1] && z < area[3];
+    const streets = [];
+    for (const rd of city.roads || []) if (walked(rd.w)) for (let i = 0; i + 3 < rd.p.length; i += 2) {
+      const sg = [rd.p[i], rd.p[i + 1], rd.p[i + 2], rd.p[i + 3], rd.w];
+      if (!inArea(sg[0], sg[1]) && !inArea(sg[2], sg[3])) continue;
+      if (nearRailway((sg[0] + sg[2]) / 2, (sg[1] + sg[3]) / 2, 4)) continue;
+      streets.push(sg);
+      for (const k of [-1, 1]) ribbon(sg[0], sg[1], sg[2], sg[3], 0, k * (sg[4] / 2 + SIDEWALK[0]), k * (sg[4] / 2 + SIDEWALK[1]));
+    }
+    // the nearest street to a point, within reach: [the point on its sidewalk's middle line, the distance to it]
+    const toSidewalk = (x, z, reach) => {
+      let best = null, bd = reach;
+      for (const [ax, az, bx, bz, w] of streets) {
+        const dx = bx - ax, dz = bz - az, L = dx * dx + dz * dz, f = L ? Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L)) : 0;
+        const px = ax + f * dx, pz = az + f * dz, dist = Math.hypot(x - px, z - pz), mid = w / 2 + (SIDEWALK[0] + SIDEWALK[1]) / 2;
+        if (dist < 0.01 || Math.abs(dist - mid) > bd) continue;
+        bd = Math.abs(dist - mid); best = [px + (x - px) / dist * mid, pz + (z - pz) / dist * mid];
+      }
+      return best;
+    };
+    const paths = city.paths || [], ends = new Map(), end = (x, z) => `${Math.round(x)},${Math.round(z)}`;
+    for (const pa of paths) for (const k of [0, pa.p.length - 2]) { const key = end(pa.p[k], pa.p[k + 1]); ends.set(key, (ends.get(key) || 0) + 1); }
+    for (const pa of paths) {
+      for (let i = 0; i + 3 < pa.p.length; i += 2) if (!nearRailway((pa.p[i] + pa.p[i + 2]) / 2, (pa.p[i + 1] + pa.p[i + 3]) / 2, 2)) ribbon(pa.p[i], pa.p[i + 1], pa.p[i + 2], pa.p[i + 3], pa.w);
+      for (const k of [0, pa.p.length - 2]) {                    // an end no other path meets, near a street: on to its sidewalk
+        const x = pa.p[k], z = pa.p[k + 1];
+        if (ends.get(end(x, z)) > 1 || !inArea(x, z)) continue;
+        const to = toSidewalk(x, z, 16);
+        if (to && Math.hypot(to[0] - x, to[1] - z) > 0.4) ribbon(x, z, to[0], to[1], pa.w);
+      }
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+    scene.add(new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: 0xcfc6ad, side: THREE.DoubleSide })));
+  }
+
+  // McCormick Place's North and South buildings are built over the Metra Electric: the station (its platform, in OSM,
+  // under the North Building's south end and the South Building's north end) is in a concrete undercroft beneath them
+  // (it "feels like a tunnel"). They stand on COVER_UP-high walls with openings where the tracks
+  // run through, a slab under them, and columns down between the tracks; COVER: the stretch of line under them.
+  const OVER_TRACKS = /^McCormick Place (South|North) Building$/, COVER_UP = 13;
+  // the North Building isn't in the city files under its name: its outline from OSM (way 769452749), its roof 28.7 m up
+  // (Cook County 2022 LiDAR: the surface model's median over the footprint less the ground beside it)
+  const MCC_NORTH = { n: "McCormick Place North Building", h: 28.7, m: 0, p: [[-87.616795,41.851855],[-87.617188,41.85284],[-87.617194,41.852854],[-87.617201,41.852871],[-87.617255,41.853008],[-87.617885,41.854588],[-87.61813,41.855204],[-87.617853,41.855266],[-87.617724,41.855295],[-87.617682,41.855305],[-87.617182,41.855416],[-87.617118,41.85543],[-87.617036,41.855448],[-87.616975,41.855462],[-87.616943,41.855469],[-87.616894,41.855482],[-87.616856,41.855491],[-87.616264,41.85562],[-87.616219,41.855629],[-87.616222,41.855635],[-87.616268,41.855626],[-87.61628,41.855657],[-87.616293,41.85569],[-87.616246,41.8557],[-87.616185,41.855714],[-87.61612,41.855729],[-87.616018,41.855751],[-87.615992,41.855681],[-87.615577,41.854621],[-87.615287,41.85389],[-87.614913,41.852955],[-87.614594,41.852163],[-87.614548,41.85206],[-87.614536,41.852028],[-87.614666,41.851998],[-87.614769,41.851975],[-87.615311,41.851854],[-87.616341,41.851625],[-87.616397,41.851613],[-87.61742,41.851388],[-87.617458,41.85138],[-87.617498,41.851372],[-87.617497,41.851457],[-87.617535,41.851457],[-87.617533,41.851529],[-87.617387,41.851563],[-87.617382,41.85152],[-87.617413,41.851513],[-87.617413,41.851501],[-87.617414,41.851465],[-87.617393,41.85147],[-87.61736,41.851478],[-87.617339,41.851483],[-87.617343,41.851494],[-87.617223,41.851522],[-87.617236,41.851554],[-87.617166,41.85157],[-87.617096,41.851586],[-87.617096,41.851523],[-87.61704,41.851534],[-87.616972,41.85155],[-87.616896,41.851566],[-87.616862,41.851574],[-87.616791,41.851589],[-87.616755,41.851596],[-87.616701,41.851607],[-87.616718,41.85165],[-87.616734,41.851691],[-87.616751,41.851737],[-87.616795,41.851855]].flatMap(([lon, lat]) => { const q = lonLat(lon, lat); return [q.x, q.z]; }) };
+  const COVER = [Infinity, -Infinity];
+  // Heights measured from Cook County's 2022 LiDAR where the city files are wrong, by a point inside the building:
+  // McCormick Place's Lakeside Center (the East building), 100 m in OSM; its roof is 25.9 m up, the overhanging roof
+  // slab (OSM's upper part) from 23.5 m. The hall under it is dark glass; the roof's edge is black steel trusses.
+  const LAKESIDE = lonLat(-87.612514, 41.852671);
+  const MEASURED = [{ at: LAKESIDE, fix: (b) => (b.m > 0 ? { ...b, m: 23.5, h: 25.9, f: "t", c: [0.045, 0.045, 0.05] } : { ...b, h: 23.5, f: "c", c: [0.1, 0.11, 0.13] }) }];
+  // the glazed footbridges between McCormick Place's halls and over Lake Shore Drive and the tracks: OSM's long, thin
+  // 6 m buildings near it, which OSM has standing on the ground. Here their floor is SKY_DECK up (assumed: clear of the
+  // catenary and the highway), on a slab, with a pier near each end.
+  const SKY_DECK = 8;
+  // small OSM buildings around Lakeside Center that read as clutter (the user's mark-up), by a point inside each:
+  // a pavilion by its north-west corner, two thin stair towers by the footbridge, and a hut at the footbridge's west end
+  // and east of the line around 18th St (Museum Campus, the edge of Lake Shore Drive): the scatter of small OSM sheds and
+  // kiosks there reads as clutter. Any building under 30 m across and 12 m tall in this box goes.
+  const CLEAR_A = lonLat(-87.6178, 41.864), CLEAR_B = lonLat(-87.610, 41.855);
+  const REMOVED = [[-87.61381, 41.85483], [-87.61364, 41.85189], [-87.61356, 41.85191], [-87.61439, 41.85177]].map(([lon, lat]) => lonLat(lon, lat));
+  // ...and two that stay although they are within the corridor cleared beside the line: 734 N Halsted and 825 W Chicago
+  // Ave, 7 storeys each on the corner of Chicago and Halsted, 11.5 and 13.4 m from the line's centre where it keeps to
+  // the railroad's strip (RR_STRIP), clear of the platforms (8.6 m)
+  const KEPT = [[-87.64805, 41.8958291], [-87.6484805, 41.8961227]].map(([lon, lat]) => lonLat(lon, lat));
+  const MCC_CENTRE = lonLat(-87.6155, 41.8524);
+  const skybridge = (b) => {
+    if (b.h > 6 || Math.hypot(b.p[0] - MCC_CENTRE.x, b.p[1] - MCC_CENTRE.z) > 400) return false;
+    let A = 0, P = 0;
+    for (let i = 0; i + 3 < b.p.length; i += 2) { A += b.p[i] * b.p[i + 3] - b.p[i + 2] * b.p[i + 1]; P += Math.hypot(b.p[i + 2] - b.p[i], b.p[i + 3] - b.p[i + 1]); }
+    const width = (P - Math.sqrt(Math.max(0, P * P - 8 * Math.abs(A)))) / 4;   // of the rectangle with this area and perimeter
+    return width < 13 && Math.abs(A) / 2 / width > 40;
+  };
+  const inside = (x, z, p) => { let hit = false; for (let i = 0, j = p.length - 2; i < p.length; j = i, i += 2) { const ax = p[i], az = p[i + 1], bx = p[j], bz = p[j + 1]; if ((az > z) !== (bz > z) && x < (bx - ax) * (z - az) / (bz - az) + ax) hit = !hit; } return hit; };
+  const undercroft = (b) => {
+    const wallMat = new THREE.MeshStandardMaterial({ color: 0x8e8f8a, roughness: 0.95, side: THREE.DoubleSide });
+    const pos = [];
+    for (let i = 0; i + 3 < b.p.length; i += 2) {                 // the walls up to the slab, open where the railway passes
+      const ax = b.p[i], az = b.p[i + 1], bx = b.p[i + 2], bz = b.p[i + 3], L = Math.hypot(bx - ax, bz - az), n = Math.max(1, Math.ceil(L / 2));
+      for (let k = 0; k < n; k++) {
+        const x0 = ax + (bx - ax) * k / n, z0 = az + (bz - az) * k / n, x1 = ax + (bx - ax) * (k + 1) / n, z1 = az + (bz - az) * (k + 1) / n;
+        if (nearRailway((x0 + x1) / 2, (z0 + z1) / 2, 0.5)) continue;
+        pos.push(x0, 0, z0, x1, 0, z1, x1, COVER_UP, z1, x0, 0, z0, x1, COVER_UP, z1, x0, COVER_UP, z0);
+      }
+    }
+    const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.computeVertexNormals();
+    scene.add(new THREE.Mesh(g, wallMat));
+    const ring = []; for (let i = 0; i + 1 < b.p.length - 2; i += 2) ring.push(V2(b.p[i], -b.p[i + 1]));
+    flatShape(ring, COVER_UP - 0.02, 0x4f5153, [], { side: THREE.DoubleSide });   // the slab's underside
+    for (let d = SOUTH.d0; d < SOUTH.d0 + SOUTH.len; d += 4) { const q = at(d).p; if (inside(q.x, q.z, b.p)) { COVER[0] = Math.min(COVER[0], d); COVER[1] = Math.max(COVER[1], d); } }
+  };
   /* ---- buildings: real footprints and parts at their real heights, in their
           real colours where OpenStreetMap or the landmark list has them ---- */
   {
@@ -661,7 +933,6 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
     const SHED = [[0.83, 0.80, 0.74], [0.72, 0.70, 0.67], [0.66, 0.48, 0.38], [0.78, 0.76, 0.72], [0.58, 0.42, 0.34]];
     const PALETTE = [[0.80, 0.74, 0.64], [0.68, 0.63, 0.58], [0.74, 0.54, 0.42], [0.62, 0.65, 0.68], [0.86, 0.83, 0.76], [0.60, 0.46, 0.38]];
     const GLASS = [[0.50, 0.62, 0.76], [0.42, 0.52, 0.64], [0.62, 0.70, 0.78], [0.36, 0.44, 0.54], [0.70, 0.66, 0.60]];
-    const STONE = [0.90, 0.86, 0.76], STEEL = [0.74, 0.78, 0.82];
     // One small repeating texture per kind of facade, tinted by the building's
     // colour. In each, the bottom-left corner is plain: roofs and blank walls use it.
     const TEX = 128;                                      // facade textures are TEX x TEX: one window bay wide, one storey tall
@@ -702,6 +973,15 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
       v: (c) => { c.fillStyle = "#56677c"; c.fillRect(0, 0, 128, 128); c.fillStyle = "#7f93a8"; c.fillRect(0, 0, 128, 20); c.fillStyle = "#f6f4f0"; c.fillRect(0, 0, 48, 128); },    // vertical piers
       d: (c) => { c.fillStyle = "#e9edf0"; c.fillRect(0, 0, 128, 128); c.fillStyle = "#8f98a2"; c.fillRect(118, 0, 10, 128); c.fillRect(0, 0, 128, 12); },                             // dark metal grid
       s: (c) => { c.fillStyle = "#f4f2ee"; c.fillRect(0, 0, 128, 128); c.fillStyle = "#e6e2da"; c.fillRect(0, 0, 128, 4); },                                                           // plain stone
+      t: (c) => {                                         // a steel roof truss seen side on: chords, posts and diagonals, open between
+        c.clearRect(0, 0, 128, 128); c.fillStyle = "#f2f2f2";
+        c.fillRect(0, 0, 128, 16); c.fillRect(0, 112, 128, 16); c.fillRect(0, 0, 7, 128);
+        c.strokeStyle = "#f2f2f2"; c.lineWidth = 6; c.beginPath(); c.moveTo(4, 116); c.lineTo(64, 12); c.lineTo(124, 116); c.stroke();
+      },
+      x: (c) => {                                         // a footbridge's glazing: one big, nearly clear pane per bay, in a slim frame
+        c.clearRect(0, 0, 128, 128); c.fillStyle = "rgba(205, 222, 235, 0.2)"; c.fillRect(0, 0, 128, 128);
+        c.fillStyle = "#e8eaec"; c.fillRect(0, 0, 128, 10); c.fillRect(0, 116, 128, 12); c.fillRect(0, 0, 4, 128); c.fillRect(124, 0, 4, 128);
+      },
       m: (c) => { c.fillStyle = "#ffffff"; c.fillRect(0, 0, 128, 128); c.fillStyle = "#9aa6b2"; c.fillRect(0, 0, 128, 3); c.fillRect(0, 0, 2, 128); c.fillRect(64, 0, 1, 128); },     // mirror glass: only thin mullions (the reflection is the material's: see below)
     };
     // Mirror glass reflects a painted surround: sky above, the haze at the horizon, the city below it.
@@ -737,7 +1017,7 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
         const lo = lit * (glassy && y1 - y0 > 40 ? 0.74 : 0.82), hi = lit * (glassy && y1 - y0 > 40 ? 1.05 : 1);
         const A = [x0, y0, z0], B = [x1, y0, z1], C = [x1, y1, z1], D = [x0, y1, z0];
         if (windows) {
-          const u1 = Math.max(1, Math.round(len / BAY)), v0 = Math.round(y0 / FLOOR), v1 = Math.max(v0 + 1, Math.round(y1 / FLOOR));
+          const pane = f === "x", u1 = Math.max(1, Math.round(len / (pane ? 16 : BAY))), v0 = pane ? 0 : Math.round(y0 / FLOOR), v1 = pane ? 1 : Math.max(v0 + 1, Math.round(y1 / FLOOR));
           push(A, lo, 0, v0); push(B, lo, u1, v0); push(C, hi, u1, v1);
           push(A, lo, 0, v0); push(C, hi, u1, v1); push(D, hi, 0, v1);
         } else {
@@ -756,37 +1036,12 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
       for (let i = 0; i < n; i++) { cx += p[i * 2] / n; cz += p[i * 2 + 1] / n; }
       return p.map((v, i) => (i % 2 ? cz : cx) + (v - (i % 2 ? cz : cx)) * k);
     };
-    // Soldier Field sits east of the tracks just south of the route's start.
-    // Its parts get stone and steel, and the two long, narrow ones become its colonnades.
-    const KX = 111320 * Math.cos(city.origin[1] * Math.PI / 180), KY = 111070;
-    const SF = V2((-87.6167 - city.origin[0]) * KX, -(41.8623 - city.origin[1]) * KY);
-    const columns = [];
-    // Bally's Chicago, from the site plan in the City's Plan Commission presentation for the PD 1426 amendment
-    // (December 12, 2022, "Existing context plan - proposed Phase 1"): the casino hall along the river, its long
-    // north-west face to the tracks; the oval drop-off plaza by Chicago Ave. The hotel is not where that plan has it
-    // (a lens at the north-east corner): in February 2024 it moved to the hall's south end, where the plan had the
-    // event center, as built (drone video of the site, autumn 2026): a dark glass slab of about 35 storeys. The plan is
-    // drawn with north to the right; PLAN() turns its pixels into local metres, fitted to three street corners
-    // (Chicago & Halsted, Grand & Halsted, Chicago & Larrabee) from OpenStreetMap. Heights are from the renderings.
-    const PLAN = (() => {
-      const KXp = 111320 * Math.cos(city.origin[1] * Math.PI / 180), KYp = 111070;
-      // [plan px, plan py] -> [lon, lat]
-      const P = [[1003, 14, -87.64782, 41.896403], [147, 14, -87.647627, 41.891194], [1003, 603, -87.642948, 41.896481]];
-      const solve = (k) => {                                      // v = a px + b py + c through the three corners
-        const [[x1, y1], [x2, y2], [x3, y3]] = P, [v1, v2, v3] = P.map((q) => q[k]);
-        const det = x1 * (y2 - y3) - y1 * (x2 - x3) + (x2 * y3 - x3 * y2);
-        return [(v1 * (y2 - y3) - y1 * (v2 - v3) + (v2 * y3 - v3 * y2)) / det, (x1 * (v2 - v3) - v1 * (x2 - x3) + (x2 * v3 - x3 * v2)) / det,
-          (x1 * (y2 * v3 - y3 * v2) - y1 * (x2 * v3 - x3 * v2) + v1 * (x2 * y3 - x3 * y2)) / det];
-      };
-      const LON = solve(2), LAT = solve(3);
-      return (px, py) => {
-        const lon = LON[0] * px + LON[1] * py + LON[2], lat = LAT[0] * px + LAT[1] * py + LAT[2];
-        return [(lon - city.origin[0]) * KXp, (city.origin[1] - lat) * KYp];
-      };
-    })();
+    // Bally's Chicago: the resort as designed is assets/ballys-resort/ (the casino, its parking decks, the hotel tower and
+    // the riverfront landscape), its outline clearing OpenStreetMap's buildings; the earlier model's site plan
+    // (assets/ballys-chicago.js: its pixels in local metres, PLAN) still gives the employee car park north of the tracks
+    const PLAN = ballysPlan(city.origin);
+    const RESORT = buildBallysResort({ THREE, origin: city.origin }), RESORT_SITE = RESORT.userData.site;
     const ring = (pts) => { const q = pts.flatMap(([px, py]) => PLAN(px, py)); return [...q, q[0], q[1]]; };
-    // the plan's outlines, in its pixels
-    const CASINO = [[740, 208], [892, 208], [908, 320], [895, 392], [624, 390], [614, 397], [622, 407], [531, 457], [495, 413], [577, 347], [602, 328], [722, 216]];
     // where OpenStreetMap's buildings give way to the plan: the casino site, and north of the tracks the blocks
     // the plan's Phase 1 turns into a temporary employee car park
     const SITE = [[1003, 15], [520, 15], [520, 300], [490, 300], [490, 470], [560, 470], [626, 402], [1003, 400]].map(([px, py]) => V2(...PLAN(px, py)));
@@ -798,61 +1053,71 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
       }
       return hit;
     })();
-    const ballys = () => {
-      const COPPER = [0.80, 0.52, 0.32], WHITE = [0.97, 0.97, 0.96], p = ring(CASINO);
-      extrude("c", p, 0, 8.5, [0.86, 0.72, 0.56], true);          // warm-lit glass at street level
-      extrude("s", shrink(p, 1.006), 8.5, 10.5, COPPER, false);
-      extrude("f", p, 10.5, 26, WHITE, true);                     // the hall, clad in white fins
-      extrude("s", shrink(p, 1.004), 26, 27, COPPER.map((v) => v * 1.1), false);
-      extrude("s", shrink(p, 0.85), 27, 30, [0.86, 0.87, 0.88], false);
-      // the drum at the hall's north-east corner, toward Chicago Ave
-      const [dx, dz] = PLAN(894, 214);
-      const ringAt = (cx, cz, r, n) => { const q = []; for (let i = 0; i <= n; i++) { const a = -(i % n) / n * Math.PI * 2; q.push(cx + r * Math.cos(a), cz + r * Math.sin(a)); } return q; };
-      extrude("v", ringAt(dx, dz, 11, 24), 0, 31, [0.90, 0.76, 0.58], true);
-      extrude("s", ringAt(dx, dz, 11.6, 24), 31, 32.2, COPPER, false);
-      // the hotel: a slab at the hall's south end, its long side to the river; dark mirror glass, about 35 storeys
-      const [hx, hz] = PLAN(566, 418), [ax, az] = PLAN(626, 402), [bx, bz] = PLAN(531, 457);
-      const ul = Math.hypot(bx - ax, bz - az), ux = (bx - ax) / ul, uz = (bz - az) / ul, rx = -uz, rz = ux;
-      const slab = (hl, hw) => { const q = []; for (const [a, b2] of [[-1, -1], [-1, 1], [1, 1], [1, -1], [-1, -1]]) q.push(hx + ux * hl * a + rx * hw * b2, hz + uz * hl * a + rz * hw * b2); return q; };
-      const GLASS = [0.30, 0.36, 0.44];
-      extrude("m", slab(28, 12), 0, 122, GLASS, true);
-      extrude("s", slab(28.3, 12.3), 122, 125, [0.22, 0.24, 0.27], false);
-      ballysSite = { x0: dx - 12, z0: dz - 14 };                  // where the drum's lettering goes (see below)
-    };
     const ELSTON_WAREHOUSE = lonLat(-87.65866, 41.90236);
-    city.buildings.forEach((b, k) => {
+    // the Obama Presidential Center: the campus is assets/obama-center.js; OpenStreetMap's buildings on its site (the
+    // Museum 32 m tall from its "9 levels", the Forum, the Library and Home Court as 6 m boxes) give way to it
+    const OPC = obamaSite(city.origin), MSI = msiSite(city.origin);   // (and the Museum of Science and Industry: assets/msi.js)
+    const MUSEUM_PARK = museumParkSite(city.origin);                  // (and the Museum Park towers: assets/museum-park.js)
+    const HALSTED_POINTE = halstedPointeSite(city.origin);            // (and Halsted Pointe on Goose Island: assets/halsted-pointe.js)
+    const FOUNDRY = foundryParkSite(city.origin);                     // (and Foundry Park on the Finkl site: assets/foundry-park.js)
+    const SOLDIER_FIELD = soldierFieldSite(city.origin);              // (and Soldier Field, east of the tracks by 18th St: assets/soldier-field.js)
+    const WILLIS = willisTowerSite(city.origin);                      // (and the Willis Tower, whose nine tubes OSM draws as one box: assets/willis-tower.js)
+    const PRAIRIE = prairieMaterialSite(city.origin);                 // (and Prairie Material's Yard 32 by Chicago/Halsted: assets/prairie-material.js)
+    const TARGET = targetDivisionSite(city.origin);                   // (and the Target at Division and Larrabee: assets/target-division.js)
+    const SOLSTICE = solsticeSite(city.origin);                       // (and Solstice on the Park in Hyde Park: assets/solstice-on-the-park.js)
+    const N_MICHIGAN = northMichigan875Site(city.origin);             // (and 875 N Michigan, the old John Hancock Center: assets/875-north-michigan.js)
+    const ELIZABETH = elizabeth410Site(city.origin);                  // (and 410 N Elizabeth, going up: assets/elizabeth-410.js)
+    const MARCEY = marcey1840Site(city.origin);                       // (and 1840 N Marcey, approved: assets/marcey-1840.js)
+    [...city.buildings, MCC_NORTH].forEach((b, k) => {
       const bi = b.i === undefined ? k : b.i;            // its number in the film's first city file, so its colour stays the same in a wider one
       const n = b.p.length / 2 - 1;
       if (n < 3) return;
+      const overTracks = OVER_TRACKS.test(b.n || "");
+      if (overTracks) { undercroft(b); b = { ...b, m: COVER_UP }; }
+      for (const q of MEASURED) if (inside(q.at.x, q.at.z, b.p)) b = q.fix(b);
+      if (REMOVED.some((q) => inside(q.x, q.z, b.p) || Math.hypot(b.p[0] - q.x, b.p[1] - q.z) < 5)) return;   // (or a corner near it: the towers are 1 m thin)
+      const sky = skybridge(b), kept = KEPT.some((q) => inside(q.x, q.z, b.p));
       let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity, area = 0;
       for (let i = 0; i < n; i++) {
         const x = b.p[i * 2], z = b.p[i * 2 + 1];
-        if (nearRailway(x, z, 1)) return;
+        if (nearRailway(x, z, 1) && !overTracks && !sky && !kept) return;
         x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z);
         area += x * b.p[i * 2 + 3] - b.p[i * 2 + 2] * z;
       }
       area = Math.abs(area) / 2;
       const w = x1 - x0, l = z1 - z0, cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
-      if (((cx - SF.x) / 160) ** 2 + ((cz - SF.y) / 205) ** 2 < 1 && b.h >= 20) {
-        if (b.h <= 30 && w < 30 && l > 90) {              // a colonnade: plinth, columns, entablature
-          extrude("s", b.p, 0, 19, STONE, false);
-          extrude("s", b.p, 29, 31.5, STONE, false);
-          for (let z = z0 + 3; z < z1 - 2; z += 4.2) for (const f of [0.28, 0.72]) columns.push([x0 + w * f, z]);
-        } else {
-          extrude("s", b.p, b.m, b.h, b.h >= 50 ? STEEL : STONE, false);
-        }
-        return;
-      }
+      if (cx > CLEAR_A.x && cx < CLEAR_B.x && cz > CLEAR_A.z && cz < CLEAR_B.z && Math.max(w, l) < 30 && b.h <= 12) return;
+      if (SOLDIER_FIELD.some((r) => inside(cx, cz, r))) return;          // (the stadium is assets/soldier-field.js)
+      if (WILLIS.some((r) => inside(cx, cz, r)) || PRAIRIE.some((r) => inside(cx, cz, r))) return;   // (as are the Willis Tower and the concrete plant)
+      if (TARGET.some((r) => inside(cx, cz, r)) || SOLSTICE.some((r) => inside(cx, cz, r))) return;  // (and the Target and Solstice on the Park)
+      if (N_MICHIGAN.some((r) => inside(cx, cz, r))) return;            // (and 875 N Michigan, its antennas with it)
+      if (ELIZABETH.some((r) => inside(cx, cz, r))) return;             // (and 410 N Elizabeth's construction site)
+      if (MARCEY.some((r) => inside(cx, cz, r))) return;                // (and 1840 N Marcey's two warehouses)
       // Bally's Chicago and its car park (built from the site plan, below) replace whatever OpenStreetMap still has there
-      if (inSite(cx, cz)) return;
+      if (inSite(cx, cz) || inside(cx, cz, RESORT_SITE)) return;
+      if (inside(cx, cz, OPC) || inside(cx, cz, MSI) || MUSEUM_PARK.some((r) => inside(cx, cz, r)) || HALSTED_POINTE.some((r) => inside(cx, cz, r)) || FOUNDRY.some((r) => inside(cx, cz, r))) return;
       // the multi-storey delivery warehouse at 1116 N Elston Ave, beside the line south of Division St: OpenStreetMap's
       // "2 levels" makes it 7.2 m, but warehouse storeys are tall and it carries parking on its roof (14 m assumed)
       if (Math.hypot(cx - ELSTON_WAREHOUSE.x, cz - ELSTON_WAREHOUSE.z) < 45 && b.h < 10) b = { ...b, h: 14 };
+      // a chimney (OSM draws the old smokestacks as tiny, tall buildings): plain brick, no windows
+      if (Math.max(w, l) < 8 && b.h > 15) b = { ...b, f: "s", c: [0.6, 0.36, 0.28] };
+      if (sky) {
+        extrude("s", b.p, SKY_DECK - 0.7, SKY_DECK, [0.8, 0.8, 0.78], false);              // the slab it walks on
+        let ux = 0, uz = 0;                                                                  // its long axis: the longest side's direction
+        for (let i = 0, best = 0; i + 3 < b.p.length; i += 2) { const dx = b.p[i + 2] - b.p[i], dz = b.p[i + 3] - b.p[i + 1], L = Math.hypot(dx, dz); if (L > best) { best = L; ux = dx / L; uz = dz / L; } }
+        const t = []; for (let i = 0; i < n; i++) t.push((b.p[i * 2] - cx) * ux + (b.p[i * 2 + 1] - cz) * uz);
+        for (const e of [Math.min(...t) + 4, Math.max(...t) - 4]) {
+          const px = cx + ux * e, pz = cz + uz * e;
+          extrude("s", [px - 0.6, pz - 0.6, px + 0.6, pz - 0.6, px + 0.6, pz + 0.6, px - 0.6, pz + 0.6, px - 0.6, pz - 0.6], 0, SKY_DECK - 0.7, [0.72, 0.72, 0.7], false);
+        }
+        b = { ...b, m: SKY_DECK, h: SKY_DECK + 4, f: "x", c: [0.86, 0.88, 0.9] };
+      }
       // colour and facade: the building's own, or a plausible one for its size
       const hgt = b.h - b.m, tall = b.h > 70, low = hgt <= 7.5, tone = 0.92 + 0.16 * hash(bi + 0.5);
       const pal = tall ? GLASS : low ? SHED : BRICK;
       const base = b.c || pal[Math.floor(hash(bi) * pal.length)];
-      const f = b.f || (tall ? (hash(bi + 0.3) < 0.5 ? "c" : "r") : low ? "w" : (area > 600 && hash(bi + 0.3) < 0.45 ? "b" : "p"));
+      // (half the low ones get punched windows rather than the warehouse's small high ones)
+      const f = b.f || (tall ? (hash(bi + 0.3) < 0.5 ? "c" : "r") : low ? (hash(bi + 0.3) < 0.5 ? "w" : "p") : (area > 600 && hash(bi + 0.3) < 0.45 ? "b" : "p"));
       const c = base.map((v) => v * (b.c ? 0.96 + 0.08 * hash(bi + 0.5) : tone));
       if (!b.c && !tall && !low && !b.pt && !b.rs) {       // an ordinary mid-rise: shopfronts, upper floors, a parapet, roof plant
         const shop = b.m === 0 && hgt > 9 && hash(bi + 0.9) < 0.7 ? 4.2 : 0;
@@ -879,30 +1144,32 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
         extrude("s", q, b.h, b.h + b.a * (dx < 0 ? 1 : 0.92), [0.95, 0.95, 0.96], false);
       }
     });
-    ballys();
-    // and the ground around it, from the same plan: the riverwalk, the oval drop-off plaza by Chicago Ave, Phase 1's
-    // employee car park in the wedge between Halsted St and the tracks, and the rows of trees. (The hall's north-west
-    // face stands about 15 m from the tracks' centreline: the plan's strip between them is the railway itself.)
+    scene.add(RESORT);                                                       // (assets/ballys-resort/)
+    scene.add(buildObamaCenter({ THREE, origin: city.origin, res: RES }));   // (assets/obama-center.js)
+    scene.add(buildMSI({ THREE, origin: city.origin }));                    // (assets/msi.js)
+    scene.add(buildMuseumPark({ THREE, origin: city.origin }));             // (assets/museum-park.js)
+    scene.add(buildHalstedPointe({ THREE, origin: city.origin }));          // (assets/halsted-pointe.js)
+    scene.add(buildFoundryPark({ THREE, origin: city.origin }));            // (assets/foundry-park.js)
+    scene.add(buildSoldierField({ THREE, origin: city.origin }));           // (assets/soldier-field.js)
+    scene.add(buildWillisTower({ THREE, origin: city.origin }));            // (assets/willis-tower.js)
+    scene.add(buildTargetDivision({ THREE, origin: city.origin }));         // (assets/target-division.js)
+    scene.add(buildSolstice({ THREE, origin: city.origin }));               // (assets/solstice-on-the-park.js)
+    scene.add(buildNorthMichigan875({ THREE, origin: city.origin }));       // (assets/875-north-michigan.js)
+    // (assets/elizabeth-410.js: the first tower at level 7, its crane standing free at a height for that stage, assumed,
+    // not the 20 m above the finished roof it would climb to)
+    scene.add(buildElizabeth410({ THREE, origin: city.origin, jibHeight: 60 }));
+    scene.add(buildMarcey1840({ THREE, origin: city.origin }));             // (assets/marcey-1840.js)
+    // (assets/prairie-material.js; its yard stops at our line's ballast, and its fence and trucks keep off the track)
+    scene.add(buildPrairieMaterial({ THREE, origin: city.origin, railway: { line: plan.map((p) => [p.x, p.y]), half: 15 } }));
+    // and from that plan, Phase 1's employee car park in the wedge between Halsted St and the tracks (the resort's own
+    // landscape has the riverwalk, the drop-off and the trees): the plan's triangle, its east side now along the line
+    // (19 m west of its centre, just outside the corridor cleared beside it) where the line keeps to the railroad's strip
     {
-      const ground = (pts, y, color) => flatPolys([ring(pts)], y, color);
-      ground([[905, 24], [532, 24], [532, 290]], 0.025, 0x5d6062);                                   // the car park, clear of the tracks
-      ground([[624, 392], [992, 395], [992, 404], [626, 405]], 0.03, 0xd2c6ad);                     // the riverwalk
-      ground([[906, 206], [992, 206], [992, 395], [978, 395], [978, 318], [906, 322]], 0.03, 0xd2c6ad);   // the plaza
-      const oval = (rx, ry) => { const q = []; for (let i = 0; i < 40; i++) { const a = i / 40 * Math.PI * 2; q.push([935 + rx * Math.cos(a), 268 + ry * Math.sin(a)]); } return q; };
-      ground(oval(30, 36), 0.04, 0x55595b); ground(oval(17, 22), 0.05, 0x7fa56a);                   // the drive round it, and its island
-      // trees: a row along the riverwalk, one along Chicago Ave, and one along the plaza's north side
-      const spots = [];
-      const row = (a, b, every) => { const [ax, az] = PLAN(...a), [bx, bz] = PLAN(...b), n = Math.floor(Math.hypot(bx - ax, bz - az) / every); for (let i = 0; i <= n; i++) spots.push([ax + (bx - ax) * i / n, az + (bz - az) * i / n]); };
-      row([640, 400], [985, 400], 10); row([990, 210], [990, 390], 9); row([912, 210], [985, 210], 9);
-      const trunk = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.18, 0.24, 3.2, 8), new THREE.MeshStandardMaterial({ color: 0x5a4632, roughness: 1 }), spots.length);
-      const crown = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(2.6, 1), new THREE.MeshStandardMaterial({ color: 0x4f7d3a, roughness: 1, flatShading: true }), spots.length);
-      const dummy = new THREE.Object3D();
-      spots.forEach(([x, z], i) => {
-        const k = 0.85 + 0.3 * hash(i + 0.37);
-        dummy.position.set(x, 1.6, z); dummy.rotation.set(0, 0, 0); dummy.scale.set(1, k, 1); dummy.updateMatrix(); trunk.setMatrixAt(i, dummy.matrix);
-        dummy.position.set(x, 3.2 + 2.2 * k, z); dummy.rotation.set(0, hash(i) * 6, 0); dummy.scale.set(k, k * 0.9, k); dummy.updateMatrix(); crown.setMatrixAt(i, dummy.matrix);
-      });
-      scene.add(trunk, crown);
+      const [N, SW, SE] = [[905, 24], [532, 24], [532, 290]].map(([px, py]) => V2(...PLAN(px, py)));
+      const inTri = (q) => { const c = (a, b) => (b.x - a.x) * (q.y - a.y) - (b.y - a.y) * (q.x - a.x), s1 = c(N, SW), s2 = c(SW, SE), s3 = c(SE, N); return (s1 >= 0 && s2 >= 0 && s3 >= 0) || (s1 <= 0 && s2 <= 0 && s3 <= 0); };
+      const edge = [];
+      for (let d = CH.d - 500; d < CH.d + 150; d += 4) { const q = at(d, -19).p; if (inTri(V2(q.x, q.z))) edge.push(q.x, q.z); }
+      flatPolys([[SW.x, SW.y, ...edge, SW.x, SW.y]], 0.025, 0x5d6062);
     }
     for (const [k, G] of Object.entries(groups)) {
       if (!G.pos.length) continue;
@@ -914,14 +1181,8 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
       FACADES[k](c);
       const tex = new THREE.CanvasTexture(cv);
       tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8;
-      scene.add(new THREE.Mesh(g, k === "m" ? mirrorGlass(tex) : new THREE.MeshBasicMaterial({ vertexColors: true, map: tex, side: THREE.DoubleSide })));
-    }
-    if (columns.length) {
-      const cols = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.85, 0.95, 10, 10),
-        new THREE.MeshBasicMaterial({ color: 0xd9d2bd }), columns.length);
-      const o = new THREE.Object3D();
-      columns.forEach((c, i) => { o.position.set(c[0], 24, c[1]); o.updateMatrix(); cols.setMatrixAt(i, o.matrix); });
-      scene.add(cols);
+      const see = k === "x" ? { transparent: true, depthWrite: false } : k === "t" ? { alphaTest: 0.5 } : {};   // the footbridges' glass, the trusses' gaps
+      scene.add(new THREE.Mesh(g, k === "m" ? mirrorGlass(tex) : new THREE.MeshBasicMaterial({ vertexColors: true, map: tex, side: THREE.DoubleSide, ...see })));
     }
   }
 
@@ -976,7 +1237,7 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
     along(d0, d1, -half, -0.1, half, -0.1, slabMat);
     along(d0, d1, -0.22, -0.085, 0.22, -0.085, drainMat);
   }
-  [otherAt, sideAt].forEach((c, k) => {                         // (the slab track is all underground, where c is -OFF and OFF)
+  [(d) => railAt(0, d), (d) => railAt(1, d)].forEach((c, k) => {   // (the slab track is all underground, where c is -OFF and OFF)
     [-0.7175, 0.7175].forEach((s, j) => {
       scene.add(new THREE.Mesh(new THREE.TubeGeometry(subCurve(0, LENGTH, (d) => c(d) + s, 0.1, 3), Math.ceil(LENGTH / 3), 0.055, 6, false), railMat));
       const cs = c(PORTAL) + s;
@@ -1009,13 +1270,14 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
     scene.add(t);
     if (!wires) return;
     const spans = [];
-    for (let s = 15; s < cor.len; s += 46) spans.push(s);
+    for (let s = 15; s < cor.len; s += 46) if (!nearOver(cor.d0 + s, 16)) spans.push(s);   // (none under a bridge)
+    const PL = cor.latL * 0.76, PR = cor.latR * 0.76;             // (inside the edges, on top of any embankment)
     const posts = new THREE.InstancedMesh(new THREE.BoxGeometry(0.28, 8.2, 0.28), steel, spans.length * 2);
-    const beams = new THREE.InstancedMesh(new THREE.BoxGeometry(cor.latR - cor.latL + 0.4, 0.3, 0.3), steel, spans.length);
+    const beams = new THREE.InstancedMesh(new THREE.BoxGeometry(PR - PL + 0.4, 0.3, 0.3), steel, spans.length);
     spans.forEach((s, i) => {
-      setInst(posts, i * 2, cor.pt(s, cor.latL + 0.5, 4.1), cor.dirAt(s));
-      setInst(posts, i * 2 + 1, cor.pt(s, cor.latR - 0.5, 4.1), cor.dirAt(s));
-      setInst(beams, i, cor.pt(s, (cor.latL + cor.latR) / 2, 7.9), cor.dirAt(s));
+      setInst(posts, i * 2, cor.pt(s, PL, 4.1), cor.dirAt(s));
+      setInst(posts, i * 2 + 1, cor.pt(s, PR, 4.1), cor.dirAt(s));
+      setInst(beams, i, cor.pt(s, (PL + PR) / 2, 7.9), cor.dirAt(s));
     });
     scene.add(posts, beams);
     const wire = [];
@@ -1032,13 +1294,355 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
     scene.add(new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: 0x2c3030 })));
   };
   surfaceTracks(SOUTH, [(s) => meSide(0, s), (s) => meSide(2, s)], true);   // the Metra Electric's other two (it is electrified)
-  surfaceTracks(curvedCorridor(northFrom, JOIN_D, -15, 15), [-10.5, 10.5], false);   // to the UP North...
+  // to the UP North... (the one to the east ends 100 m past Chicago/Halsted, where our line bends onto the industrial
+  // spur past Prairie Material's yard: its silos stand where that track would run)
+  const EAST_TRACK_END = CH.d + 100;
+  surfaceTracks(curvedCorridor(northFrom, EAST_TRACK_END, -15, 15), [-10.5, 10.5], false);
+  surfaceTracks(curvedCorridor(EAST_TRACK_END, JOIN_D, -15, 15), [-10.5], false);
   // ...and beside it to the west, the UP Northwest's two tracks, until they curve away north-west at Clybourn (in OSM they
   // are 4 m apart, right beside the UP North's; here moved out past the platforms, assumed). North of Clybourn the UP North
   // is its own two tracks.
   const UPNW_END = Math.min(CLY.d + 320, BRIDGE.d0 - 10);          // (it has its own bridge over the river, further west)
   const upnwAway = (s) => 30 * smooth((JOIN_D + s - CLY.platTo) / 300);
   surfaceTracks(curvedCorridor(JOIN_D, UPNW_END, -15, 10), [(s) => -10.5 - upnwAway(s), (s) => -14.5 - upnwAway(s)], false);
+
+  /* ---- south of where our alignment begins (in the opening's area: city.rails), the Metra Electric runs on: its main
+          tracks from OpenStreetMap, on the same embankment (EMB_ME), between concrete walls, with a plate-girder bridge
+          over each street that passes under ---- */
+  if (city.rails && city.introArea) {
+    const TOP = EMB_ME, HALF = 3, [AW, AN, AE, AS] = city.introArea;
+    const CELL = 40, grid = new Map(), key = (i, j) => i * 100003 + j;
+    for (const rd of city.roads) for (let i = 0; i + 3 < rd.p.length; i += 2) {
+      const sgm = [rd.p[i], rd.p[i + 1], rd.p[i + 2], rd.p[i + 3], rd.w];
+      if (Math.max(sgm[0], sgm[2]) < AW || Math.min(sgm[0], sgm[2]) > AE || Math.max(sgm[1], sgm[3]) < AN || Math.min(sgm[1], sgm[3]) > AS) continue;
+      for (let a = Math.floor(Math.min(sgm[0], sgm[2]) / CELL); a <= Math.floor(Math.max(sgm[0], sgm[2]) / CELL); a++)
+        for (let b = Math.floor(Math.min(sgm[1], sgm[3]) / CELL); b <= Math.floor(Math.max(sgm[1], sgm[3]) / CELL); b++) {
+          const k = key(a, b); if (!grid.has(k)) grid.set(k, []); grid.get(k).push(sgm);
+        }
+    }
+    const top = [], walls = [], girders = [], strips = [], stripUV = [];
+    const quad = (arr, a, b, c, d) => arr.push(...a, ...b, ...c, ...a, ...c, ...d);
+    // each track: a strip painted with its ties (every TIE_EVERY) and rails, so that it stays smooth far off
+    const tieTex = (() => {
+      const cv = document.createElement("canvas"); cv.width = 64; cv.height = 32;
+      const c = cv.getContext("2d"), px = (m) => m / 2.6 * 64;
+      c.fillStyle = "#57524d"; c.fillRect(0, 0, 64, 32);
+      c.fillStyle = "#3a3632"; c.fillRect(px(0.05), 0, px(2.5), 32 * 0.24 / TIE_EVERY);
+      c.fillStyle = "#c3c9cd"; for (const o of [1.3 - 0.7175, 1.3 + 0.7175]) c.fillRect(px(o - 0.04), 0, Math.max(1, px(0.08)), 32);
+      const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8;
+      return t;
+    })();
+    for (const r of city.rails) {
+      if (r.s) continue;                                          // (sidings and yards: not on the embankment)
+      for (let i = 0; i + 3 < r.p.length; i += 2) {
+        const ax = r.p[i], az = r.p[i + 1], bx = r.p[i + 2], bz = r.p[i + 3], len = Math.hypot(bx - ax, bz - az);
+        if (len < 0.3 || nearRailway((ax + bx) / 2, (az + bz) / 2, 2)) continue;
+        const ux = (bx - ax) / len, uz = (bz - az) / len, nx = uz, nz = -ux;
+        const pt = (t, off, y) => [ax + ux * t + nx * off, y, az + uz * t + nz * off];
+        quad(top, pt(0, -HALF, TOP), pt(len, -HALF, TOP), pt(len, HALF, TOP), pt(0, HALF, TOP));
+        quad(strips, pt(0, -1.3, TOP + 0.03), pt(len, -1.3, TOP + 0.03), pt(len, 1.3, TOP + 0.03), pt(0, 1.3, TOP + 0.03));
+        const n = len / TIE_EVERY; stripUV.push(0, 0, 0, n, 1, n, 0, 0, 1, n, 1, 0);
+        // where a street crosses under: the stretch of the segment its width (and a sidewalk each side) takes, at its angle
+        const cuts = [], seen = new Set();
+        for (let a = Math.floor(Math.min(ax, bx) / CELL); a <= Math.floor(Math.max(ax, bx) / CELL); a++)
+          for (let b = Math.floor(Math.min(az, bz) / CELL); b <= Math.floor(Math.max(az, bz) / CELL); b++)
+            for (const sgm of grid.get(key(a, b)) || []) {
+              if (seen.has(sgm)) continue; seen.add(sgm);
+              const [cx, cz, dx, dz, w] = sgm, ex = dx - cx, ez = dz - cz, den = ux * len * ez - uz * len * ex;
+              if (Math.abs(den) < 1e-6) continue;
+              const tt = ((cx - ax) * ez - (cz - az) * ex) / den, uu = ((cx - ax) * uz * len - (cz - az) * ux * len) / den;
+              if (tt < 0 || tt > 1 || uu < 0 || uu > 1) continue;
+              const sin = Math.abs(ux * ez - uz * ex) / Math.hypot(ex, ez), half = (w / 2 + 2.5) / Math.max(0.3, sin);
+              cuts.push([tt * len - half, tt * len + half]);
+            }
+        cuts.sort((p, q) => p[0] - q[0]);
+        let at0 = 0;
+        const run = (t0, t1, bridge) => {
+          if (t1 - t0 < 0.05) return;
+          for (const sg of [-1, 1]) {
+            if (bridge) quad(girders, pt(t0, sg * HALF, TOP - 1.3), pt(t1, sg * HALF, TOP - 1.3), pt(t1, sg * HALF, TOP), pt(t0, sg * HALF, TOP));
+            else quad(walls, pt(t0, sg * HALF, -0.1), pt(t1, sg * HALF, -0.1), pt(t1, sg * HALF, TOP), pt(t0, sg * HALF, TOP));
+          }
+        };
+        for (const [c0, c1] of cuts) { const s0 = Math.max(at0, c0), s1 = Math.min(len, c1); if (s1 <= s0) continue; run(at0, s0, false); run(s0, s1, true); at0 = s1; }
+        run(at0, len, false);
+      }
+    }
+    const mesh = (pos, color, extra = {}) => {
+      const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.computeVertexNormals();
+      scene.add(new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color, roughness: 0.95, side: THREE.DoubleSide, ...extra })));
+    };
+    mesh(top, 0x57524d); mesh(walls, 0x9d9e97); mesh(girders, 0x6d7773, { roughness: 0.75, metalness: 0.15 });
+    const sg = new THREE.BufferGeometry();
+    sg.setAttribute("position", new THREE.Float32BufferAttribute(strips, 3)); sg.setAttribute("uv", new THREE.Float32BufferAttribute(stripUV, 2)); sg.computeVertexNormals();
+    scene.add(new THREE.Mesh(sg, new THREE.MeshStandardMaterial({ map: tieTex, roughness: 1, side: THREE.DoubleSide })));
+  }
+
+  /* ---- the embankments (EMB): the fill under the railway, its sides sloping down to the street (a retaining wall where
+          the corridor is too narrow for a slope), and over each street that passes under (GAPS) a plate-girder bridge
+          between concrete abutments ---- */
+  {
+    const slopeMat = new THREE.MeshStandardMaterial({ color: 0x76805a, roughness: 1, side: THREE.DoubleSide });    // grassed
+    const wallMat = new THREE.MeshStandardMaterial({ color: 0x9d9e97, roughness: 0.95, side: THREE.DoubleSide });  // concrete
+    const topMat = new THREE.MeshStandardMaterial({ color: 0x6b6660, roughness: 1, side: THREE.DoubleSide });      // ballast
+    const girderMat = new THREE.MeshStandardMaterial({ color: 0x6d7773, roughness: 0.75, metalness: 0.15, side: THREE.DoubleSide });
+    const soffitMat = new THREE.MeshStandardMaterial({ color: 0x8d8f89, emissive: 0x2a2b28, roughness: 1, side: THREE.DoubleSide });   // (in shade: lit a little)
+    const DECK = 1.3, PARAPET = 0.6, STEP = 4;
+    const P = (d, lat, y) => at(d, lat).p.setY(y);
+    // A strip of fill from d0 to d1: top edges L(d) and R(d), feet FL(d) and FR(d) at street level.
+    const fill = (d0, d1, L, R, FL, FR) => {
+      if (d1 - d0 < 1) return;
+      const top = (d) => EMB(d) - 0.16, n = Math.max(1, Math.ceil((d1 - d0) / STEP)), dd = (i) => d0 + (i / n) * (d1 - d0);
+      ribbon((i) => [P(dd(i), L(dd(i)), top(dd(i))), P(dd(i), R(dd(i)), top(dd(i)))], n, topMat);
+      const clamp = (d) => Math.min(Math.max(d, d0), d1);
+      const gaps = GAPS.filter(([a, b]) => EMB((a + b) / 2) > 0.6 && b + 40 > d0 && a - 40 < d1);
+      const cut = (e, k, E) => e + k * E(e + k * E(e));            // where a bridge's end, skewed with its street, meets the edge E
+      // the sides, broken at each bridge: the fill along each edge stops and starts again where the street crosses that edge
+      const runsAt = (E) => { const r = [d0]; for (const [a, b, k] of gaps) r.push(clamp(cut(a, k, E)), clamp(cut(b, k, E))); r.push(d1); return r; };
+      for (const [E, F] of [[L, FL], [R, FR]]) {
+        const rt = runsAt(E), rb = runsAt(F);
+        for (let j = 0; j + 1 < rt.length; j += 2) {
+          const lt = rt[j + 1] - rt[j], lb = rb[j + 1] - rb[j];
+          if (lt < 0.5 && lb < 0.5) continue;
+          const m = Math.max(1, Math.ceil(Math.max(lt, lb) / STEP)), mid = (rt[j] + rt[j + 1]) / 2, steep = Math.abs(F(mid) - E(mid)) < 0.6 * EMB(mid);
+          ribbon((i) => { const t = rt[j] + (i / m) * lt, u = rb[j] + (i / m) * lb; return [P(t, E(t), top(t)), P(u, F(u), -0.1)]; }, m, steep ? wallMat : slopeMat);
+        }
+      }
+      // across: the abutments facing each street (square to it), and the fill's ends where the strip stops at full height
+      const face = (e, k) => {
+        const lats = [FL, L, R, FR].map((E) => E(e)), ys = [-0.1, top(e), top(e), -0.1];
+        ribbon((i) => [P(clamp(e + k * lats[i]), lats[i], -0.1), P(clamp(e + k * lats[i]), lats[i], ys[i])], 3, wallMat);
+      };
+      for (const e of [d0, d1]) if (EMB(e) > 0.6 && !inGap(e)) face(e, 0);
+      for (const [a, b, k] of gaps) {
+        for (const e of [a, b]) if (e > d0 && e < d1) face(e, k);
+        // the bridge: the deck's soffit and a plate girder along each edge, each running square to the street
+        const m = Math.max(1, Math.ceil((b - a) / 2)), along = (E, f) => clamp(cut(a, k, E) + f * (b - a));
+        if (along(L, 1) - along(L, 0) < 0.5 && along(R, 1) - along(R, 0) < 0.5) continue;
+        ribbon((i) => { const t = along(L, i / m), u = along(R, i / m); return [P(t, L(t), EMB(t) - DECK), P(u, R(u), EMB(u) - DECK)]; }, m, soffitMat);
+        for (const E of [L, R]) ribbon((i) => { const t = along(E, i / m); return [P(t, E(t), EMB(t) - DECK), P(t, E(t), EMB(t) + PARAPET)]; }, m, girderMat);
+      }
+    };
+    // (the corridor's ends at the river are walls: the Deering Bridge's piers stand there)
+    const span = (cor) => { let a = cor.d0, b = cor.d0 + cor.len; while (a < b && EMB(a) < 0.05) a += STEP; while (b > a && EMB(b) < 0.05) b -= STEP; return [a, b]; };
+    for (const cor of [SOUTH, NORTH_A, NORTH_B]) {
+      const [a, b] = span(cor), s = (d) => d - cor.d0;
+      fill(a, b, (d) => Math.min(cor.latL + 0.9 * EMB(d), -10.2), (d) => Math.max(cor.latRAt(s(d)) - 0.9 * EMB(d), Math.min(10.2, cor.latRAt(s(d)))),
+        () => cor.latL, (d) => cor.latRAt(s(d)));
+    }
+    // the UP Northwest's two tracks on their own fill beside ours, as they curve away west after Clybourn
+    const nw = (d) => -12.5 - upnwAway(d - JOIN_D);
+    fill(Math.max(JOIN_D, span(NORTH_A)[0]), UPNW_END, (d) => nw(d) - 3.5, (d) => Math.min(nw(d) + 3.5, -10.2), (d) => nw(d) - 3.5, (d) => Math.min(nw(d) + 3.5, -10.2));
+  }
+
+  /* ---- the bridges over the Metra Electric (OVERS): the footbridges' concrete decks rise from each end to OVER_DECK over
+          the tracks on slender piers (43rd's and 41st's with blue masts splaying out over the tracks, stays down to the
+          deck's edges); the road bridges climb on walled ramps to a girder span over the railway ---- */
+  {
+    const std = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.9, side: THREE.DoubleSide, ...extra });
+    const conc = std(0xb7b8b2), soffit = std(0x8f918b, { emissive: 0x222320 }), asphalt = std(0x46494c, { roughness: 1 });
+    const blue = std(0x4f8fce, { roughness: 0.45, metalness: 0.3 }), railing = std(0x8fa3ad, { roughness: 0.5, metalness: 0.4, transparent: true, opacity: 0.6 });
+    const box = new THREE.BoxGeometry(1, 1, 1), UPV = new THREE.Vector3(0, 1, 0);
+    const tube = (a, b, r, mat) => {
+      const dir = b.clone().sub(a), m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, dir.length(), 8), mat);
+      m.position.copy(a).add(b).multiplyScalar(0.5); m.quaternion.setFromUnitVectors(UPV, dir.normalize()); scene.add(m);
+    };
+    const stays = [];
+    for (const o of OVERS) {
+      if (o.d === null) continue;
+      const base = EMB(o.d), deck = base + OVER_DECK, W = o.foot ? 2.3 : 7.5, TH = o.foot ? 0.8 : 1.4, RAMP = 95;
+      let raw = o.pts.map((q) => V2(q.x, q.z));
+      if (!o.foot) {                                              // the road's ramps, on along its line from each end
+        const u = raw[1].clone().sub(raw[0]).normalize();
+        raw = [raw[0].clone().addScaledVector(u, -RAMP), raw[0], raw[1], raw[1].clone().addScaledVector(u, RAMP)];
+      }
+      const P = [];                                               // every 2 m: point, distance along, direction
+      for (let i = 1; i < raw.length; i++) {
+        const a = raw[i - 1], b = raw[i], L = a.distanceTo(b), t = b.clone().sub(a).normalize(), s0 = P.length ? P[P.length - 1].s : 0;
+        for (let k = P.length ? 1 : 0; k <= Math.ceil(L / 2); k++) { const f = Math.min(k * 2 / L, 1); P.push({ p: a.clone().lerp(b, f), s: s0 + f * L, t }); }
+      }
+      const L = P[P.length - 1].s, over = P.map((q) => !!nearRailway(q.p.x, q.p.y, 1));   // (has() gives a position, not true)
+      const sA = P[over.indexOf(true)]?.s ?? L / 2, sB = P[over.lastIndexOf(true)]?.s ?? L / 2;
+      const h = o.foot
+        ? (s) => deck * Math.max(0, Math.min(1, sA > 10 ? s / (sA - 6) : 1, L - sB > 10 ? (L - s) / (L - sB - 6) : 1))
+        : (s) => deck * smooth(s / RAMP) * (1 - smooth((s - (L - RAMP)) / RAMP));
+      const at3 = (i, lat, y) => new THREE.Vector3(P[i].p.x - P[i].t.y * lat, y, P[i].p.y + P[i].t.x * lat);
+      const near = P.map((q) => !!nearRailway(q.p.x, q.p.y, 4)), oA = P[near.indexOf(true)]?.s ?? sA, oB = P[near.lastIndexOf(true)]?.s ?? sB;
+      const n = P.length - 1, H = P.map((q) => h(q.s)), open = P.map((q) => q.s >= oA && q.s <= oB);   // one span, first track to last (no wall dropping between tracks)
+      ribbon((i) => [at3(i, -W, H[i] + 0.02), at3(i, W, H[i] + 0.02)], n, o.foot ? conc : asphalt);
+      ribbon((i) => [at3(i, -W, Math.max(0, H[i] - TH)), at3(i, W, Math.max(0, H[i] - TH))], n, soffit);
+      for (const lat of [-W, W]) {
+        if (o.foot) {
+          ribbon((i) => [at3(i, lat, Math.max(0, H[i] - TH)), at3(i, lat, H[i] + 0.25)], n, conc);
+          ribbon((i) => [at3(i, lat * 0.98, H[i] + 0.25), at3(i, lat * 0.98, H[i] + 1.25)], n, railing);
+        } else {
+          ribbon((i) => [at3(i, lat, open[i] ? Math.max(0, H[i] - TH) : -0.1), at3(i, lat, H[i] + 1.0)], n, conc);
+        }
+      }
+      if (o.foot) {                                               // piers every 20 m, none on the railway
+        for (let i = 5; i < n - 3; i += 10) {
+          const y = H[i] - TH;
+          if (y < 1.5 || nearRailway(P[i].p.x, P[i].p.y, 1.5)) continue;
+          const m = new THREE.Mesh(box, conc); m.scale.set(0.8, y, 0.8); m.position.set(P[i].p.x, y / 2, P[i].p.y); scene.add(m);
+        }
+      } else {                                                    // a pier wall each side of the railway, where the span begins and ends
+        for (let i = 1; i <= n; i++) if (open[i] !== open[i - 1]) ribbon((k) => [at3(i, k ? W : -W, -0.1), at3(i, k ? W : -W, H[i] - TH)], 1, conc);
+      }
+      if (o.blue) {                                               // the masts: from each edge over the middle of the tracks, splaying out along and up
+        const im = P.findIndex((q) => q.s >= (sA + sB) / 2), reach = 7;
+        for (const sg of [-1, 1]) for (const e of [-1, 1]) {
+          const j = Math.min(Math.max(im + e * reach, 0), n), foot = at3(im, sg * W, H[im] + 0.25), tip = at3(j, sg * (W + 2.6), H[j] + 7);
+          tube(foot, tip, 0.22, blue);
+          for (const k of [3, 6, 9]) { const q = at3(Math.min(Math.max(im + e * (reach + k), 0), n), sg * W, H[Math.min(Math.max(im + e * (reach + k), 0), n)] + 1.25); stays.push(tip.x, tip.y, tip.z, q.x, q.y, q.z); }
+        }
+      }
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute(stays, 3));
+    scene.add(new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: 0x3f6f9f })));
+  }
+
+  // Trees, as instanced meshes: spots [{ x, z, h (its height), r (its crown's radius), c (0..1: which crown, which green) }].
+  // A crown is a cluster of lumpy lobes (icosahedra, their corners pushed in and out), darker underneath and in the
+  // gaps, lighter on top; three shapes, so neighbours differ. Each lobe is about a unit across the whole crown. detail:
+  // the icosahedra's (0 for trees only ever seen from far off, a quarter of the faces).
+  function plantTrees(spots, detail = 1) {
+    if (!spots.length) return;
+    const hash = (n) => { const x = Math.sin(n * 91.7 + 17.3) * 43758.5453; return x - Math.floor(x); };
+    const crownShape = (seed) => {
+      const lobes = [[0, 0, 0, 0.78], [0.5, 0.12, 0.18, 0.56], [-0.44, 0.06, -0.3, 0.58], [0.08, 0.42, -0.36, 0.5], [-0.16, 0.34, 0.46, 0.5]]
+        .slice(0, 4 + (seed % 2)).map(([x, y, z, r], k) => [x + (hash(seed * 7 + k) - 0.5) * 0.2, y, z + (hash(seed * 7 + k + 0.5) - 0.5) * 0.2, r]);
+      const pos = [], col = [];
+      for (const [cx, cy, cz, r] of lobes) {
+        const g = new THREE.IcosahedronGeometry(r, detail), a = g.attributes.position;
+        for (let i = 0; i < a.count; i++) {
+          const x = a.getX(i), y = a.getY(i), z = a.getZ(i), n = 1 + (hash(seed + x * 13.1 + y * 7.7 + z * 3.3) - 0.5) * 0.28;   // the same corner moves the same way
+          const px = cx + x * n, py = cy + y * n * 0.9, pz = cz + z * n;
+          pos.push(px, py, pz);
+          const sh = 0.55 + 0.45 * Math.min(1, Math.max(0, (py + 0.6) / 1.3)) * (0.75 + 0.25 * Math.hypot(x, y, z) / r);   // underside and inner faces in shade
+          col.push(sh, sh, sh);
+        }
+        g.dispose();
+      }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+      g.computeVertexNormals();
+      return g;
+    };
+    const trunk = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.16, 0.3, 1, detail ? 7 : 5), new THREE.MeshStandardMaterial({ color: 0x5b4632, roughness: 1 }), spots.length);
+    const leafMat = new THREE.MeshStandardMaterial({ color: 0xffffff, vertexColors: true, roughness: 1, flatShading: true });
+    const kinds = [0, 1, 2].map((v) => spots.filter((t) => Math.floor(t.c * 3) === v));
+    const crowns = kinds.map((list, v) => new THREE.InstancedMesh(crownShape(v + 1), leafMat, Math.max(1, list.length)));
+    const greens = [0x5a8a40, 0x6a9a4b, 0x4f7d3a, 0x77a352].map((c) => new THREE.Color(c));
+    spots.forEach((t, i) => {
+      dummy.position.set(t.x, t.h * 0.3, t.z); dummy.rotation.set(0, 0, 0); dummy.scale.set(1, t.h * 0.6, 1); dummy.updateMatrix(); trunk.setMatrixAt(i, dummy.matrix);
+    });
+    kinds.forEach((list, v) => list.forEach((t, j) => {
+      dummy.position.set(t.x, t.h - t.r * 0.75, t.z); dummy.rotation.set(0, t.c * 37.7, 0); dummy.scale.set(t.r * 1.15, t.r * 0.95, t.r * 1.15); dummy.updateMatrix();
+      crowns[v].setMatrixAt(j, dummy.matrix); crowns[v].setColorAt(j, greens[Math.floor(hash(t.c * 97) * 4)]);
+    }));
+    scene.add(trunk, ...crowns);
+  }
+
+  /* ---- trees on both sides of the Metra Electric from 47th to 27th (as in the aerials: strips of trees between the
+          railway and the streets and Lake Shore Drive), kept off the footbridges and road bridges ---- */
+  {
+    const K47 = SOUTH_STOPS[3], K27 = SOUTH_STOPS[5], STEP = 6;
+    const hash = (n) => { const x = Math.sin(n * 91.7 + 17.3) * 43758.5453; return x - Math.floor(x); };
+    const spots = [];
+    for (let d = K47.d + 60, i = 0; d < K27.d - 60; d += STEP, i++) for (const sg of [-1, 1]) for (let row = 0; row < 2; row++) {
+      const k = i * 4 + (sg > 0 ? 2 : 0) + row;
+      if (hash(k) < 0.3 || nearOver(d, 14)) continue;
+      const lat = sg * (22.5 + row * 6 + hash(k + 0.5) * 4), dd = d + (hash(k + 0.7) - 0.5) * STEP;
+      const p = at(dd, lat).p;
+      spots.push({ x: p.x, z: p.z, h: 7 + hash(k + 0.9) * 7, r: 2.6 + hash(k + 0.3) * 2.2, c: hash(k + 0.1) });
+    }
+    plantTrees(spots);
+  }
+
+  /* ---- the opening's area, south of 59th (city.introArea: tools/build-intro-area.mjs): trees thick in its woods and
+          scattered over its parks, along its residential streets, and wherever OpenStreetMap has one mapped; kept off
+          streets, paths, buildings, water, the railway and the Obama Center's grounds (it has its own) ---- */
+  if (city.introArea) {
+    const [AW, AN, AE, AS] = city.introArea, inArea = (x, z) => x > AW && x < AE && z > AN && z < AS;
+    const hash = (n) => { const x = Math.sin(n * 63.1 + 29.9) * 43758.5453; return x - Math.floor(x); };
+    const CELL = 30, cell = (x, z) => Math.floor(x / CELL) * 100003 + Math.floor(z / CELL);
+    const ways = new Map(), houses = new Map();                  // grids of street and path segments, and of buildings
+    const into = (grid, x0, z0, x1, z1, item) => {
+      for (let i = Math.floor(x0 / CELL); i <= Math.floor(x1 / CELL); i++) for (let j = Math.floor(z0 / CELL); j <= Math.floor(z1 / CELL); j++) {
+        const k = i * 100003 + j; if (!grid.has(k)) grid.set(k, []); grid.get(k).push(item);
+      }
+    };
+    for (const w of [...(city.roads || []), ...(city.paths || []).map((pa) => ({ ...pa, path: true }))]) for (let i = 0; i + 3 < w.p.length; i += 2) {
+      const s = [w.p[i], w.p[i + 1], w.p[i + 2], w.p[i + 3], w.w / 2, !w.path && walked(w.w)];   // (and whether it has sidewalks)
+      if (inArea(s[0], s[1]) || inArea(s[2], s[3])) into(ways, Math.min(s[0], s[2]) - 15, Math.min(s[1], s[3]) - 15, Math.max(s[0], s[2]) + 15, Math.max(s[1], s[3]) + 15, s);
+    }
+    for (const b of city.buildings) {
+      if (!inArea(b.p[0], b.p[1])) continue;
+      let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+      for (let i = 0; i < b.p.length; i += 2) { x0 = Math.min(x0, b.p[i]); x1 = Math.max(x1, b.p[i]); z0 = Math.min(z0, b.p[i + 1]); z1 = Math.max(z1, b.p[i + 1]); }
+      into(houses, x0 - 2, z0 - 2, x1 + 2, z1 + 2, b.p);
+    }
+    const wetPolys = city.water.filter((p) => inArea(p[0], p[1]) || p.length > 400);
+    const OPC_SITE = obamaSite(city.origin);
+    // (nor on the sites of the modelled projects, which plant their own trees: Soldier Field's decks stand 13.5 m up)
+    const MODEL_SITES = [...soldierFieldSite(city.origin), ...halstedPointeSite(city.origin), ...foundryParkSite(city.origin),
+      ...willisTowerSite(city.origin), ...prairieMaterialSite(city.origin), ...targetDivisionSite(city.origin), ...solsticeSite(city.origin),
+      ...northMichigan875Site(city.origin), ...elizabeth410Site(city.origin),
+      ...marcey1840Site(city.origin)];
+    // (a tree keeps off the sidewalks too, unless it's planted in the parkway between the curb and the sidewalk)
+    const clear = (x, z, m, parkway = false) => {
+      if (!inArea(x, z) || nearRailway(x, z, 8) || inside(x, z, OPC_SITE) || MODEL_SITES.some((r) => inside(x, z, r))) return false;
+      for (const [ax, az, bx, bz, hw, sw] of ways.get(cell(x, z)) || []) {
+        const dx = bx - ax, dz = bz - az, L = dx * dx + dz * dz, f = L ? Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L)) : 0;
+        const dist = Math.hypot(x - ax - f * dx, z - az - f * dz);
+        if (dist < hw + m) return false;
+        if (sw && dist < hw + SIDEWALK[1] + m && !(parkway && dist < hw + SIDEWALK[0] - m)) return false;
+      }
+      for (const p of houses.get(cell(x, z)) || []) if (inside(x, z, p)) return false;
+      return !wetPolys.some((p) => inside(x, z, p));
+    };
+    const spots = [];
+    const tree = (x, z, k, big = 1) => spots.push({ x, z, h: (7 + hash(k) * 7) * big, r: (2.4 + hash(k + 0.3) * 1.8) * big, c: hash(k + 0.1) });
+    // within a polygon (a flat [x, z, ...] ring), on a jittered grid `step` apart, keeping a share of the spots
+    const fill = (p, step, keep, m, k0, big) => {
+      let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+      for (let i = 0; i < p.length; i += 2) { x0 = Math.min(x0, p[i]); x1 = Math.max(x1, p[i]); z0 = Math.min(z0, p[i + 1]); z1 = Math.max(z1, p[i + 1]); }
+      let k = k0;
+      for (let x = x0; x < x1; x += step) for (let z = z0; z < z1; z += step) {
+        k++;
+        const px = x + (hash(k + 0.4) - 0.5) * step * 0.8, pz = z + (hash(k + 0.6) - 0.5) * step * 0.8;
+        if (hash(k) < keep && inside(px, pz, p) && clear(px, pz, m)) tree(px, pz, k, big);
+      }
+    };
+    (city.trees || []).forEach(([x, z], i) => { if (clear(x, z, 0.5)) tree(x, z, 10 + i); });
+    (city.woods || []).forEach((p, i) => fill(p, 9, 0.85, 1.5, 1e5 + i * 1e4, 1.1));
+    city.parks.filter((p) => inArea(p[0], p[1])).forEach((p, i) => fill(p, 26, 0.4, 3, 2e6 + i * 1e4, 1));
+    // along the residential streets, both sides, every 11 m or so, in the parkway between the curb and the sidewalk
+    (city.avenues || []).forEach((w, i) => {
+      for (let j = 0; j + 3 < w.p.length; j += 2) {
+        const ax = w.p[j], az = w.p[j + 1], bx = w.p[j + 2], bz = w.p[j + 3], len = Math.hypot(bx - ax, bz - az);
+        if (len < 4) continue;
+        const nx = (bz - az) / len, nz = -(bx - ax) / len;
+        for (let u = 5; u < len - 5; u += 11) for (const sg of [-1, 1]) {
+          const k = 3e6 + i * 1e3 + j * 10 + u + (sg > 0 ? 0.5 : 0), off = w.w / 2 + SIDEWALK[0] / 2;
+          const x = ax + (bx - ax) * u / len + sg * nx * off, z = az + (bz - az) * u / len + sg * nz * off;
+          if (hash(k) < 0.75 && clear(x, z, 0.8, true)) tree(x, z, k, 0.95);
+        }
+      }
+    });
+    plantTrees(spots, 0);
+  }
+  /* ---- McCormick Place's undercroft (COVER): columns every 9 m along each side of the tracks and on the island ---- */
+  if (COVER[0] < COVER[1]) {
+    const colMat = new THREE.MeshStandardMaterial({ color: 0x9a9b95, roughness: 0.9 }), box = new THREE.BoxGeometry(0.9, COVER_UP, 0.9);
+    const MP = SOUTH_STOPS[SOUTH_STOPS.length - 1], isl = MP.island ? MP.island.edges : null;
+    for (let d = COVER[0] + 4; d < COVER[1] - 2; d += 9) {
+      const lats = [SOUTH.latL + 1.2, SOUTH.latR - 1.2];
+      if (isl && d > MP.platFrom && d < MP.platTo) { const [a, b] = isl(d); lats.push((a + b) / 2); }
+      for (const lat of lats) { const m = new THREE.Mesh(box, colMat), q = at(d, lat).p; m.position.set(q.x, COVER_UP / 2, q.z); scene.add(m); }
+    }
+  }
 
   /* ---- our own overhead line, the whole way: a contact wire in the open,
           following the track down the ramps, and a rigid conductor rail hung
@@ -1056,7 +1660,7 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
     const copper = new THREE.MeshBasicMaterial({ color: 0x2c3030 });
     const railBar = new THREE.MeshStandardMaterial({ color: 0xaab2b4, roughness: 0.45, metalness: 0.6,
       emissive: 0xaab2b4, emissiveIntensity: 0.12 });
-    for (const c of [otherAt, sideAt]) {
+    for (const c of [(d) => railAt(0, d), (d) => railAt(1, d)]) {   // (over our two tracks)
       for (const [d0, d1] of [[0, PORTAL], [PORTAL2, LENGTH]]) {
         scene.add(new THREE.Mesh(new THREE.TubeGeometry(wireCurve(d0, d1, c), Math.ceil((d1 - d0) / 3), 0.022, 5, false), copper));
       }
@@ -1098,43 +1702,526 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
     const fPosts = new THREE.InstancedMesh(new THREE.BoxGeometry(0.28, 1, 0.28), steel, frames.length * 2);
     const fDrops = new THREE.InstancedMesh(new THREE.BoxGeometry(0.07, 1, 0.07), steel, frames.length * 2);
     frames.forEach((d, i) => {
-      const h = wireUp(d), ground = -at(d).p.y;                   // ground level, measured from the rail
+      const h = wireUp(d), ground = -at(d).p.y + EMB(d);          // ground level (or the top of an embankment), measured from the rail
       place(fBeams, i, d, 0, h + LIFT);
       [-1, 1].forEach((sg, k) => {
         upright(fPosts, i * 2 + k, d, sg * POST, Math.min(ground, h + LIFT - 0.01), h + LIFT);
-        upright(fDrops, i * 2 + k, d, trackAt(k, d), h + 0.02, h + LIFT);
+        upright(fDrops, i * 2 + k, d, railAt(k, d), h + 0.02, h + LIFT);
       });
     });
     scene.add(fBeams, fPosts, fDrops);
   }
 
   /* ---- the Halsted St and Chicago Ave viaducts: the two streets meet on a bridge right over the
-          railway, each climbing to it on a walled ramp (heights and ramp lengths assumed) ---- */
+          railway, each climbing to it on a ramp, fill between walls and then spans on piers (heights and ramp
+          lengths assumed). The City (CDOT) is rebuilding them now (August 2025 to late 2026), and the film shows the
+          new ones: steel-beam spans on open concrete piers, replaced in kind (the project's bid notice), raised bike
+          lanes on Halsted, 24-hour CTA bus lanes on Chicago, new street lights and signals (CDOT's project page), and
+          a concrete parapet topped with a black steel railing (CDOT's renderings for its June 2024 community meeting,
+          as Streetsblog Chicago printed them). CDOT's streets are wider (Halsted 64-104 ft, Chicago 91 ft); here they
+          keep the film's 16 m, so the lanes are squeezed in. The girders, piers, bearings, finishes and colors are
+          assumed ---- */
   const VIA_DECK = 8.4, VIA_HALF = 8, VIA_HX = -2300, VIA_CZ = -3600;   // deck top above the ground, half-width; Halsted's and Chicago's centrelines in city.roads (local metres)
   {
-    const DECK = VIA_DECK, DEPTH = 1.4, RAIL = 1.0, RAMP = 110;   // girder depth, parapet, ramp length
+    const DECK = VIA_DECK, HALF = VIA_HALF, HX = VIA_HX, CZ = VIA_CZ, RAMP = 110;   // ramp length
+    const SLAB = 0.28, DEPTH = 1.4;                               // the deck slab; slab and girders together, so 7.0 m clear over the rails
+    const PAR_W = 0.4, PAR_H = 0.7, CURB = 0.15, RAIL = 0.6;       // the parapet (its height above the sidewalk), the curb, the railing on the parapet
+    const BAND = SLAB + CURB + PAR_H;                             // the deck's edge and the parapet's outer face, one band of concrete
+    const BIKE = 1.4;                                             // Halsted's bike lanes, at sidewalk level between the curb and the sidewalk
+    const GIRDERS = [-7.2, -4.8, -2.4, 0, 2.4, 4.8, 7.2];         // steel plate girders under each street, 2.4 m apart (the deck overhangs 0.8 m)
+    const SEAT = DECK - DEPTH - 0.12;                             // the abutments' bridge seats, under the girders' bearings
+    const HMIN = 4.6;                                             // the fill gives way to open spans where the deck is this high
+    const STAIR_IN = 6.1;                                         // (openStation's IN: the station's stairs run up between this and PLAT_OUT)
+    const hash = (n) => { const x = Math.sin(n * 74.7 + 13.9) * 43758.5453; return x - Math.floor(x); };
+    const V = (x, y, z) => new THREE.Vector3(x, y, z);
+
+    // everything is gathered by material and drawn as one mesh each
+    const batches = new Map();
+    const bat = (mat) => { if (!batches.has(mat)) batches.set(mat, { p: [], uv: [] }); return batches.get(mat); };
+    const quad = (mat, a, b, c, d, ta = [0, 0], tb = [1, 0], tc = [1, 1], td = [0, 1]) => {
+      const B = bat(mat);
+      for (const [q, t] of [[a, ta], [b, tb], [c, tc], [a, ta], [c, tc], [d, td]]) { B.p.push(q.x, q.y, q.z); B.uv.push(t[0], t[1]); }
+    };
+    const put = (mat, geo, m) => {                                // a geometry, placed by a matrix
+      const g = (geo.index ? geo.toNonIndexed() : geo.clone()).applyMatrix4(m), p = g.attributes.position, uv = g.attributes.uv, B = bat(mat);
+      for (let i = 0; i < p.count; i++) { B.p.push(p.getX(i), p.getY(i), p.getZ(i)); B.uv.push(uv ? uv.getX(i) : 0, uv ? uv.getY(i) : 0); }
+    };
+    const BOX = new THREE.BoxGeometry(1, 1, 1), COL = new THREE.CylinderGeometry(0.45, 0.45, 1, 12, 1, true);
+    const POLE = new THREE.CylinderGeometry(0.075, 0.12, 1, 8, 1, true);
+    const WHEEL = new THREE.CylinderGeometry(0.5, 0.5, 0.3, 12).rotateX(Math.PI / 2);
+
+    // each street, from (ax, az) to (bx, bz), at full height between s0 and s1 meters along it: P(s, lat, y) is a point
+    // `lat` meters to its right (east on Halsted, south on Chicago); curb: half its roadway's width
+    const street = (ax, az, bx, bz, s0, s1, curb) => {
+      const len = Math.hypot(bx - ax, bz - az), ux = (bx - ax) / len, uz = (bz - az) / len;
+      return { len, ux, uz, s0, s1, curb, gaps: { [-1]: [], [1]: [] },
+        P: (s, lat, y) => V(ax + ux * s - uz * lat, y, az + uz * s + ux * lat),
+        h: (s) => DECK * smooth((s - (s0 - RAMP)) / RAMP) * (1 - smooth((s - s1) / RAMP)),
+        sOf: (x, z) => (x - ax) * ux + (z - az) * uz };
+    };
+    const H = street(HX, -3270, HX, -3990, 220, 420, 4.9);         // Halsted St, south to north: one lane south, two north
+    // North of Chicago Ave, Halsted stays up: the viaduct runs on to the North Branch, the street crosses the river on its
+    // bascule bridge (OSM way 24231504, bridge=movable, layer 1; its leaves down) at about the viaduct's height, and comes
+    // down to grade on fill north of it. Measured on the Cook County 2022 LiDAR (ISGS DSM and DTM, spring 2022, before the
+    // rebuild), above the rail level under the viaduct (180.0 m NAVD88): the deck 6.4 m up at the south bank, 6.0 m at
+    // mid-span and 5.0 m at the north bank (the water 4.4 m below grade), and the road on the north bank on fill, back at
+    // grade about 185 m north of the river. The film's viaduct is 8.4 m up (assumed; its 2022 deck read 6.6-6.9 m), so the
+    // deck comes down 2 m over the 64 m before the river. bank: the river's banks along Halsted (city.water), as s; end:
+    // the foot of the ramp
+    H.bank = [484, 534]; H.end = 720;
+    {
+      const K = [[H.s1, DECK], [H.bank[0], 6.4], [(H.bank[0] + H.bank[1]) / 2, 6.0], [H.bank[1], 5.0], [H.end, 0]], h0 = H.h;
+      H.h = (s) => {
+        if (s <= K[0][0]) return h0(s);
+        if (s >= H.end) return 0;
+        let i = 1; while (s > K[i][0]) i++;
+        return K[i - 1][1] + (K[i][1] - K[i - 1][1]) * (s - K[i - 1][0]) / (K[i][0] - K[i - 1][0]);
+      };
+    }
+    const C = street(-2640, CZ, -2080, CZ, 220, 450, 6.0);         // Chicago Ave, west to east: a bus lane and a lane each way
+    H.other = C; C.other = H;
+    // a matrix on street st: at s along it, lat across it, y up; its x along the street, z across it
+    const frame = (st, s, lat, y, sx = 1, sy = 1, sz = 1) => new THREE.Matrix4().makeBasis(V(st.ux, 0, st.uz), V(0, 1, 0), V(-st.uz, 0, st.ux)).setPosition(st.P(s, lat, y)).scale(V(sx, sy, sz));
+    // a matrix at (x, y, z) facing (fx, fz)
+    const facing = (x, y, z, fx, fz, sx = 1, sy = 1, sz = 1) => new THREE.Matrix4().makeBasis(V(fz, 0, -fx), V(0, 1, 0), V(fx, 0, fz)).setPosition(x, y, z).scale(V(sx, sy, sz));
+    const boxS = (mat, st, s0, s1, l0, l1, y0, y1) => put(mat, BOX, frame(st, (s0 + s1) / 2, (l0 + l1) / 2, (y0 + y1) / 2, s1 - s0, y1 - y0, l1 - l0));
+    // a bar from (l0, y0) to (l1, y1) across street st at s, t thick
+    const seg = (mat, st, s, l0, y0, l1, y1, t) => put(mat, BOX, frame(st, s, (l0 + l1) / 2, (y0 + y1) / 2)
+      .multiply(new THREE.Matrix4().makeRotationX(-Math.atan2(y1 - y0, l1 - l0))).scale(V(t, t, Math.hypot(l1 - l0, y1 - y0))));
+
+    for (const st of [H, C]) {
+      st.cc = st.sOf(HX, CZ);                                     // where the other crosses
+      // Open beneath, spans on piers between an abutment at each end, wherever the deck is HMIN or more up (and over the
+      // whole railway, from 3 m before either edge comes within 3 m of its corridor to 3 m after); below that, the
+      // ramps are fill between retaining walls
+      let lo = Infinity, hi = -Infinity;
+      for (let s = st.s0; s <= st.s1; s += 0.5) for (const lat of [-HALF, 0, HALF]) {
+        const q = st.P(s, lat, 0);
+        if (NORTH.has(q.x, q.z, 3)) { lo = Math.min(lo, s); hi = Math.max(hi, s); }
+      }
+      let a = st.s0, b = st.s1;
+      while (st.h(a - 0.5) >= HMIN) a -= 0.5;
+      while (st.h(b + 0.5) >= HMIN && !(st.bank && b + 0.5 > st.bank[0])) b += 0.5;   // (Halsted's spans end at the river)
+      st.lo = Math.min(lo - 3, st.cc - HALF, a); st.hi = Math.max(hi + 3, st.cc + HALF, b);
+      st.on = st.s0 - RAMP; while (st.h(st.on) < 0.25) st.on += 0.5;      // where the parapets begin and end, on the ramps
+      st.off = st.end ?? st.s1 + RAMP; while (st.h(st.off) < 0.25) st.off -= 0.5;
+    }
+    // the station's stairs come up through Halsted's east parapet onto its sidewalk (see openStation): gaps there
+    for (const sg of [1, -1]) {
+      const ss = [STAIR_IN, PLAT_OUT].map((lat) => { let d = CH.d; while (d < LENGTH - 5 && at(d, sg * lat).p.x > HX + HALF) d += 0.25; const p = at(d, sg * lat).p; return H.sOf(p.x, p.z); });
+      H.gaps[1].push([Math.min(...ss) - 0.7, Math.max(...ss) + 0.7]);
+    }
+    for (const st of [H, C]) st.breaks = [st.lo, st.hi, st.on, st.off, ...[HALF, HALF - PAR_W, st.other.curb].flatMap((k) => [st.cc - k, st.cc + k]), ...st.gaps[1].flat(), ...(st.bank || [])];
+    // sample points along a street: every 8 m on its ramps, and wherever something begins or ends
+    const sampleS = (st, from, to) => {
+      const v = [from, to, ...st.breaks];
+      for (const [r0, r1] of [[st.s0 - RAMP, st.s0], [st.s1, st.end ?? st.s1 + RAMP]]) for (let s = r0; s <= r1 + 1e-6; s += 8) v.push(s);
+      return [...new Set(v.filter((s) => s >= from && s <= to).map((s) => Math.round(s * 1000) / 1000))].sort((a, b) => a - b);
+    };
+    // a strip along street st over [from, to], from (latA, yA) to (latB, yB): each y meters above the deck, or a function
+    // of s giving it outright; u along it, one per `tile` meters, and v from vA to vB across it (or the other way round: swap)
+    const strip = (mat, st, [from, to], latA, yA, latB, yB, tile = 1, vA = 0, vB = 1, swap = false) => {
+      if (to - from < 0.01) return;
+      const ss = sampleS(st, from, to), Y = (y, s) => typeof y === "function" ? y(s) : st.h(s) + y, F = (v, s) => typeof v === "function" ? v(s) : v;
+      const T = (u, v) => swap ? [v, u] : [u, v];
+      for (let i = 1; i < ss.length; i++) {
+        const a = ss[i - 1], b = ss[i];
+        quad(mat, st.P(a, latA, Y(yA, a)), st.P(b, latA, Y(yA, b)), st.P(b, latB, Y(yB, b)), st.P(a, latB, Y(yB, a)),
+          T(a / tile, F(vA, a)), T(b / tile, F(vA, b)), T(b / tile, F(vB, b)), T(a / tile, F(vB, a)));
+      }
+    };
+    const minus = (ranges, [c0, c1]) => ranges.flatMap(([a, b]) => b <= c0 || a >= c1 ? [[a, b]] : [[a, Math.min(b, c0)], [Math.max(a, c1), b]].filter(([p, q]) => q - p > 0.01));
+
+    /* the look: canvas textures, materials */
+    const tex = (w, h, draw) => {
+      const [cv, c] = hiCanvas(w, h); draw(c);
+      const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; t.wrapS = t.wrapT = THREE.RepeatWrapping;
+      return t;
+    };
+    const std = (o) => new THREE.MeshStandardMaterial({ roughness: 0.9, side: THREE.DoubleSide, ...o });
+    // form-lined concrete for the abutments and the ramps' walls: a "fractured fin" liner, ribs every 15 cm (2.4 m a tile)
+    const linerMat = std({ map: tex(256, 256, (c) => {
+      c.fillStyle = "#bdbcb2"; c.fillRect(0, 0, 256, 256);
+      for (let i = 0; i < 16; i++) {
+        const x = i * 16;
+        c.fillStyle = `rgba(62, 62, 56, ${0.3 + 0.15 * hash(i)})`; c.fillRect(x, 0, 4, 256);                        // the groove
+        for (let y = 0; y < 256; y += 8) {                                                                             // the rib's broken face
+          c.fillStyle = `rgba(255, 255, 248, ${0.04 + 0.14 * hash(i * 31 + y)})`; c.fillRect(x + 5 + 3 * hash(i + y * 0.37), y, 7, 8);
+          c.fillStyle = `rgba(60, 60, 55, ${0.1 * hash(i * 17 + y)})`; c.fillRect(x + 12, y, 3, 8);
+        }
+      }
+      c.fillStyle = "rgba(55, 55, 50, 0.5)"; c.fillRect(0, 253, 256, 3);                                              // a lift joint every 2.4 m
+    }) });
+    // the deck's edge and the parapet: smooth concrete, a joint where the parapet sits on the deck, the drip line along
+    // the slab's lower edge, a control joint every 6 m
+    const bandMat = std({ map: tex(384, 72, (c) => {
+      c.fillStyle = "#c9c8bf"; c.fillRect(0, 0, 384, 72);
+      for (let i = 0; i < 80; i++) { c.fillStyle = `rgba(90, 90, 80, ${0.06 * hash(i)})`; c.fillRect(hash(i + 0.3) * 384, hash(i + 0.6) * 72, 18, 4); }
+      const y = (m) => 72 - (m / BAND) * 72;                       // meters up from the band's foot, on the canvas
+      c.fillStyle = "rgba(45, 47, 45, 0.6)"; c.fillRect(0, y(SLAB) - 1, 384, 2);
+      c.fillStyle = "rgba(25, 27, 25, 0.75)"; c.fillRect(0, y(0.05), 384, 3);
+      c.fillStyle = "rgba(45, 47, 45, 0.5)"; c.fillRect(0, 0, 2, y(SLAB));
+    }) });
+    // the railing: 3 m panels of black steel pickets between a top and a bottom rail, a post at each end
+    const railMat = std({ color: 0x23272a, roughness: 0.55, metalness: 0.35, alphaTest: 0.5, map: tex(512, 104, (c) => {
+      c.clearRect(0, 0, 512, 104); c.fillStyle = "#fff";
+      c.fillRect(0, 0, 512, 8); c.fillRect(0, 86, 512, 7); c.fillRect(0, 0, 12, 104);
+      for (let x = 22; x < 512; x += 20) c.fillRect(x, 0, 4, 93);
+    }) });
+    // the fascia girders' webs: painted steel, a stiffener every 2 m (and the stiffeners themselves: fin, below)
+    const fasciaMat = std({ roughness: 0.55, metalness: 0.25, map: tex(128, 68, (c) => {
+      c.fillStyle = "#506069"; c.fillRect(0, 0, 128, 68);
+      c.fillStyle = "rgba(0, 0, 0, 0.32)"; c.fillRect(0, 0, 128, 5); c.fillRect(0, 63, 128, 5);
+      c.fillStyle = "rgba(255, 255, 255, 0.16)"; c.fillRect(59, 0, 4, 68);
+      c.fillStyle = "rgba(0, 0, 0, 0.3)"; c.fillRect(63, 0, 6, 68);
+    }) });
+    const paint = std({ color: 0x506069, roughness: 0.55, metalness: 0.25 });           // painted steel (assumed): the fascia girders
+    const paintDark = std({ color: 0x323b41, roughness: 0.7, metalness: 0.2, emissive: 0x323b41, emissiveIntensity: 0.35 });   // and in the shade under the deck, lit from the ground
+    const concrete = std({ color: 0xbebdb3 }), soffit = std({ color: 0x8e908a, emissive: 0x8e908a, emissiveIntensity: 0.22 }), drip = std({ color: 0x2a2c2b });
+    const bearingMat = std({ color: 0x2b2c2c, roughness: 0.8 });
+    const PX = 20;                                                // road markings: canvas pixels a meter
+    const asphalt = (c, w, h) => {
+      c.fillStyle = "#4b4e51"; c.fillRect(0, 0, w, h);
+      for (let i = 0; i < w * h / 60; i++) { c.fillStyle = hash(i) < 0.5 ? "rgba(20, 20, 20, 0.12)" : "rgba(140, 140, 136, 0.1)"; c.fillRect(hash(i + 0.1) * w, hash(i + 0.2) * h, 3, 3); }
+    };
+    const yellow2 = (c, x, L) => { c.fillStyle = "#e0b43a"; c.fillRect(x - 4, 0, 2, L); c.fillRect(x + 2, 0, 2, L); };
+    // Halsted: a 12 m tile across its roadway (x) and along it (y): the double yellow, and the dashes between the two lanes north
+    const hRoad = std({ map: tex(H.curb * 2 * PX, 12 * PX, (c) => {
+      const W = H.curb * 2 * PX, L = 12 * PX, x = (lat) => (lat + H.curb) * PX;
+      asphalt(c, W, L); yellow2(c, x(-H.curb / 3), L);
+      c.fillStyle = "#e8e8e2"; c.fillRect(x(H.curb / 3) - 1, 0, 3, 3 * PX);
+    }) });
+    // Chicago: red bus lanes at the curbs, marked CTA BUS ONLY (read from the bottom up by those driving in each), a lane each way
+    const BUSL = 3.2;
+    const cRoad = std({ map: tex(C.curb * 2 * PX, 48 * PX, (c) => {
+      const W = C.curb * 2 * PX, L = 48 * PX, x = (lat) => (lat + C.curb) * PX;
+      asphalt(c, W, L);
+      c.fillStyle = "#a3282b"; c.fillRect(x(-C.curb), 0, BUSL * PX, L); c.fillRect(x(C.curb - BUSL), 0, BUSL * PX, L);
+      c.fillStyle = "#e8e8e2"; c.fillRect(x(-C.curb + BUSL) - 1, 0, 3, L); c.fillRect(x(C.curb - BUSL) - 2, 0, 3, L);
+      yellow2(c, x(0), L);
+      const words = (cx, cy, flip) => {
+        c.save(); c.translate(cx, cy); if (flip) c.rotate(Math.PI); c.scale(1, 2.6);
+        c.fillStyle = "#efefe8"; c.font = "bold 16px Arial, Helvetica, sans-serif"; c.textAlign = "center"; c.textBaseline = "middle";
+        ["ONLY", "BUS", "CTA"].forEach((w, i) => c.fillText(w, 0, (i - 1) * 23)); c.restore();
+      };
+      // eastbound (the south lane) up the canvas, westbound down; each 25 m before the intersection (and every 48 m on)
+      const yAt = (s) => L * (1 - (((s % 48) + 48) % 48) / 48);
+      words(x(C.curb - BUSL / 2), yAt(C.cc - 25), false); words(x(-C.curb + BUSL / 2), yAt(C.cc + 25), true);
+    }) });
+    const plainRoad = std({ color: 0x4b4e51 }), white = std({ color: 0xe8e8e2 });
+    const walkMat = std({ map: tex(48, 48, (c) => { c.fillStyle = "#bfbeb6"; c.fillRect(0, 0, 48, 48); c.fillStyle = "rgba(80, 80, 72, 0.45)"; c.fillRect(0, 0, 2, 48); }) });   // scored every 1.5 m
+    const bikeMat = std({ map: tex(32, 32, (c) => { c.fillStyle = "#3f8a52"; c.fillRect(0, 0, 32, 32); c.fillStyle = "#e6e6df"; c.fillRect(0, 0, 32, 4); }) });   // green, a white line on the sidewalk's side
+    const poleMat = std({ color: 0x9ba1a5, roughness: 0.5, metalness: 0.15 }), headMat = std({ color: 0x7a8085, roughness: 0.5, metalness: 0.15 });
+    const signalMat = std({ color: 0x1b1d1f, roughness: 0.6 });
+
+    /* the decks: roadway, curbs, sidewalks (and Halsted's bike lanes), the deck's edge, the parapet and its railing */
+    for (const st of [H, C]) {
+      const o = st.other, cc = st.cc, L = [[0, st.len]];
+      const roadCut = [cc - o.curb, cc + o.curb], edgeCut = [cc - HALF, cc + HALF], inner = [cc - HALF + PAR_W, cc + HALF - PAR_W];
+      const walkCut = st === H ? roadCut : inner, parCut = st === H ? inner : edgeCut;      // (Halsted's sidewalks and parapets run round the corners)
+      for (const r of minus(L, roadCut)) strip(st === H ? hRoad : cRoad, st, r, -st.curb, 0.02, st.curb, 0.02, st === H ? 12 : 48, 0, 1, true);
+      for (const sg of [-1, 1]) {
+        for (const r of minus(L, roadCut)) strip(concrete, st, r, sg * st.curb, 0.02, sg * st.curb, CURB);
+        for (const r of minus(L, walkCut)) {
+          const w = st === H ? st.curb + BIKE : st.curb;
+          if (st === H) strip(bikeMat, st, r, sg * st.curb, CURB, sg * w, CURB, 4);
+          strip(walkMat, st, r, sg * w, CURB, sg * (HALF - PAR_W), CURB, 1.5);
+        }
+        for (const r of minus([[st.on, st.off]], edgeCut)) strip(bandMat, st, r, sg * HALF, -SLAB, sg * HALF, CURB, 6, 0, (SLAB + CURB) / BAND);
+        let par = minus([[st.on, st.off]], parCut);
+        for (const g of st.gaps[sg]) par = minus(par, g);
+        for (const r of par) {
+          strip(bandMat, st, r, sg * HALF, CURB, sg * HALF, CURB + PAR_H, 6, (SLAB + CURB) / BAND, 1);
+          strip(concrete, st, r, sg * HALF, CURB + PAR_H, sg * (HALF - PAR_W), CURB + PAR_H);
+          strip(concrete, st, r, sg * (HALF - PAR_W), CURB, sg * (HALF - PAR_W), CURB + PAR_H);
+          strip(railMat, st, r, sg * (HALF - PAR_W / 2), CURB + PAR_H, sg * (HALF - PAR_W / 2), CURB + PAR_H + RAIL, 3);
+          for (const s of r) if (Math.abs(Math.abs(s - cc) - HALF) > 0.01) quad(concrete, st.P(s, sg * HALF, st.h(s) + CURB), st.P(s, sg * (HALF - PAR_W), st.h(s) + CURB), st.P(s, sg * (HALF - PAR_W), st.h(s) + CURB + PAR_H), st.P(s, sg * HALF, st.h(s) + CURB + PAR_H));
+        }
+        // below the edge: the ramps' retaining walls, form-lined, down to the ground
+        for (const r of [[st.on, st.lo], [st.bank ? st.bank[1] : st.hi, st.off]]) strip(linerMat, st, r, sg * HALF, () => -0.1, sg * HALF, -SLAB, 2.4, -0.1 / 2.4, (s) => (st.h(s) - SLAB) / 2.4);
+      }
+    }
+    // the intersection: plain asphalt between the curbs, a crosswalk across each street beside it, and a stop line
+    quad(plainRoad, V(HX - H.curb, DECK + 0.02, CZ - C.curb), V(HX + H.curb, DECK + 0.02, CZ - C.curb), V(HX + H.curb, DECK + 0.02, CZ + C.curb), V(HX - H.curb, DECK + 0.02, CZ + C.curb));
+    for (const st of [H, C]) for (const k of [-1, 1]) {
+      const s = st.cc + k * (st.other.curb + 1.8), y = st.h(s) + 0.04;
+      for (let lat = -st.curb + 0.5; lat < st.curb - 0.3; lat += 1.2) quad(white, st.P(s - 1.5, lat, y), st.P(s + 1.5, lat, y), st.P(s + 1.5, lat + 0.6, y), st.P(s - 1.5, lat + 0.6, y));
+      const sb = st.cc + k * (st.other.curb + 4.0), l0 = k < 0 ? 0.15 : -st.curb, l1 = k < 0 ? st.curb : -0.15;   // (traffic keeps right: it comes in on the right of the center line)
+      quad(white, st.P(sb - 0.25, l0, y), st.P(sb + 0.25, l0, y), st.P(sb + 0.25, l1, y), st.P(sb - 0.25, l1, y));
+    }
+
+    /* the structure over the railway: girders and cross frames under a slab, abutments with bearings, open piers */
+    const TRACKS = (d) => d < JOIN_D ? [-10.5, -OFF, OFF, 10.5] : [-14.5, -10.5, -OFF, OFF];   // ours, and the UP's others (see surfaceTracks)
+    const posts = [];                                             // the overhead's frames' posts (see the overhead: every 30 m, TRENCH + 0.25 m out)
+    for (let d = PORTAL2 + 12; d < LENGTH; d += 30) for (const sg of [-1, 1]) { const p = at(d, sg * (TRENCH + 0.25)).p; if (Math.hypot(p.x - HX, p.z - CZ) < 250) posts.push(p); }
+    const COL_R = 0.45;
+    const colFree = (x, z) => {                                   // may a column stand here? Not on a track, a platform or its stair, or by a post
+      if (posts.some((p) => Math.hypot(p.x - x, p.z - z) < 1.6)) return false;
+      const q = NORTH.has(x, z, 0);
+      if (!q) return true;
+      if (TRACKS(q.d).some((t) => Math.abs(q.lat - t) < 3.2)) return false;                  // its face 2.75 m or more from a track's center
+      return !(q.d > CH.platFrom - 3 && q.d < CH.platTo + 3 && Math.abs(q.lat) > PLAT_IN - 0.5 - COL_R && Math.abs(q.lat) < PLAT_OUT + 0.6 + COL_R);
+    };
+    // a pier across street st at s: two or three columns as far apart as the railway lets them be (or one, with the cap
+    // cantilevered both ways), and how good a pier that is
+    const pierAt = (st, s) => {
+      const ok = [];
+      for (let e = -HALF + 0.9; e <= HALF - 0.9 + 1e-6; e += 0.25) { const q = st.P(s, e, 0); if (colFree(q.x, q.z)) ok.push(e); }
+      if (!ok.length) return null;
+      const a = ok[0], b = ok[ok.length - 1];
+      if (b - a >= 4.5) {
+        const m = ok.reduce((k, e) => Math.abs(e - (a + b) / 2) < Math.abs(k - (a + b) / 2) ? e : k, a), cols = m - a >= 4.5 && b - m >= 4.5 ? [a, m, b] : [a, b];
+        return { score: 100 - 6 * Math.max(a + HALF, HALF - b) + cols.length, cols };
+      }
+      const e = ok.reduce((k, e) => Math.abs(e) < Math.abs(k) ? e : k);
+      return { score: 40 - 6 * Math.abs(e), cols: [e] };
+    };
+    // Over the railway the piers run along it, not square to the streets (it crosses them on the skew): a line of columns
+    // 14 m out from the line each side, just outside the four tracks, under a cap that carries the girders where they
+    // cross it. Between the two lines, a clear span over all the tracks and the platforms
+    const SKEW = 14;
+    for (const st of [H, C]) {
+      st.skew = [];
+      for (const L of [-SKEW, SKEW]) {
+        const cross = (e) => {                                    // where the line L m out crosses lat e of the street, as s
+          let prev = null;
+          for (let s = st.lo; s <= st.hi; s += 0.5) {
+            const q = st.P(s, e, 0), r = NORTH.has(q.x, q.z, 8), l = r ? r.lat : null;
+            if (l !== null && prev && Math.sign(l - L) !== Math.sign(prev[1] - L)) return prev[0] + (L - prev[1]) / (l - prev[1]) * (s - prev[0]);
+            prev = l === null ? null : [s, l];
+          }
+          return null;
+        };
+        const e0 = -HALF + 0.35, e1 = HALF - 0.35, s0 = cross(e0), s1 = cross(e1);
+        if (s0 === null || s1 === null || (st === C && Math.abs((s0 + s1) / 2 - st.cc) < HALF)) continue;   // (in the intersection it is Halsted's)
+        st.skew.push({ e0, s0, e1, s1, at: (e) => s0 + (e - e0) / (e1 - e0) * (s1 - s0) });
+      }
+    }
+    // the other piers, about 28 m apart and never more than 34 (none in the intersection, and Chicago Ave's spans end at
+    // Halsted's girders): the cheapest chain of spans and piers from one support to the next
+    const chain = (st, from, to) => {
+      const cand = [{ s: from, cost: 0 }];
+      for (let s = from + 12; s <= to - 12; s += 0.5) {
+        if (Math.abs(s - st.cc) < HALF + 3) continue;
+        const p = pierAt(st, s);
+        if (p) cand.push({ s, p, cost: Infinity });
+      }
+      cand.push({ s: to, cost: Infinity });
+      for (let i = 1; i < cand.length; i++) for (let j = i - 1; j >= 0 && cand[i].s - cand[j].s <= 45; j--) {
+        const span = cand[i].s - cand[j].s;
+        if (span < 12) continue;
+        const c = cand[j].cost + 0.05 * (span - 28) ** 2 + (span > 34 ? 50 * (span - 34) : 0) + (cand[i].p ? 0.3 * (120 - cand[i].p.score) : 0);
+        if (c < cand[i].cost) { cand[i].cost = c; cand[i].prev = cand[j]; }
+      }
+      const out = [];
+      for (let k = cand[cand.length - 1].prev; k && k.p; k = k.prev) out.unshift({ s: k.s, ...k.p });
+      return out;
+    };
+    for (const st of [H, C]) {
+      const cc = st.cc, edgeCut = [cc - HALF, cc + HALF];
+      // the girders: Halsted's run right through the intersection; Chicago's stop at Halsted's outer ones
+      const runs = st === H ? [[st.lo, st.hi]] : [[st.lo, cc - 7.2], [cc + 7.2, st.hi]];
+      st.piers = runs.flatMap(([a, b]) => {                      // (between the skewed piers too)
+        const out = []; let from = a;
+        for (const [p, q] of st.skew.map((k) => [Math.min(k.s0, k.s1), Math.max(k.s0, k.s1)]).filter(([p, q]) => q > a && p < b).sort((x, y) => x[0] - y[0])) { out.push(...chain(st, from, p)); from = q; }
+        return [...out, ...chain(st, from, b)];
+      });
+      // and Halsted's bascule bridge, from the abutment at the south bank (its backwall) to the one at the north bank
+      const spans = st.bank ? [...runs, [st.bank[0] + 0.9, st.bank[1]]] : runs;
+      for (const [a, b] of spans) for (const e of GIRDERS) {
+        const r = [a === st.lo ? a - 0.6 : a, b === st.hi || (st.bank && b === st.bank[1]) ? b + 0.6 : b], outer = Math.abs(e) > 7, sg = Math.sign(e);
+        if (outer) {                                              // the fascia girder: its web's outer face painted and stiffened, its inner face in shade
+          strip(fasciaMat, st, r, e + sg * 0.02, -DEPTH + 0.05, e + sg * 0.02, -SLAB - 0.04, 2);
+          strip(paintDark, st, r, e - sg * 0.02, -DEPTH + 0.05, e - sg * 0.02, -SLAB - 0.04);
+        } else strip(paintDark, st, r, e, -DEPTH + 0.05, e, -SLAB - 0.04);
+        strip(outer ? paint : paintDark, st, r, e - 0.225, -DEPTH, e + 0.225, -DEPTH);          // the bottom flange
+      }
+      // the slab's underside, and the drip groove along each edge where it is open to the sky; the fascia's stiffeners
+      strip(soffit, st, [st.lo - 0.9, st.hi + 0.9], -HALF, -SLAB, HALF, -SLAB);
+      if (st.bank) strip(soffit, st, [st.bank[0] + 0.9, st.bank[1] + 0.9], -HALF, -SLAB, HALF, -SLAB);
+      for (const sg of [-1, 1]) for (const r of minus(st.bank ? [[st.lo, st.hi], [st.bank[0] + 0.9, st.bank[1]]] : [[st.lo, st.hi]], edgeCut)) {
+        strip(drip, st, r, sg * (HALF - 0.12), -SLAB - 0.005, sg * (HALF - 0.08), -SLAB - 0.005);
+        for (let s = Math.ceil((r[0] - 1) / 2) * 2 + 1; s < r[1] - 0.3; s += 2) {             // (on the texture's lines)
+          const h = st.h(s);
+          quad(paint, st.P(s, sg * 7.22, h - DEPTH + 0.05), st.P(s, sg * 7.42, h - DEPTH + 0.05), st.P(s, sg * 7.42, h - SLAB - 0.04), st.P(s, sg * 7.22, h - SLAB - 0.04));
+        }
+      }
+      // cross frames between the girders, an X and a bottom strut, at most 8 m apart between supports
+      for (const [a, b] of spans) {
+        const sup = [a, ...st.piers.map((p) => p.s).filter((s) => s > a && s < b), b];
+        for (let k = 1; k < sup.length; k++) {
+          const n = Math.ceil((sup[k] - sup[k - 1]) / 8);
+          for (let j = 1; j < n; j++) {
+            const s = sup[k - 1] + (j / n) * (sup[k] - sup[k - 1]), h = st.h(s), y0 = h - DEPTH + 0.12, y1 = h - SLAB - 0.15, w = 0.05;
+            for (let g = 1; g < GIRDERS.length; g++) {
+              if (st.skew.some((k) => Math.abs(s - k.at((GIRDERS[g - 1] + GIRDERS[g]) / 2)) < 1.6)) continue;   // (not into a skewed pier's cap)
+              const l0 = GIRDERS[g - 1] + 0.05, l1 = GIRDERS[g] - 0.05, n2 = Math.hypot(l1 - l0, y1 - y0), ol = (y1 - y0) / n2 * w, oy = (l1 - l0) / n2 * w;
+              quad(paintDark, st.P(s, l0 + ol, y1 + oy), st.P(s, l1 + ol, y0 + oy), st.P(s, l1 - ol, y0 - oy), st.P(s, l0 - ol, y1 - oy));   // the X
+              quad(paintDark, st.P(s, l0 - ol, y0 + oy), st.P(s, l1 - ol, y1 + oy), st.P(s, l1 + ol, y1 - oy), st.P(s, l0 + ol, y0 - oy));
+              quad(paintDark, st.P(s - w, l0, y0), st.P(s - w, l1, y0), st.P(s + w, l1, y0), st.P(s + w, l0, y0));
+            }
+          }
+        }
+      }
+      // the abutments, where the fill ends: a form-lined wall up to the bridge seat, the seat, and the backwall behind it up
+      // to the deck; a bearing under each girder's end
+      for (const [sa, dir] of [[st.lo, 1], [st.hi, -1], ...(st.bank ? [[st.bank[1], -1]] : [])]) {
+        const h = st.h(sa), seat = h - DEPTH - 0.12;
+        const wall = (s, y0, y1) => quad(linerMat, st.P(s, -HALF, y0), st.P(s, HALF, y0), st.P(s, HALF, y1), st.P(s, -HALF, y1), [-HALF / 2.4, y0 / 2.4], [HALF / 2.4, y0 / 2.4], [HALF / 2.4, y1 / 2.4], [-HALF / 2.4, y1 / 2.4]);
+        wall(sa, -0.1, seat); wall(sa - dir * 0.9, seat, h - SLAB);
+        quad(concrete, st.P(sa, -HALF, seat), st.P(sa, HALF, seat), st.P(sa - dir * 0.9, HALF, seat), st.P(sa - dir * 0.9, -HALF, seat));
+        for (const e of GIRDERS) boxS(bearingMat, st, sa - dir * 0.3 - 0.22, sa - dir * 0.3 + 0.22, e - 0.26, e + 0.26, seat, seat + 0.12);
+      }
+      // the piers: a cap as deep as the girders (so nothing hangs lower over the tracks), on round columns
+      for (const k of st.skew) {
+        const a = st.P(k.at(GIRDERS[0]), GIRDERS[0], 0), b = st.P(k.at(GIRDERS[6]), GIRDERS[6], 0), len = a.distanceTo(b), n = Math.ceil(len / 7), h = st.h((k.s0 + k.s1) / 2);
+        const m = a.clone().lerp(b, 0.5), dx = (b.x - a.x) / len, dz = (b.z - a.z) / len;      // (from one fascia girder to the other)
+        put(concrete, BOX, facing(m.x, (h - DEPTH - 0.05 + h - SLAB) / 2, m.z, dx, dz, 1.4, DEPTH - SLAB + 0.05, len));
+        for (let i = 0; i < n; i++) {
+          const c = a.clone().lerp(b, (i + 0.5) / n);
+          if (colFree(c.x, c.z)) put(concrete, COL, facing(c.x, (h - DEPTH - 0.05 - 0.3) / 2, c.z, 1, 0, 1, h - DEPTH - 0.05 + 0.3, 1));
+        }
+      }
+      for (const p of st.piers) {
+        const h = st.h(p.s);
+        boxS(concrete, st, p.s - 0.7, p.s + 0.7, -HALF + 0.35, HALF - 0.35, h - DEPTH - 0.05, h - SLAB);
+        for (const e of p.cols) put(concrete, COL, frame(st, p.s, e, (h - DEPTH - 0.05 - 0.3) / 2, 1, h - DEPTH - 0.05 + 0.3, 1));
+      }
+    }
+
+    /* on the decks: street lights, the intersection's signals, CTA's bus stops, and a bus */
+    // Chicago's standard: a gray steel pole, its arm reaching out over the road to an LED cobra head 9.1 m up, about every
+    // 30 m along each side (staggered); not by the corners, where the signals are, nor in front of the stairs
+    const LIGHT = 9.1, ARM = 2.4;
+    for (const st of [H, C]) for (const sg of [-1, 1]) for (let s = st.on + 6 + (sg > 0 ? 15 : 0); s < st.off - 4; s += 30) {
+      if (Math.abs(s - st.cc) < HALF + 9 || st.gaps[sg].some(([a, b]) => s > a - 2 && s < b + 2)) continue;
+      const lat = sg * (HALF - PAR_W - 0.3), y0 = st.h(s) + CURB;
+      put(poleMat, BOX, frame(st, s, lat, y0 + 0.3, 0.36, 0.6, 0.36));
+      put(poleMat, POLE, frame(st, s, lat, y0 + (LIGHT + 0.6) / 2, 1, LIGHT - 0.6, 1));
+      seg(poleMat, st, s, lat, y0 + LIGHT - 0.35, lat - sg * ARM, y0 + LIGHT + 0.2, 0.09);
+      put(headMat, BOX, frame(st, s, lat - sg * (ARM + 0.3), y0 + LIGHT + 0.14, 0.34, 0.14, 0.8));
+    }
+    // the signals (galvanized poles and mast arms; black heads on yellow-bordered backplates, all assumed): a pole at each
+    // corner, its mast arm out over the far side of one approach. Halsted has the green; Chicago waits at red
+    const headTex = (lit) => tex(64, 160, (c) => {
+      c.fillStyle = "#f0c000"; c.fillRect(0, 0, 64, 160);
+      c.fillStyle = "#16181a"; c.fillRect(5, 5, 54, 150);
+      ["#ff3b2f", "#ffb000", "#3dffa0"].forEach((col, i) => { c.fillStyle = i === lit ? col : "#2c2f31"; c.beginPath(); c.arc(32, 31 + i * 49, 19, 0, Math.PI * 2); c.fill(); });
+    });
+    const greenHead = new THREE.MeshBasicMaterial({ map: headTex(2) }), redHead = new THREE.MeshBasicMaterial({ map: headTex(0) });
+    const pedTex = (walk) => tex(48, 48, (c) => {
+      c.fillStyle = "#16181a"; c.fillRect(0, 0, 48, 48); c.fillStyle = walk ? "#f4f4ee" : "#ff8a1e";
+      if (walk) { c.beginPath(); c.arc(24, 10, 4, 0, 7); c.fill(); c.fillRect(21, 15, 6, 15); c.fillRect(17, 29, 4, 14); c.fillRect(27, 29, 4, 14); }
+      else { c.fillRect(17, 16, 14, 18); for (let k = 0; k < 4; k++) c.fillRect(17 + k * 3.6, 6, 2.6, 12); c.fillRect(31, 22, 6, 4); }
+    });
+    const walkHead = new THREE.MeshBasicMaterial({ map: pedTex(true) }), handHead = new THREE.MeshBasicMaterial({ map: pedTex(false) });
+    const face = (mat, m, w, h) => quad(mat, V(-w / 2, -h / 2, 0).applyMatrix4(m), V(w / 2, -h / 2, 0).applyMatrix4(m), V(w / 2, h / 2, 0).applyMatrix4(m), V(-w / 2, h / 2, 0).applyMatrix4(m));
+    const CORNER = 6.9, base = DECK + CURB;                        // the poles stand back on the corners' sidewalks
+    for (const [sx, sz, ax, az, lit] of [[1, -1, -1, 0, greenHead], [-1, 1, 1, 0, greenHead], [-1, -1, 0, 1, redHead], [1, 1, 0, -1, redHead]]) {
+      const px = HX + sx * CORNER, pz = CZ + sz * CORNER, fx = ax ? 0 : -sx, fz = ax ? -sz : 0;   // the arm along (ax, az); its heads face back across the intersection
+      put(poleMat, POLE, facing(px, base + 3, pz, 1, 0, 1.6, 6, 1.6));
+      put(poleMat, BOX, facing(px, base + 0.25, pz, 1, 0, 0.5, 0.5, 0.5));
+      const ARM2 = 6.2, ya = base + 5.75;
+      put(poleMat, BOX, facing(px + ax * ARM2 / 2, ya, pz + az * ARM2 / 2, ax || 0.0001, az, 0.14, 0.14, ARM2));
+      for (const k of [2.4, 5.2]) {                               // two heads over the approach's lanes
+        const hx = px + ax * k, hz = pz + az * k, m = facing(hx, ya - 0.75, hz, fx, fz);
+        put(signalMat, BOX, facing(hx, ya - 0.75, hz, fx, fz, 0.36, 1.05, 0.26));
+        face(lit, m.clone().multiply(new THREE.Matrix4().makeTranslation(0, 0, 0.135)), 0.58, 1.3);
+      }
+      // a pedestrian head on the pole for each crosswalk at this corner: walk across Chicago (with Halsted's green), not across Halsted
+      for (const [dx, dz, mat] of [[-sx, 0, handHead], [0, -sz, walkHead]]) {   // (each faces those waiting on the far side)
+        const m = facing(px + dx * 0.25, base + 2.7, pz + dz * 0.25, dx || 0.0001, dz);
+        put(signalMat, BOX, m.clone().scale(V(0.42, 0.42, 0.24)));
+        face(mat, m.clone().multiply(new THREE.Matrix4().makeTranslation(0, 0, 0.125)), 0.36, 0.36);
+      }
+    }
+    // CTA's bus stops (CTA's positions, each moved onto the sidewalk on its side of the film's narrower street): a sign
+    // on a pole, facing the buses coming in (the sign's design simplified)
+    const stopTex = (route, name, dir) => tex(120, 180, (c) => {
+      c.fillStyle = "#ffffff"; c.fillRect(0, 0, 120, 180);
+      c.fillStyle = "#0b5aa6"; c.fillRect(0, 0, 120, 46);
+      c.textAlign = "center"; c.fillStyle = "#ffffff"; c.font = "bold 24px Arial, Helvetica, sans-serif"; c.fillText("CTA", 60, 24);
+      c.font = "bold 13px Arial, Helvetica, sans-serif"; c.fillText("BUS STOP", 60, 40);
+      c.fillStyle = "#111"; c.fillRect(14, 54, 92, 64); c.fillStyle = "#fff"; c.font = "bold 52px Arial, Helvetica, sans-serif"; c.fillText(route, 60, 106);
+      c.fillStyle = "#111"; c.font = "bold 19px Arial, Helvetica, sans-serif"; c.fillText(name, 60, 144);
+      c.font = "14px Arial, Helvetica, sans-serif"; c.fillText(dir, 60, 166);
+      c.strokeStyle = "#9a9a9a"; c.lineWidth = 3; c.strokeRect(1.5, 1.5, 117, 177);
+    });
+    const STOPS = [[-87.647606, 41.896724, H, 1, "8", "Halsted", "Northbound"], [-87.647853, 41.896104, H, -1, "8", "Halsted", "Southbound"],
+      [-87.647269, 41.896297, C, 1, "66", "Chicago", "Eastbound"], [-87.648183, 41.896518, C, -1, "66", "Chicago", "Westbound"]];
+    for (const [lon, lat0, st, sg, route, name, dir] of STOPS) {
+      const q = lonLat(lon, lat0), s = st.sOf(q.x, q.z), lat = sg * (st === H ? st.curb + BIKE + 0.3 : st.curb + 0.35), y = st.h(s) + CURB;
+      st.stop = st.stop || {}; st.stop[sg] = s;
+      put(poleMat, BOX, frame(st, s, lat, y + 1.45, 0.06, 2.9, 0.06));
+      const mat = new THREE.MeshStandardMaterial({ map: stopTex(route, name, dir), roughness: 0.6 });
+      for (const k of [-1, 1]) {                                  // both faces, each the right way round: toward the buses coming in (-sg along), and away
+        const ds = -sg * k * 0.012, w = 0.225 * sg * k;
+        quad(mat, st.P(s + ds, lat - w, y + 2.15), st.P(s + ds, lat + w, y + 2.15), st.P(s + ds, lat + w, y + 2.83), st.P(s + ds, lat - w, y + 2.83));
+      }
+    }
+    // a bus waiting at the #8's northbound stop: a generic 40-foot low-floor bus in CTA's white, its blue and red stripe, "8 Halsted" on its signs
+    {
+      const BL = 12.2, BW = 2.59, B0 = 0.3, B1 = 3.2;             // length, width, body from 0.3 to 3.2 m above the road
+      const busTex = tex(1024, 512, (c) => {
+        const side = (x0, frontRight, doors) => {                 // 512 x 256 at the top: m meters from the rear, at y meters up
+          const X = (m) => x0 + (frontRight ? m : BL - m) / BL * 512, Y = (y) => 256 - (y - B0) / (B1 - B0) * 256;
+          const rect = (m0, m1, y0, y1, col) => { c.fillStyle = col; const a = X(m0), b = X(m1); c.fillRect(Math.min(a, b), Y(y1), Math.abs(b - a), Y(y0) - Y(y1)); };
+          rect(0, BL, B0, B1, "#f3f4f1"); rect(0, BL, 3.02, B1, "#d4d7d8");
+          rect(0.4, BL - 0.15, 1.3, 2.72, "#1f2a31");
+          for (let m = 1.6; m < BL - 1; m += 1.45) rect(m, m + 0.07, 1.3, 2.72, "#e9ebe8");     // window pillars
+          rect(0, BL, 0.5, 0.8, "#0b5ca8"); rect(0, BL, 0.84, 0.92, "#c8212f");
+          if (doors) for (const [m0, m1] of [[BL - 1.85, BL - 0.65], [4.5, 5.7]]) { rect(m0, m1, 0.36, 2.78, "#cfd3d4"); rect(m0 + 0.06, m1 - 0.06, 0.42, 2.72, "#25313a"); rect((m0 + m1) / 2 - 0.02, (m0 + m1) / 2 + 0.02, 0.42, 2.72, "#cfd3d4"); }
+          c.fillStyle = "#151617";
+          for (const m of [BL - 2.25, BL - 9.25]) { c.beginPath(); c.ellipse(X(m), 256, 0.66 / BL * 512, 0.7 / (B1 - B0) * 256, 0, Math.PI, 0); c.fill(); }
+          c.fillStyle = "#0b5ca8"; c.font = "bold 26px Arial, Helvetica, sans-serif"; c.textAlign = "center"; c.fillText("CTA", X(BL * 0.42), Y(1.08));
+        };
+        side(0, true, true); side(512, false, false);             // its right (curb) side with the doors, and its left
+        const end = (x0, front) => {                              // 256 x 256 below: x across its width, y up
+          const X = (w) => x0 + w / BW * 256, Y = (y) => 512 - (y - B0) / (B1 - B0) * 256, rect = (w0, w1, y0, y1, col) => { c.fillStyle = col; c.fillRect(X(w0), Y(y1), X(w1) - X(w0), Y(y0) - Y(y1)); };
+          rect(0, BW, B0, B1, "#f3f4f1"); rect(0, BW, 0.5, 0.8, "#0b5ca8"); rect(0, BW, B0, 0.46, "#2b2e30");
+          if (front) {
+            rect(0.08, BW - 0.08, 1.05, 2.45, "#1c262d"); rect(0.2, BW - 0.2, 2.55, 2.95, "#0d0d0d");
+            c.fillStyle = "#ffb21e"; c.font = "bold 30px Arial, Helvetica, sans-serif"; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText("8  Halsted", X(BW / 2), Y(2.75));
+            for (const w of [0.18, BW - 0.48]) rect(w, w + 0.3, 0.62, 0.78, "#f6f2dc");
+          } else {
+            rect(0.35, BW - 0.35, 1.1, 2.0, "#9ea4a6"); rect(BW / 2 - 0.35, BW / 2 + 0.35, 2.55, 2.95, "#0d0d0d");
+            c.fillStyle = "#ffb21e"; c.font = "bold 30px Arial, Helvetica, sans-serif"; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText("8", X(BW / 2), Y(2.75));
+            for (const w of [0.1, BW - 0.3]) rect(w, w + 0.2, 0.95, 1.6, "#b3191c");
+          }
+        };
+        end(0, true); end(256, false);
+        c.fillStyle = "#d9dcdc"; c.fillRect(512, 256, 512, 256); c.fillStyle = "#b9bdbe"; c.fillRect(560, 300, 160, 168);     // the roof, and its air conditioning
+      });
+      const busMat = std({ map: busTex, roughness: 0.5 }), dark = std({ color: 0x161718 }), roofMat = std({ color: 0xc4c8c9, roughness: 0.6 });
+      busTex.wrapS = busTex.wrapT = THREE.ClampToEdgeWrapping;
+      const s = H.stop[1] + 1.0 - BL / 2, lat = H.curb * 2 / 3, y = H.h(s) + 0.02;   // in the middle of the curb lane, its front door at the sign
+      const M = frame(H, s, lat, y), P = (x, yy, z) => V(x, yy, z).applyMatrix4(M);
+      const uv = (px, py) => [px / 1024, 1 - py / 512];
+      const r4 = (a, b, c2, d, x0, y0, x1, y1) => quad(busMat, a, b, c2, d, uv(x0, y1), uv(x1, y1), uv(x1, y0), uv(x0, y0));   // corners as seen from outside: bottom left first
+      const x = BL / 2, z = BW / 2;
+      r4(P(-x, B0, z), P(x, B0, z), P(x, B1, z), P(-x, B1, z), 0, 0, 512, 256);           // right side
+      r4(P(x, B0, -z), P(-x, B0, -z), P(-x, B1, -z), P(x, B1, -z), 512, 0, 1024, 256);    // left side
+      r4(P(x, B0, z), P(x, B0, -z), P(x, B1, -z), P(x, B1, z), 0, 256, 256, 512);         // front
+      r4(P(-x, B0, -z), P(-x, B0, z), P(-x, B1, z), P(-x, B1, -z), 256, 256, 512, 512);   // rear
+      r4(P(-x, B1, z), P(x, B1, z), P(x, B1, -z), P(-x, B1, -z), 512, 256, 1024, 512);    // roof
+      quad(dark, P(-x, B0, z), P(x, B0, z), P(x, B0, -z), P(-x, B0, -z));
+      for (const ax of [x - 2.25, x - 9.25]) for (const k of [-1, 1]) put(dark, WHEEL, M.clone().multiply(new THREE.Matrix4().makeTranslation(ax, 0.5, k * (z - 0.2))));
+      put(roofMat, BOX, M.clone().multiply(new THREE.Matrix4().makeTranslation(-x + 2.6, B1 + 0.18, 0)).scale(V(3.6, 0.36, 2.0)));
+    }
+
+    for (const [mat, B] of batches) {
+      const g = new THREE.BufferGeometry();
+      g.setAttribute("position", new THREE.Float32BufferAttribute(B.p, 3));
+      g.setAttribute("uv", new THREE.Float32BufferAttribute(B.uv, 2));
+      g.computeVertexNormals();
+      scene.add(new THREE.Mesh(g, mat));
+    }
+
+    // and on across the North Branch: the Chicago Ave bridge, at street level from the foot of the viaduct's ramp
+    // to where the avenue picks up again on the east bank (its bascule leaves are assumed down, its girders 1.6 m deep)
     const wallMat = new THREE.MeshStandardMaterial({ color: 0xa9aaa2, roughness: 0.95, side: THREE.DoubleSide });
     const roadMat = new THREE.MeshStandardMaterial({ color: 0x45484b, roughness: 1, side: THREE.DoubleSide });
     const underMat = new THREE.MeshStandardMaterial({ color: 0x5b5d59, roughness: 1, side: THREE.DoubleSide });
-    const HX = VIA_HX, CZ = VIA_CZ;
-    // from (ax, az) to (bx, bz), at full height between distances s0 and s1 along it
-    const viaduct = (ax, az, bx, bz, half, s0, s1) => {
-      const len = Math.hypot(bx - ax, bz - az), ux = (bx - ax) / len, uz = (bz - az) / len, n = Math.ceil(len / 4);
-      const P = (i, lat, y) => { const s = (i / n) * len; return new THREE.Vector3(ax + ux * s - uz * lat, y, az + uz * s + ux * lat); };
-      const hAt = (i) => { const s = (i / n) * len; return DECK * smooth((s - (s0 - RAMP)) / RAMP) * (1 - smooth((s - s1) / RAMP)); };
-      const open = (i) => { const q = P(i, 0, 0); return NORTH.has(q.x, q.z, 5); };   // spans the railway; solid elsewhere
-      ribbon((i) => [P(i, -half, hAt(i) + 0.02), P(i, half, hAt(i) + 0.02)], n, roadMat);
-      ribbon((i) => [P(i, -half, Math.max(0, hAt(i) - DEPTH)), P(i, half, Math.max(0, hAt(i) - DEPTH))], n, underMat);
-      for (const lat of [-half, half]) {
-        ribbon((i) => [P(i, lat, open(i) ? Math.max(0, hAt(i) - DEPTH) : -0.1), P(i, lat, hAt(i) + (hAt(i) > 0.3 ? RAIL : 0))], n, wallMat);
-      }
-      // a pier wall each side of the railway, where the span begins and ends
-      for (let i = 1; i < n; i++) if (open(i) !== open(i - 1)) ribbon((k) => [P(i, k ? half : -half, -0.1), P(i, k ? half : -half, hAt(i) - DEPTH)], 1, wallMat);
-    };
-    viaduct(HX, -3270, HX, -3920, VIA_HALF, 220, 420);                   // Halsted St, south to north
-    viaduct(-2640, CZ, -2080, CZ, VIA_HALF, 220, 450);                   // Chicago Ave, west to east
-    // and on across the North Branch: the Chicago Ave bridge, at street level from the foot of the viaduct's ramp
-    // to where the avenue picks up again on the east bank (its bascule leaves are assumed down, its girders 1.6 m deep)
     {
       const ax = -2084, az = CZ, bx = -1972, bz = -3610, len = Math.hypot(bx - ax, bz - az), ux = (bx - ax) / len, uz = (bz - az) / len, n = Math.ceil(len / 4);
       const P = (i, lat, y) => { const s2 = (i / n) * len; return new THREE.Vector3(ax + ux * s2 - uz * lat, y, az + uz * s2 + ux * lat); };
@@ -1226,6 +2313,14 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
     bore(from, PORTAL2);
   }
 
+  // A sign readable from both sides: two planes back to back (one plane drawn double-sided shows its text mirrored from
+  // behind). `back` is the texture on the far side, where it differs: an exit sign's arrow points the other way there.
+  const twoSided = (tex, w, h, back = tex) => {
+    const g = new THREE.Group(), geo = new THREE.PlaneGeometry(w, h), far = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: back }));
+    far.rotation.y = Math.PI;
+    g.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: tex })), far);
+    return g;
+  };
   /* ---- stations: a box with a platform each side, signs, and an exit ---- */
   const fitFont = (c, text, maxW, size, weightAndFamily) => {     // largest font up to `size` that fits maxW
     do { c.font = weightAndFamily.replace("%", size); size -= 4; } while (c.measureText(text).width > maxW && size > 20);
@@ -1424,16 +2519,16 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
       c.beginPath(); c.moveTo(ax(760), 200); c.lineTo(ax(900), 60); c.moveTo(ax(790), 60); c.lineTo(ax(900), 60); c.lineTo(ax(900), 170); c.stroke();
     });
     const exitRight = exitTexture(false), exitLeft = exitTexture(true);
-    const board = (tex, w, h, d, side, up, face) => {     // face: "train" (toward arriving trains) or "track"
+    const board = (tex, w, h, d, side, up, face, back) => {     // face: "train" (toward arriving trains) or "track"
       const q = at(d, side, up);
-      const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide }));
+      const m = twoSided(tex, w, h, back);
       m.position.copy(q.p);
       m.lookAt(face === "train" ? q.p.clone().sub(q.tan) : q.p.clone().addScaledVector(q.right, side > 0 ? -1 : 1));
       scene.add(m);
     };
     for (let d = S.platFrom + 6; d < S.platTo; d += 15) for (const sg of [-1, 1]) board(nameTex, 2.9, 0.72, d, sg * (PLAT_OUT - 0.06), 2.5, "track");
     // and one each side hung across the platform for arriving trains: over its back half, clear of the edge, on rods from the ceiling
-    for (const [d, sg] of [[S.platFrom + 20, 1], [S.platFrom + 35, -1]]) {   // (the far one clear of the painting seen while stopped)
+    for (const [d, sg] of [[S.platFrom + 20, S.our], [S.platFrom + 35, -S.our]]) {   // (the far one clear of the painting seen while stopped)
       board(nameTex, 3.0, 0.75, d, sg * 7.0, 4.6, "train");
       // (in a hall: from an arm off the wall below the gallery)
       const top = S.hall ? 5.6 : CEIL;
@@ -1465,26 +2560,26 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
       // which from the track is to the left on the right-hand wall and to the right on the left-hand one
       ribbon((i) => [at(EX0 + RUN + 1.5, sg * (i ? OUT : IN), PLAT_UP).p, at(EX0 + RUN + 1.5, sg * (i ? OUT : IN), WALL).p], 1, tile);
       if (S.hall) ribbon((i) => [at(EX0 + RUN + 1.5, sg * (i ? PLAT_OUT : IN), TOP).p, at(EX0 + RUN + 1.5, sg * (i ? PLAT_OUT : IN), TOP + 1.1).p], 1, glass);
-      board(sg > 0 ? exitRight : exitLeft, 3.0, 0.75, EX0 - 1.2, sg * ((IN + OUT) / 2 - 0.2), 3.75, "train");
-      board(sg > 0 ? exitLeft : exitRight, 2.4, 0.6, EX0 - 9, sg * (PLAT_OUT - 0.07), 2.5, "track");
+      board(sg > 0 ? exitRight : exitLeft, 3.0, 0.75, EX0 - 1.2, sg * ((IN + OUT) / 2 - 0.2), 3.75, "train", sg > 0 ? exitLeft : exitRight);
+      board(sg > 0 ? exitLeft : exitRight, 2.4, 0.6, EX0 - 9, sg * (PLAT_OUT - 0.07), 2.5, "track", sg > 0 ? exitRight : exitLeft);
     }
 
     // An easter egg: paintings from the Art Institute of Chicago (public domain), up to three on each wall, hung above
     // the teal band in dark frames with a small label under each. Monet's train at Gare Saint-Lazare greets the
     // first station in the tunnel.
     if (art) {
-      const HANG = [[[0, 2, 5], [1, 8]], [[3, 6, 4], [7, 9]], [[12, 10, 13], [14, 11]], [[15, 16, 17], []]];   // per station: right wall, left wall
+      const HANG = [[[0, 2, 5], [1, 8]], [[3, 6, 4], [7, 9]], [[12, 10, 13], [14, 11]], [[15, 16, 17], []]];   // per station: the train's platform's wall (the left), the far wall
       const frameMat = new THREE.MeshBasicMaterial({ color: 0x1d1814, side: THREE.DoubleSide }), matMat = new THREE.MeshBasicMaterial({ color: 0xe9e4d8, side: THREE.DoubleSide });
       const panel = (mat, w, h, d, side, up) => {
         const q = at(d, side, up), m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
         m.position.copy(q.p); m.lookAt(q.p.clone().addScaledVector(q.right, side > 0 ? -1 : 1)); scene.add(m);
       };
       const si = STN.indexOf(S), UP = 3.3;                         // centre height: over the teal band, between the name boards along the wall
-      [1, -1].forEach((sg, k) => {
+      [S.our, -S.our].forEach((sg, k) => {
         // midway between the name boards on the wall (every 15 m from S.platFrom + 6). The platform's wall: on the stretch the
         // cab sees slowing in; the far wall: one there too, and one across the tracks 10 to 15 m ahead of where the cab stops,
         // the nearest stretch of it in view while the train stands
-        const list = (HANG[si] || [[], []])[k], spots = sg > 0 ? [S.platFrom + 58.5, S.platFrom + 73.5, S.platFrom + 88.5] : [S.platFrom + 88.5, S.platFrom + 121];
+        const list = (HANG[si] || [[], []])[k], spots = !k ? [S.platFrom + 58.5, S.platFrom + 73.5, S.platFrom + 88.5] : [S.platFrom + 88.5, S.platFrom + 121];
         list.forEach((ai, j) => {
           const a = art[ai];
           if (!a) return;
@@ -1536,9 +2631,9 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
       const m = new THREE.Mesh(new THREE.BoxGeometry(w, hi - lo, w), mat), q = at(d, side, (lo + hi) / 2);
       m.position.copy(q.p); m.lookAt(q.p.clone().add(q.tan)); scene.add(m);
     };
-    const sign = (tex, w, h, d, side, up, face) => {       // face: "train" (toward arriving trains) or "track"
+    const sign = (tex, w, h, d, side, up, face, back) => {       // face: "train" (toward arriving trains) or "track"
       const q = at(d, side, up);
-      const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide }));
+      const m = twoSided(tex, w, h, back);
       m.position.copy(q.p);
       m.lookAt(face === "train" ? q.p.clone().sub(q.tan) : q.p.clone().addScaledVector(q.right, side > 0 ? -1 : 1));
       scene.add(m);
@@ -1605,14 +2700,14 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
         along(dz, top, sg * (IN + 0.02), -0.06, sg * (OUT - 0.02), -0.06, dim);
       }
       // the way out, on a frame over the foot of the stair
-      sign(sg > 0 ? exitRight : exitLeft, 3.0, 0.75, EX0 - 1.2, sg * ((IN + OUT) / 2 - 0.2), 3.75, "train");
+      sign(sg > 0 ? exitRight : exitLeft, 3.0, 0.75, EX0 - 1.2, sg * ((IN + OUT) / 2 - 0.2), 3.75, "train", sg > 0 ? exitLeft : exitRight);
       for (const lat of [IN - 0.75, OUT - 0.12]) post(EX0 - 1.2, sg * lat, PLAT_UP, 4.15, 0.1);
     }
   };
   /* ---- the Metra Electric's island platforms (S.island): between two tracks, edges(d) -> [lo, hi] metres from the line,
           following both as they spread and close. A canopy down the middle, the name hung under it facing each track,
           and in the middle, past the cab, a stair: down to a pedestrian tunnel under the tracks, or (stair.reach) up onto
-          a footbridge, as at 18th. No stair: the western pair's island across the tracks at the Hyde Park stations ---- */
+          a footbridge, as at 18th. No stair: the eastern pair's island across the tracks at the Hyde Park stations ---- */
   const islandStation = (S, edges, stair = null) => {
     const F = S.platFrom, T = S.platTo, STEP = 3;
     const std = (color, rough = 0.95) => new THREE.MeshStandardMaterial({ color, roughness: rough, side: THREE.DoubleSide });
@@ -1628,8 +2723,8 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
       const m = new THREE.Mesh(new THREE.BoxGeometry(w, y1 - y0, w), mat), q = at(d, side, (y0 + y1) / 2);
       m.position.copy(q.p); m.lookAt(q.p.clone().add(q.tan)); scene.add(m);
     };
-    const sign = (tex, w, h, d, side, up, toward) => {             // toward: a lateral to face, or "train" (arriving trains)
-      const q = at(d, side, up), m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide }));
+    const sign = (tex, w, h, d, side, up, toward, back) => {             // toward: a lateral to face, or "train" (arriving trains)
+      const q = at(d, side, up), m = twoSided(tex, w, h, back);
       m.position.copy(q.p); m.lookAt(toward === "train" ? q.p.clone().sub(q.tan) : at(d, toward, up).p); scene.add(m);
     };
     const SW = 2.6, RUN = 15, STEPS = 40, sL = off(mid, -SW / 2), sR = off(mid, SW / 2);
@@ -1648,10 +2743,12 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
     const CAN0 = S.d - 36, CAN1 = stair ? EX0 - 1.5 : S.stop + 13, ROOF = 4.45;
     strip(CAN0, CAN1, off(lo, 0.4), off(hi, -0.4), ROOF, ROOF, roofMat);
     for (const e of [off(lo, 0.4), off(hi, -0.4)]) strip(CAN0, CAN1, e, e, ROOF - 0.22, ROOF + 0.02, teal);
-    for (let d = CAN0 + 1; d <= CAN1 - 0.5; d += 8.5) post(d, mid(d), PLAT_UP, ROOF - 0.02);
-    // the name, hung under the canopy, back to back: one facing each track
+    const POSTS = 8.5;
+    for (let d = CAN0 + 1; d <= CAN1 - 0.5; d += POSTS) post(d, mid(d), PLAT_UP, ROOF - 0.02);
+    // the name, hung under the canopy, back to back: one facing each track, in every other gap between the posts (a 2.9 m
+    // board fits a gap's 8.3 m clear, so no post cuts through it)
     const nameTex = stationName(S);
-    for (let d = CAN0 + 5; d < CAN1 - 3; d += 15) for (const sg of [-1, 1]) sign(nameTex, 2.9, 0.72, d, mid(d) + sg * 0.03, 3.55, mid(d) + sg * 10);
+    for (let d = CAN0 + 1 + POSTS / 2; d < CAN1 - 2; d += 2 * POSTS) sign(nameTex, 2.9, 0.72, d, mid(d), 3.55, mid(d) + 10);
     if (!stair) return;
     // the stair, and the way out on a frame over its foot
     S.exits = { [-1]: EX0, 1: EX0 }; S.stairRun = RUN; S.exitTop = TOP; S.stairLat = mid;
@@ -1676,27 +2773,27 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
       ribbon((i) => { const d = EX0 + RUN, lat = i ? sR(d) : sL(d); return [at(d, lat, -0.12).p, at(d, lat, PLAT_UP).p]; }, 1, dim);
       strip(EX0 + RUN * PLAT_UP / (PLAT_UP - TOP), EX0 + RUN, off(sL, 0.02), off(sR, -0.02), -0.06, -0.06, dim);
     }
-    sign(exitSign(S, false, !stair.reach), 3.0, 0.75, EX0 - 1.2, mid(EX0 - 1.2), 3.75, "train");
+    sign(exitSign(S, false, !stair.reach), 3.0, 0.75, EX0 - 1.2, mid(EX0 - 1.2), 3.75, "train", exitSign(S, true, !stair.reach));
     for (const e of [-1.3, 1.3]) post(EX0 - 1.2, mid(EX0 - 1.2) + e, PLAT_UP, 4.15, 0.1);
   };
   for (const [S, side] of ISLANDS) {
     if (S === M18) continue;
     islandStation(S, S.island.edges, { top: -3.6 });
-    // at the Hyde Park stations, the western pair's island too, across the tracks
-    if (side > 0) islandStation(S, (d) => { const hi = otherAt(d) - 1.7; return [Math.max(meSide(0, d) + 1.7, hi - 7.5), hi]; });
+    // at the Hyde Park stations, the eastern pair's island too, across the tracks
+    if (side < 0) islandStation(S, islandEdges(1, otherAt, (d) => meSide(2, d)));
   }
   // 18th's: up onto the East 18th St footbridge, which crosses just past the north end of the island
   islandStation(M18, M18.island.edges, { top: BRIDGE_DECK, reach: (side) => bridgeCross(side) - BRIDGE_W / 2 });
   // Chicago/Halsted's: where a line `side` metres from the centreline passes under the Halsted St viaduct's east edge
   openStation(CH, { top: VIA_DECK, reach: (side) => { let d = CH.d; while (d < LENGTH - 5 && at(d, side).p.x > VIA_HX + VIA_HALF) d += 0.25; return d; } });
-  // Division/Elston's: a footbridge straight across the tracks (assumed, like the station), with a
-  // stair-and-lift tower at each end, outside the platforms
   // Clybourn's: stairs down from each platform to a pedestrian tunnel under the tracks (assumed)
   openStation(CLY, { top: -3.6, down: true, reach: () => CLY.bridge });
   // (and the new stops on the UP North, all assumed, likewise)
-  // Peterson/Ridge's: stairs down from each platform to an underpass (the openings only, as at Clybourn)
-  openStation(NORTH_STOPS[2], { top: -3.6, down: true, reach: () => NORTH_STOPS[2].bridge });
-  for (const S of [DIV, ...NORTH_STOPS.filter((S) => S !== NORTH_STOPS[2])]) {
+  // Division/Elston's and every new UP North stop's (Addison/Lincoln to Rogers Park): stairs down from each platform to an
+  // underpass (the openings only, as at Clybourn)
+  const UNDERPASS = [DIV, ...NORTH_STOPS];             // stairs down to the street under the line
+  for (const S of UNDERPASS) openStation(S, { top: -3.6, down: true, reach: () => S.bridge });
+  for (const S of NORTH_STOPS.filter((S) => !UNDERPASS.includes(S))) {
     openStation(S, { top: BRIDGE_DECK, reach: () => S.bridge - BRIDGE_W / 2 });
     const std = (color, rough = 0.9) => new THREE.MeshStandardMaterial({ color, roughness: rough, side: THREE.DoubleSide });
     const deckMat = std(0x9da19c), sideMat = std(0xb8bbb5), towerMat = std(0x9fa6a8, 0.6);
@@ -1717,12 +2814,28 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
     }
   }
 
+  // The Brown Line's inbound track (toward the Loop, south-east): of its two main tracks, the one on the right of a train
+  // heading that way (the 'L' runs on the right), as points every 3 m in the direction of travel, at its rail height.
+  let BROWN_IN = null;
+  const brownInbound = () => {
+    const ways = BROWN_LINE.filter((w) => w.length >= 20).map((w) => w.map(([lon, lat]) => { const q = lonLat(lon, lat); return new THREE.Vector3(q.x, 8.8 + EMB_NORTH, q.z); }));
+    const se = new THREE.Vector3(1, 0, 1).normalize(), right = new THREE.Vector3(-se.z, 0, se.x);
+    const way = ways.sort((a, b) => b.reduce((m, p) => m + p.dot(right), 0) / b.length - a.reduce((m, p) => m + p.dot(right), 0) / a.length)[0];
+    if (way[way.length - 1].clone().sub(way[0]).dot(se) < 0) way.reverse();
+    const pts = [way[0]];
+    for (let i = 1; i < way.length; i++) { const n = Math.max(1, Math.round(way[i].distanceTo(way[i - 1]) / 3)); for (let k = 1; k <= n; k++) pts.push(way[i - 1].clone().lerp(way[i], k / n)); }
+    const cum = [0];
+    for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + pts[i].distanceTo(pts[i - 1]));
+    return { pts, cum, len: cum[cum.length - 1] };
+  };
+
   /* ---- the Brown Line (CTA's Ravenswood Branch) overhead just south of Addison/Lincoln, on OSM's alignment (BROWN_LINE):
           each track on a steel deck with side girders, ties and rails, on a column every 15 m, none on our railway. Its
           rail is BROWN_UP above ours, clear of our wires (assumed: in reality the UP North is on an embankment there,
           and the 'L' crosses over it) ---- */
   {
-    const BROWN_UP = 8.8, HALF = 1.9, GIRDER = 1.3, structural = new THREE.MeshStandardMaterial({ color: 0x47524c, roughness: 0.75, metalness: 0.2, side: THREE.DoubleSide });
+    BROWN_IN = brownInbound();
+    const BROWN_UP = 8.8 + EMB_NORTH, HALF = 1.9, GIRDER = 1.3, structural = new THREE.MeshStandardMaterial({ color: 0x47524c, roughness: 0.75, metalness: 0.2, side: THREE.DoubleSide });
     for (const way of BROWN_LINE) {
       // the way every 3 m, and its sideways direction at each point
       const raw = way.map(([lon, lat]) => { const q = lonLat(lon, lat); return new THREE.Vector3(q.x, BROWN_UP, q.z); }), pts = [raw[0]];
@@ -1752,8 +2865,45 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
     }
   }
 
+  /* ---- the Brown Line's Addison station: its two side platforms on OSM's outlines, at the 'L''s height, under canopies
+          on posts, with the station's name (the platforms' height above the rail, the canopies and signs assumed) ---- */
+  {
+    const RAIL = 8.8 + EMB_NORTH, TOP = RAIL + 0.95, std = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.85, side: THREE.DoubleSide, ...extra });
+    const deck = std(0xa7a8a3), edge = std(0xd9b43a), roofMat = std(0x5b4a3e), postMat = std(0x3c3530, { metalness: 0.3 });
+    const [cv, c] = hiCanvas(512, 128);
+    c.fillStyle = "#1d1d1f"; c.fillRect(0, 0, 512, 128); c.fillStyle = "#62361b"; c.fillRect(0, 100, 512, 28);
+    c.fillStyle = "#fff"; c.font = "bold 66px Helvetica, Arial, sans-serif"; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText("Addison", 256, 52);
+    const signTex = new THREE.CanvasTexture(cv); signTex.colorSpace = THREE.SRGBColorSpace;
+    const signMat = new THREE.MeshStandardMaterial({ map: signTex, roughness: 0.6, side: THREE.DoubleSide });
+    for (const outline of BROWN_ADDISON) {
+      const ring = outline.map(([lon, lat]) => { const q = lonLat(lon, lat); return V2(q.x, -q.z); });
+      for (const [y, mat] of [[TOP, deck], [RAIL - 0.5, deck], [RAIL + 4.3, roofMat]]) {
+        const g = new THREE.ShapeGeometry(new THREE.Shape(ring)); g.rotateX(-Math.PI / 2); g.translate(0, y, 0);
+        scene.add(new THREE.Mesh(g, mat));
+      }
+      for (let i = 0; i + 1 < ring.length; i++) {                 // the platform's edge faces
+        const a = ring[i], b = ring[i + 1];
+        ribbon((k) => [new THREE.Vector3(k ? b.x : a.x, RAIL - 0.5, -(k ? b.y : a.y)), new THREE.Vector3(k ? b.x : a.x, TOP, -(k ? b.y : a.y))], 1, edge);
+      }
+      // posts and name signs along its long axis: between its two farthest-apart points
+      let A = ring[0], B = ring[0];
+      for (const p of ring) for (const q of ring) if (p.distanceTo(q) > A.distanceTo(B)) { A = p; B = q; }
+      const len = A.distanceTo(B), cx = ring.reduce((m, p) => m + p.x, 0) / ring.length, cy = ring.reduce((m, p) => m + p.y, 0) / ring.length;
+      const u = B.clone().sub(A).normalize(), mid0 = A.clone().add(B).multiplyScalar(0.5), off = V2(cx, cy).sub(mid0);
+      for (let s = 4; s < len - 3; s += 9) {
+        const q = A.clone().addScaledVector(u, s).add(off);
+        const post = new THREE.Mesh(new THREE.BoxGeometry(0.25, RAIL + 4.3 - TOP, 0.25), postMat);
+        post.position.set(q.x, (TOP + RAIL + 4.3) / 2, -q.y); scene.add(post);
+        if (Math.round(s / 9) % 2) {
+          const sg = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 0.6), signMat);
+          sg.position.set(q.x, TOP + 2.6, -q.y); sg.lookAt(sg.position.clone().add(new THREE.Vector3(-u.y, 0, -u.x))); scene.add(sg);
+        }
+      }
+    }
+  }
+
   /* ---- the UP North's bridge over the North Branch at Webster Ave (assets/webster-bridge.js; its design assumed) ---- */
-  { const mid = (BRIDGE.d0 + BRIDGE.d1) / 2; buildRiverBridge({ THREE, scene, at, d0: BRIDGE.d0, d1: BRIDGE.d1, trackLats: [otherAt(mid), sideAt(mid)] }); }
+  { const mid = (BRIDGE.d0 + BRIDGE.d1) / 2; buildRiverBridge({ THREE, scene, at, d0: BRIDGE.d0, d1: BRIDGE.d1, ground: EMB(BRIDGE.d0), trackLats: [otherAt(mid), sideAt(mid)] }); }
 
   /* ---- the East 18th St footbridge, from OpenStreetMap: a concrete deck with glass parapets, on piers kept clear
           of the railway. It rises from the ground at each end to BRIDGE_DECK over the span (the heights between
@@ -1799,327 +2949,14 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
   // (and vanish), `leavers` have got off. The dissolve halfway through each dwell swaps one for the other.
   const boarders = ALL.map(() => []), leavers = ALL.map(() => []), farBoarders = ALL.map(() => []);
 
-  /* ---- people waiting on the platforms: rounded figures in many skin tones and clothes. Every station
+  /* ---- people waiting on the platforms: ten kinds of rider (assets/people.js), each varied in skin tone, hair and
+          clothes by its seed. Every station
           has someone using a wheelchair, someone with a baby in a stroller, someone with a bike, adults
           with children, and travellers with luggage (one alone, two as a couple). Each is built facing
           +z, then stood on a platform and turned. They don't move. ---- */
   const peopleSpots = [];                                 // { kind, station, pos, d, side } for the preview views
   {
-    const hash = (n) => { const x = Math.sin(n * 91.7 + 47.3) * 43758.5453; return x - Math.floor(x); };
-    const pick = (list, k) => list[Math.floor(hash(k) * list.length)];
-    const SKIN = [0xf0c9ae, 0xe6b894, 0xd9a47c, 0xc68a5e, 0xa86b42, 0x8a5433, 0x6b3f26, 0x4a2c1b];
-    const HAIR = [0x17120f, 0x2e1f16, 0x5a3a22, 0x8c8c8c, 0xc9a25c, 0x7a3b1e, 0x0f0f12];
-    const TOPS = [0x23395b, 0x3a3f44, 0x5b6b3a, 0x7a2434, 0xd0a030, 0x0b7285, 0x8f979a, 0xe9e6df, 0xb8322a, 0x4a6fa5, 0x6a4c93, 0xd97b3a];
-    const LEGS = [0x1f2a3a, 0x2b2d30, 0x3d4b63, 0x5a5346, 0x6f7a80, 0x1a1a1c, 0x4a3b2e];
-    const KIDS = [0xe2574c, 0xf2c94c, 0x3aa0d8, 0x58b368, 0xf08a5d, 0x9b6bd0, 0xf2f2f2];   // brighter clothes for children
-    const BAGS = [0x1f2a44, 0x7a2434, 0x2f5d50, 0x2b2d30, 0xc9772f, 0x5a5f66, 0x3b6ea5];
-    // Shading comes from a "matcap" (a picture of a lit ball), not from the scene's lights, so the
-    // figures look round in the station's flat light and the same wherever the train's headlights point.
-    const matcap = (() => {
-      const cv = document.createElement("canvas"); cv.width = cv.height = 256;
-      const c = cv.getContext("2d"), g = c.createRadialGradient(100, 84, 8, 128, 128, 150);
-      g.addColorStop(0, "#f1f1f1"); g.addColorStop(0.45, "#dcdcdc"); g.addColorStop(0.8, "#a6a6a6"); g.addColorStop(1, "#808080");
-      c.fillStyle = g; c.fillRect(0, 0, 256, 256);
-      const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; return t;
-    })();
-    const mats = new Map(), geos = new Map();
-    const tone = (color) => { if (!mats.has(color)) mats.set(color, new THREE.MeshMatcapMaterial({ color, matcap })); return mats.get(color); };
-    const geo = (key, make) => { if (!geos.has(key)) geos.set(key, make()); return geos.get(key); };
-    const CYL = () => geo("cyl", () => new THREE.CylinderGeometry(1, 1, 1, 20)), BALL = () => geo("ball", () => new THREE.SphereGeometry(1, 32, 22)),
-      RING = () => geo("ring", () => new THREE.TorusGeometry(1, 0.06, 10, 44));
-    const RBOX = () => geo("rbox", () => {                 // a box with rounded edges, 1 x 1 x 1
-      const sh = new THREE.Shape(), a = 0.5, r = 0.14;
-      sh.moveTo(-a + r, -a); sh.lineTo(a - r, -a); sh.quadraticCurveTo(a, -a, a, -a + r); sh.lineTo(a, a - r); sh.quadraticCurveTo(a, a, a - r, a);
-      sh.lineTo(-a + r, a); sh.quadraticCurveTo(-a, a, -a, a - r); sh.lineTo(-a, -a + r); sh.quadraticCurveTo(-a, -a, -a + r, -a);
-      const g = new THREE.ExtrudeGeometry(sh, { depth: 0.7, bevelEnabled: true, bevelThickness: 0.15, bevelSize: 0.1, bevelSegments: 5, curveSegments: 8 });
-      g.computeBoundingBox(); const b = g.boundingBox, sz = b.getSize(new THREE.Vector3()), c = b.getCenter(new THREE.Vector3());
-      g.translate(-c.x, -c.y, -c.z); g.scale(1 / sz.x, 1 / sz.y, 1 / sz.z); g.computeVertexNormals(); return g;
-    });
-    const add = (g, geometry, color, x, y, z, sx, sy, sz, rx = 0, ry = 0, rz = 0) => {
-      const m = new THREE.Mesh(geometry, tone(color)); m.position.set(x, y, z); m.scale.set(sx, sy, sz); m.rotation.set(rx, ry, rz); g.add(m); return m;
-    };
-    const Y = new THREE.Vector3(0, 1, 0);
-    const between = (g, geometry, a, b, color, sx, sz, lenScale = true) => {
-      const A = new THREE.Vector3(...a), d = new THREE.Vector3(...b).sub(A), len = d.length();
-      const m = new THREE.Mesh(geometry, tone(color)); m.scale.set(sx, lenScale ? len : 1, sz);
-      m.position.copy(A).addScaledVector(d, 0.5); m.quaternion.setFromUnitVectors(Y, d.normalize()); g.add(m); return m;
-    };
-    const tube = (g, a, b, r, color) => between(g, CYL(), a, b, color, r, r);          // a thin rod from a to b
-    // a limb from a to b with rounded ends (a capsule of radius r, flattened front to back by `flat`)
-    const limb = (g, a, b, r, color, flat = 1) => {
-      const len = Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]), key = `cap${r.toFixed(3)}_${len.toFixed(2)}`;
-      return between(g, geo(key, () => new THREE.CapsuleGeometry(r, len, 8, 20)), a, b, color, 1, flat, false);
-    };
-    const wheel = (g, x, y, z, r, color = 0x1c1e20) => add(g, RING(), color, x, y, z, r, r, r, 0, Math.PI / 2, 0);
-    const look = (k, kid = false) => ({ skin: pick(SKIN, k), hair: pick(kid ? HAIR.filter((h) => h !== 0x8c8c8c) : HAIR, k + 0.2), top: pick(kid ? KIDS : TOPS, k + 0.4), legs: pick(LEGS, k + 0.6), k, kid });
-    // a limb or body section from a to b that tapers from radius r0 (at a) to r1 (at b), flattened front to back by `flat`
-    const taper = (g, a, b, r0, r1, color, flat = 1) => {
-      const len = Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]), key = `tap${r0.toFixed(3)}_${r1.toFixed(3)}_${len.toFixed(2)}`;
-      return between(g, geo(key, () => new THREE.CylinderGeometry(r1, r0, len, 24)), a, b, color, 1, flat, false);
-    };
-    const joint = (g, p, r, color, flat = 1) => add(g, BALL(), color, p[0], p[1], p[2], r, r, r * flat);
-    // The figures are the plain "scale figures" of an architect's drawing: real proportions, no faces.
-    // head, neck and hair (or a hat), from the base of the neck at height y; children's heads are larger for their size
-    const head = (g, L, y) => {
-      const h = new THREE.Group(); h.position.y = y; h.scale.setScalar(L.kid ? 1.22 : 1); g.add(h);
-      taper(h, [0, -0.04, 0], [0, 0.06, 0], 0.05, 0.042, L.skin);
-      add(h, BALL(), L.skin, 0, 0.155, 0.004, 0.09, 0.113, 0.099);
-      const style = hash(L.k + 0.8);
-      if (style < 0.14) add(h, BALL(), pick(TOPS, L.k + 0.9), 0, 0.2, -0.006, 0.097, 0.085, 0.106);   // a knit hat
-      else if (style > 0.2) {
-        add(h, BALL(), L.hair, 0, 0.183, -0.02, 0.095, 0.098, 0.1);
-        if (style > 0.62) add(h, BALL(), L.hair, 0, 0.07, -0.062, 0.082, 0.15, 0.05);              // longer hair, to the shoulders
-      }
-    };
-    // hips to head, with the hip joints at height y; `reach` swings the arms forward (radians), per arm if an array
-    const upper = (g, L, y, reach = 0, pack = true) => {
-      const FLAT = 0.62, coat = !L.kid && hash(L.k + 1.1) < 0.3;
-      taper(g, [0, y - 0.03, 0], [0, y + 0.2, 0], 0.168, 0.148, L.top, FLAT);                      // hips up to the waist
-      taper(g, [0, y + 0.2, 0], [0, y + 0.5, 0], 0.148, 0.188, L.top, FLAT);                       // waist up to the chest
-      add(g, BALL(), L.top, 0, y + 0.5, 0, 0.214, 0.075, 0.122);                                   // shoulders
-      if (coat) taper(g, [0, y - 0.34, 0], [0, y + 0.2, 0], 0.2, 0.152, L.top, 0.66);              // a coat to mid-thigh
-      [-1, 1].forEach((sg, i) => {
-        const r = Array.isArray(reach) ? reach[i] : reach, a1 = r * 0.7, a2 = r * 1.2 + 0.18;
-        const sh = [sg * 0.215, y + 0.5, 0], el = [sh[0] + sg * 0.03, sh[1] - 0.28 * Math.cos(a1), 0.28 * Math.sin(a1)],
-          wr = [el[0], el[1] - 0.25 * Math.cos(a2), el[2] + 0.25 * Math.sin(a2)];
-        joint(g, sh, 0.056, L.top); taper(g, sh, el, 0.054, 0.044, L.top); joint(g, el, 0.044, L.top); taper(g, el, wr, 0.043, 0.034, L.top);
-        add(g, BALL(), L.skin, wr[0], wr[1] - 0.04 * Math.cos(a2), wr[2] + 0.04 * Math.sin(a2), 0.032, 0.05, 0.04);   // hand
-      });
-      head(g, L, y + 0.6);
-      if (pack && hash(L.k + 1.3) < 0.3) add(g, RBOX(), pick(BAGS, L.k + 1.4), 0, y + 0.31, -0.165, 0.29, 0.4, 0.15);   // a backpack
-    };
-    const HIP = 0.86;                                      // hip joints above the ground, standing
-    // `stride` (1 or -1) sets one leg forward and the other back, mid-step
-    const blocky = (L, reach = 0, pack = true, stride = 0) => {
-      const g = new THREE.Group();
-      for (const sg of [-1, 1]) {
-        const f = sg * stride;
-        const hip = [sg * 0.085, HIP, 0], knee = [sg * 0.085, 0.47, 0.005 + f * 0.11], ankle = [sg * 0.085, 0.09, f * 0.24];
-        taper(g, knee, hip, 0.058, 0.08, L.legs); joint(g, knee, 0.057, L.legs); taper(g, ankle, knee, 0.04, 0.055, L.legs);
-        add(g, BALL(), 0x1b1b1d, sg * 0.085, 0.042, 0.05 + f * 0.24, 0.05, 0.042, 0.125);          // shoes
-      }
-      upper(g, L, HIP, reach, pack);
-      g.scale.setScalar(L.kid ? 0.52 + 0.2 * hash(L.k + 1.7) : 0.92 + 0.14 * hash(L.k + 1.7));     // different heights; children are 4 to 10 or so
-      return g;
-    };
-    /* People from the Quaternius Universal Base Characters (CC0): a rigged male or female body, posed by turning
-       its bones, dressed by colouring it by which bones move each part of it (top, sleeves, trousers, shoes; bare
-       skin elsewhere, tinted to one of SKIN), with one of the pack's hairstyles bound to the same skeleton. */
-    const BODY_H = { male: 1.81, female: 1.77 };              // their heights as modelled
-    const lin = (hex) => new THREE.Color(hex);                // a colour for a shader uniform (converted to linear)
-    const clothAttrs = new Map();
-    // Per vertex: how much of it each part of the outfit moves with, from the skin weights. clothA = (top, forearm,
-    // thigh, shoe), clothB = calf; what is left over is bare skin (head, neck, hands). Forearm and calf are covered or
-    // not per person (sleeves, trousers or shorts).
-    const dress = (mesh) => {
-      const g = mesh.geometry;
-      if (clothAttrs.has(g)) return;
-      const names = mesh.skeleton.bones.map((b) => b.name), part = names.map((n) =>
-        /^(spine_0[123]|clavicle|upperarm)/.test(n) ? 0 : /^lowerarm/.test(n) ? 1 : /^(pelvis|thigh)/.test(n) ? 2 : /^(foot|ball)/.test(n) ? 3 : /^calf/.test(n) ? 4 : -1);
-      const si = g.attributes.skinIndex, sw = g.attributes.skinWeight, n = si.count, A = new Float32Array(n * 4), B = new Float32Array(n);
-      for (let v = 0; v < n; v++) for (let k = 0; k < 4; k++) {
-        const c = part[si.getComponent(v, k)], w = sw.getComponent(v, k);
-        if (c === 4) B[v] += w; else if (c >= 0) A[v * 4 + c] += w;
-      }
-      g.setAttribute("clothA", new THREE.BufferAttribute(A, 4)); g.setAttribute("clothB", new THREE.BufferAttribute(B, 1));
-      clothAttrs.set(g, true);
-    };
-    const SKIN_REF = 0.214;                                   // the light texture's mean skin luminance, linear
-    const bodyMaterial = (src, skinTex, u) => {
-      const m = new THREE.MeshMatcapMaterial({ map: skinTex, normalMap: src.normalMap, matcap });
-      m.normalScale.copy(src.normalScale);
-      m.onBeforeCompile = (sh) => {
-        Object.assign(sh.uniforms, u);
-        // the outfit's share of a point: (top, trousers, shoes, bare skin)
-        const outfit = `uniform float uSleeve, uTrouser;
-          vec4 outfit(vec4 a, float b) {
-            return vec4(a.x + uSleeve * a.y, a.z + uTrouser * b, a.w, 1.0 - (a.x + a.y + a.z + a.w + b) + (1.0 - uSleeve) * a.y + (1.0 - uTrouser) * b);
-          }`;
-        sh.vertexShader = sh.vertexShader
-          .replace("#include <common>", `#include <common>
-          attribute vec4 clothA; attribute float clothB; varying vec4 vClothA; varying float vClothB;
-          ${outfit}`)
-          .replace("#include <begin_vertex>", `#include <begin_vertex>
-          vClothA = clothA; vClothB = clothB;
-          transformed += objectNormal * 0.016 * clamp(1.0 - outfit(clothA, clothB).w, 0.0, 1.0);   // the clothes stand a little off the skin`);
-        sh.fragmentShader = sh.fragmentShader
-          .replace("#include <common>", `#include <common>
-          varying vec4 vClothA; varying float vClothB; uniform vec3 uSkin, uTop, uLegs, uShoes; float clothF = 0.0;
-          ${outfit}`)
-          .replace("#include <map_fragment>", `#include <map_fragment>
-          vec4 w = outfit(vClothA, vClothB);
-          float lum = dot(diffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722));
-          vec3 col = uSkin * clamp(lum / ${SKIN_REF}, 0.55, 1.35);
-          float best = w.w;
-          if (w.x > best) { best = w.x; col = uTop; }
-          if (w.y > best) { best = w.y; col = uLegs; }
-          if (w.z > best) { best = w.z; col = uShoes; }
-          clothF = best == w.w ? 0.0 : 1.0;
-          diffuseColor.rgb = col;`)
-          .replace("mapN.xy *= normalScale;", "mapN.xy *= normalScale * (1.0 - 0.85 * clothF);")    // cloth hides the muscles...
-          .replace("vec3 outgoingLight = diffuseColor.rgb * matcapColor.rgb;",           // ...and softens the body's shape under it
-            "vec3 outgoingLight = diffuseColor.rgb * mix(matcapColor.rgb, vec3(0.86), 0.45 * clothF);");
-      };
-      m.customProgramCacheKey = () => "quaternius-dressed";
-      return m;
-    };
-    const sharedMats = new Map(), shared = (key, make) => { if (!sharedMats.has(key)) sharedMats.set(key, make()); return sharedMats.get(key); };
-    const HAIRS = { male: ["Hair_Buzzed", "Hair_SimpleParted", "Hair_Buzzed", null], female: ["Hair_Long", "Hair_Buns", "Hair_BuzzedFemale", "Hair_SimpleParted"] };
-    const AX = new THREE.Vector3(1, 0, 0), AZ = new THREE.Vector3(0, 0, 1), qP = new THREE.Quaternion(), qW = new THREE.Quaternion(), qT = new THREE.Quaternion();
-    // turn a bone by `ang` about an axis of the figure's own space (it faces +z, its left is +x)
-    const turn = (bone, axis, ang) => {
-      bone.parent.getWorldQuaternion(qP); bone.getWorldQuaternion(qW);
-      qT.setFromAxisAngle(axis, ang).multiply(qW);
-      bone.quaternion.copy(qP.invert().multiply(qT)); bone.updateMatrixWorld(true);
-    };
-    // pose: reach (forward swing of the arms, radians; per arm [left, right]), stride (1 or -1: mid-step), seated
-    const human = (L, { reach = 0, pack = true, stride = 0, seated = false } = {}) => {
-      const sex = hash(L.k + 2.1) < 0.5 ? "male" : "female", src = humans[sex];
-      const obj = humans.clone(src.scene), bones = {};
-      obj.traverse((o) => { if (o.isBone) bones[o.name] = o; });
-      obj.updateMatrixWorld(true);
-      const u = {
-        uSkin: { value: lin(L.skin) }, uTop: { value: lin(L.top) }, uLegs: { value: lin(L.legs) },
-        uShoes: { value: lin(pick([0x1b1b1d, 0x2b2d30, 0x5a3a22, 0xe9e6df, 0x3d4b63], L.k + 2.3)) },
-        uSleeve: { value: hash(L.k + 2.5) < (L.kid ? 0.4 : 0.65) ? 1 : 0 }, uTrouser: { value: hash(L.k + 2.7) < (L.kid ? 0.5 : 0.85) ? 1 : 0 },
-      };
-      let skeleton = null;
-      obj.traverse((o) => {
-        if (!o.isSkinnedMesh) return;
-        skeleton = o.skeleton;
-        if (/^SuperHero|^Superhero/.test(o.name)) { dress(o); o.material = bodyMaterial(o.material, humans.skin[sex], u); }
-        else if (/Eyebrows/.test(o.name)) o.material = tone(L.hair);
-        else o.material = shared("eyes" + o.material.map.uuid, () => new THREE.MeshMatcapMaterial({ map: o.material.map, matcap }));
-      });
-      const style = pick(HAIRS[sex], L.k + 2.9);
-      for (const name of [style, sex === "male" && !L.kid && hash(L.k + 3.1) < 0.3 ? "Hair_Beard" : null]) {
-        if (!name || !humans.hair[name]) continue;
-        const h = humans.clone(humans.hair[name].scene);
-        const parts = [];
-        h.traverse((o) => { if (o.isSkinnedMesh) parts.push(o); });
-        parts.forEach((o) => {
-          o.bind(new THREE.Skeleton(o.skeleton.bones.map((b) => bones[b.name]), o.skeleton.boneInverses), o.bindMatrix);
-          const nm = o.material.normalMap;
-          o.material = shared(`hair${L.hair}_${nm && nm.uuid}`, () => new THREE.MeshMatcapMaterial({ color: L.hair, normalMap: nm, matcap }));
-        });
-        parts.forEach((o) => obj.add(o));
-      }
-      // the pose
-      const [rl, rr] = Array.isArray(reach) ? reach : [reach, reach];
-      turn(bones.upperarm_l, AZ, -1.33); turn(bones.upperarm_r, AZ, 1.33);       // arms down from the T
-      turn(bones.upperarm_l, AX, -rl * 0.75); turn(bones.upperarm_r, AX, -rr * 0.75);
-      turn(bones.lowerarm_l, AX, -(rl * 0.6 + 0.2)); turn(bones.lowerarm_r, AX, -(rr * 0.6 + 0.2));
-      if (seated) {
-        for (const sd of ["l", "r"]) { turn(bones["thigh_" + sd], AX, -1.5); turn(bones["calf_" + sd], AX, 1.4); }
-      } else if (stride) {
-        turn(bones.thigh_l, AX, -0.32 * stride); turn(bones.thigh_r, AX, 0.32 * stride);
-        turn(bones[stride > 0 ? "calf_r" : "calf_l"], AX, 0.35);
-      }
-      if (L.kid) bones.Head.scale.setScalar(1.3);
-      obj.updateMatrixWorld(true);
-      const height = L.kid ? 0.95 + 0.4 * hash(L.k + 1.7) : (sex === "male" ? 1.72 : 1.62) * (0.95 + 0.1 * hash(L.k + 1.7));
-      const sc = height / BODY_H[sex], g = new THREE.Group();
-      obj.scale.setScalar(sc);
-      if (seated) {                                           // the hips on the wheelchair's seat
-        const hip = bones.thigh_l.getWorldPosition(new THREE.Vector3());
-        obj.position.set(0, 0.6 - hip.y * sc, -0.05 - hip.z * sc);
-      }
-      g.add(obj);
-      if (pack && !seated && hash(L.k + 1.3) < 0.3) {         // a backpack, on the upper back
-        const sp = bones.spine_03.getWorldPosition(new THREE.Vector3()).multiplyScalar(sc);
-        add(g, RBOX(), pick(BAGS, L.k + 1.4), 0, sp.y - 0.08, sp.z - 0.2 * sc / 0.94, 0.29, 0.4, 0.15);
-      }
-      return g;
-    };
-    const standing = (L, reach = 0, pack = true, stride = 0) => humans ? human(L, { reach, pack, stride }) : blocky(L, reach, pack, stride);
-    const wheelchairUser = (L) => {
-      const g = new THREE.Group(), FRAME = 0x2a4d8f;
-      for (const sg of [-1, 1]) {
-        wheel(g, sg * 0.31, 0.3, -0.05, 0.3);                                                      // drive wheels, with push rims
-        add(g, RING(), 0xb8bcc0, sg * 0.335, 0.3, -0.05, 0.26, 0.26, 0.26, 0, Math.PI / 2, 0);
-        for (let k = 0; k < 4; k++) { const a = k * Math.PI / 4; tube(g, [sg * 0.31, 0.3 - 0.29 * Math.cos(a), -0.05 - 0.29 * Math.sin(a)], [sg * 0.31, 0.3 + 0.29 * Math.cos(a), -0.05 + 0.29 * Math.sin(a)], 0.005, 0x8d9296); }
-        wheel(g, sg * 0.22, 0.07, 0.4, 0.07);                                                      // casters
-        tube(g, [sg * 0.22, 0.1, 0.4], [sg * 0.22, 0.47, 0.22], 0.014, FRAME);
-        tube(g, [sg * 0.22, 0.47, 0.24], [sg * 0.22, 0.47, -0.2], 0.014, FRAME);
-        tube(g, [sg * 0.22, 0.47, -0.2], [sg * 0.22, 0.98, -0.26], 0.014, FRAME);                  // back posts and push handles
-        limb(g, [sg * 0.22, 0.98, -0.27], [sg * 0.22, 0.98, -0.35], 0.017, 0x1c1e20);
-        tube(g, [sg * 0.22, 0.47, 0.24], [sg * 0.16, 0.12, 0.52], 0.012, FRAME);                   // footrest hangers
-        if (humans) continue;
-        taper(g, [sg * 0.09, 0.6, -0.05], [sg * 0.1, 0.6, 0.32], 0.08, 0.06, L.legs);              // thighs along the seat
-        joint(g, [sg * 0.1, 0.6, 0.32], 0.06, L.legs);
-        taper(g, [sg * 0.1, 0.6, 0.32], [sg * 0.1, 0.19, 0.47], 0.056, 0.042, L.legs);             // shins down to the footplate
-        add(g, BALL(), 0x1b1b1d, sg * 0.1, 0.145, 0.53, 0.058, 0.048, 0.13);
-      }
-      add(g, RBOX(), 0x1c1e20, 0, 0.49, 0.03, 0.46, 0.07, 0.46);                                   // seat, backrest, footplate
-      add(g, RBOX(), 0x1c1e20, 0, 0.76, -0.235, 0.46, 0.42, 0.05);
-      add(g, RBOX(), 0x4a4f54, 0, 0.1, 0.52, 0.34, 0.03, 0.16);
-      if (humans) g.add(human(L, { reach: 0.45, pack: false, seated: true })); else upper(g, L, 0.6, 0.45, false);
-      return g;
-    };
-    const withStroller = (L, babySkin) => {
-      const g = standing(L, 0.8, false), s = new THREE.Group(), SHELL = 0x38546e;
-      for (const sg of [-1, 1]) {
-        wheel(s, sg * 0.24, 0.11, 0.3, 0.11); wheel(s, sg * 0.24, 0.11, -0.3, 0.11);
-        tube(s, [sg * 0.24, 0.11, 0.3], [sg * 0.22, 0.98, -0.5], 0.014, 0x9aa0a4);                 // frame up to the handle
-        tube(s, [sg * 0.24, 0.11, -0.3], [sg * 0.22, 0.6, 0.12], 0.014, 0x9aa0a4);
-      }
-      limb(s, [-0.22, 0.98, -0.5], [0.22, 0.98, -0.5], 0.02, 0x1c1e20);                            // handle
-      add(s, RBOX(), SHELL, 0, 0.62, 0.02, 0.44, 0.3, 0.66);                                       // the seat shell
-      add(s, BALL(), SHELL, 0, 0.76, -0.2, 0.225, 0.25, 0.25);                                     // canopy, behind the baby
-      add(s, RBOX(), 0xe8dfc8, 0, 0.775, 0.16, 0.34, 0.06, 0.34);                                  // blanket
-      add(s, BALL(), babySkin, 0, 0.86, 0.02, 0.085, 0.09, 0.09);                                  // the baby...
-      add(s, BALL(), 0xf2c94c, 0, 0.915, 0.005, 0.09, 0.05, 0.092);                                // ...in a sun hat
-      s.position.z = 0.98; g.add(s);
-      return g;
-    };
-    const withBike = (L) => {
-      const g = new THREE.Group(), FRAME = 0xc8432b, DARK = 0x1c1e20, b = new THREE.Group();
-      const rider = standing(L, [0.1, 0.75], false); rider.position.x = -0.42; g.add(rider);
-      wheel(b, 0, 0.34, 0.54, 0.33); wheel(b, 0, 0.34, -0.5, 0.33);
-      for (const z of [0.54, -0.5]) for (let k = 0; k < 6; k++) { const a = k * Math.PI / 6; tube(b, [0, 0.34 - 0.32 * Math.cos(a), z - 0.32 * Math.sin(a)], [0, 0.34 + 0.32 * Math.cos(a), z + 0.32 * Math.sin(a)], 0.004, 0x9aa0a4); }
-      const BB = [0, 0.3, -0.02], SEAT = [0, 0.84, -0.2], HEAD = [0, 0.88, 0.36], REAR = [0, 0.34, -0.5], FRONT = [0, 0.34, 0.54];
-      tube(b, BB, SEAT, 0.018, FRAME); tube(b, SEAT, HEAD, 0.018, FRAME); tube(b, [0, 0.8, 0.38], BB, 0.02, FRAME);   // seat, top and down tubes
-      tube(b, BB, REAR, 0.012, FRAME); tube(b, SEAT, REAR, 0.012, FRAME);                          // chain and seat stays
-      tube(b, HEAD, FRONT, 0.014, FRAME);                                                          // fork
-      tube(b, SEAT, [0, 0.95, -0.22], 0.012, 0x9aa0a4); add(b, BALL(), DARK, 0, 0.965, -0.23, 0.06, 0.025, 0.13);     // seat post and saddle
-      tube(b, HEAD, [0, 1.0, 0.34], 0.012, 0x9aa0a4); limb(b, [-0.26, 1.0, 0.34], [0.26, 1.0, 0.34], 0.014, DARK);    // stem and handlebar
-      add(b, CYL(), 0x9aa0a4, 0, 0.3, -0.02, 0.07, 0.012, 0.07, 0, 0, Math.PI / 2);                // chainring
-      b.rotation.z = -0.07; g.add(b);                                                              // leaning a little toward its owner
-      return g;
-    };
-    // a rolling suitcase standing at (x, z), its handle up
-    const suitcase = (g, k, x, z, big = true) => {
-      const w = big ? 0.44 : 0.36, h = big ? 0.68 : 0.52, color = pick(BAGS, k);
-      add(g, RBOX(), color, x, 0.06 + h / 2, z, w, h, 0.27);
-      for (const sg of [-1, 1]) {
-        add(g, RING(), 0x1c1e20, x + sg * (w / 2 - 0.06), 0.035, z - 0.08, 0.03, 0.03, 0.03, 0, Math.PI / 2, 0);
-        tube(g, [x + sg * 0.09, 0.06 + h, z - 0.08], [x + sg * 0.09, 0.06 + h + 0.34, z - 0.08], 0.009, 0x9aa0a4);
-      }
-      limb(g, [x - 0.1, 0.06 + h + 0.34, z - 0.08], [x + 0.1, 0.06 + h + 0.34, z - 0.08], 0.014, 0x1c1e20);
-      add(g, RBOX(), 0x1c1e20, x, 0.06 + h * 0.62, z + 0.14, w * 0.5, 0.05, 0.02);                 // a strap across the front
-    };
-    const traveller = (k) => {                             // alone, with a suitcase and sometimes a second bag on top
-      const g = standing(look(k), [0.05, 0.3]);
-      suitcase(g, k + 0.3, 0.52, 0.1);
-      if (hash(k + 0.7) < 0.6) add(g, RBOX(), pick(BAGS, k + 0.8), 0.52, 0.86, 0.1, 0.36, 0.22, 0.2);
-      return g;
-    };
-    const couple = (k) => {                                // two travellers side by side, turned a little toward each other
-      const g = new THREE.Group();
-      const a = standing(look(k), [0.3, 0.05]), b = standing(look(k + 7), [0.05, 0.3]);
-      a.position.x = -0.34; a.rotation.y = 0.3; b.position.x = 0.34; b.rotation.y = -0.3; g.add(a, b);
-      suitcase(g, k + 0.3, -0.78, 0.1); suitcase(g, k + 0.5, 0.78, 0.1, hash(k + 0.6) < 0.5);
-      return g;
-    };
-    const family = (k) => {                                // an adult with one or two children, hand in hand
-      const g = new THREE.Group(), n = hash(k + 0.9) < 0.4 ? 2 : 1;
-      const adult = standing(look(k), n === 2 ? [0.12, 0.12] : [0.02, 0.12], false); g.add(adult);
-      for (let i = 0; i < n; i++) {
-        const kid = standing(look(k + 3 + i * 5, true), 0.05, hash(k + i + 1.2) < 0.5);
-        kid.position.x = (i ? -1 : 1) * 0.4; kid.position.z = 0.04; g.add(kid);
-      }
-      return g;
-    };
+    const { hash, wheelchairUser, withStroller, withBike, family, traveller, couple, crowd, walker, turnHeads, bake } = peopleKit({ THREE });   // (assets/people.js)
     // sg: the platform (see platAt); those on our train's (sg === S.our) board it, and "track" faces the track they wait for
     const stand = (g, kind, si, d, side, yaw, face = "track", up = PLAT_UP, waiting = true, sg = Math.sign(side)) => {
       const S = ALL[si], q = at(d, side, up);
@@ -2128,6 +2965,10 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
       g.rotateY(yaw);
       scene.add(g);
       if (!waiting) return;
+      // heads turned a little toward the train they wait for, up the line where it comes from (ours runs up it; the
+      // other track's trains, down it, but those on the far side of the Hyde Park islands run up it too: farDir)
+      const from = d + (sg === S.our || (S.island && S.island.farDir > 0) ? -12 : 12);
+      turnHeads(g, at(from, trackFor(S, sg, from), up + 1.5).p);
       peopleSpots.push({ kind, station: si, pos: q.p.clone(), d, side });
       if (sg === S.our) boarders[si].push(g);                // on the platform beside the train's track: these get on it
       else farBoarders[si].push(g);                          // and these, the train on the other track (at Union Station, where the two meet)
@@ -2147,19 +2988,20 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
         if (besideStair(d)) { if (WHEELS.includes(kind)) d = SPAN[0] - 1 - 2.5 * WHEELS.indexOf(kind); else x = Math.min(x, strip(d)); }
         stand(g, kind, si, d, platAt(S, sg, x, d), yaw, face, PLAT_UP, true, sg);
       };
-      wait(wheelchairUser(look(K + 1)), "wheelchair", S.stop + 9 + pi, sw, 1.7, 0.25);
+      // Everyone waits behind where the cab stops, along the train: nobody at the far end of the platform, past it.
+      wait(wheelchairUser(K + 1), "wheelchair", S.stop - 9 - pi * 0.5, sw, 1.7, 0.25);
       // where that one waits across the tracks, a second on the train's own platform, so someone using a wheelchair boards at every stop
-      if (sw !== S.our) wait(wheelchairUser(look(K + 7)), "wheelchair", S.stop + 10.5, S.our, 1.7, 0.25);
-      wait(withStroller(look(K + 2), pick(SKIN, K + 2.5)), "stroller", S.stop + 13.5, -sw, 2.0, 0.15, "behind");
-      wait(withBike(look(K + 3)), "bike", S.stop + 5 - pi * 0.6, -sw, 2.1, 0, "ahead");
-      wait(family(K + 4), "family", S.stop + 12.5 + pi * 0.7, sw, 2.6, -0.2);
-      wait(traveller(K + 5), "traveller", S.stop + 7.5, -sw, 1.5, 0.2);
-      wait(couple(K + 6), "couple", S.stop + 15.5 - pi * 0.5, sw, 1.4, 0.1);
+      if (sw !== S.our) wait(wheelchairUser(K + 7), "wheelchair", S.stop - 10.5, S.our, 1.7, 0.25);
+      wait(withStroller(K + 2), "stroller", S.stop - 13.5, -sw, 2.0, 0.15, "behind");
+      wait(withBike(K + 3), "bike", S.stop - 5 - pi * 0.6, -sw, 2.1, 0, "ahead");
+      wait(family(K + 4), "family", S.stop - 12.5 - pi * 0.7, sw, 2.6, -0.2);
+      wait(traveller(K + 5), "traveller", S.stop - 7.5, -sw, 1.5, 0.2);
+      wait(couple(K + 6), "couple", S.stop - 15.5 - pi * 0.5, sw, 1.4, 0.1);
       // then the rest of the crowd, scattered along both platforms (Union Station gets more luggage)
-      const crowd = ["family", "traveller", S === STN[2] ? "couple" : "standing", S === STN[2] ? "traveller" : "standing", "kid"];
+      const kinds = ["family", "traveller", S === STN[2] ? "couple" : "standing", S === STN[2] ? "traveller" : "standing", "kid"];
       for (let i = 0; i < 16; i++) {
-        const k = K + 10 + i, sg = hash(k + 0.11) < 0.55 ? 1 : -1, kind = crowd[i] || "standing";
-        const d = S.crowdFrom + 5 + hash(k + 0.21) * (S.platTo - S.crowdFrom - 9);
+        const k = K + 10 + i, sg = hash(k + 0.11) < 0.55 ? 1 : -1, kind = kinds[i] || "standing";
+        const d = S.crowdFrom + 5 + hash(k + 0.21) * (Math.min(S.platTo - 4, S.stop - 3) - S.crowdFrom - 5);
         let x = 1.2 + hash(k + 0.31) * 3.0;
         const EX0 = S.exits ? S.exits[sg] : S.stop + 17, RUN = S.stairRun || 12;   // the stairs: keep their foot clear
         if (d > EX0 - 1.5 && d < EX0 + RUN + 2 && x > 1.65) x = 1.2 + hash(k + 0.31) * 0.5;
@@ -2168,18 +3010,17 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
         if (peopleSpots.some((o) => o.station === si && o.pos.distanceTo(pos) < (kind === "standing" ? 1.5 : 2.2))) continue;
         const f = hash(k + 0.41), face = f < 0.6 ? "track" : f < 0.85 ? "behind" : "ahead", yaw = (hash(k + 0.51) - 0.5) * 1.1;
         const g = kind === "family" ? family(k) : kind === "traveller" ? traveller(k) : kind === "couple" ? couple(k)
-          : kind === "kid" ? family(k + 50) : standing(look(k));
+          : kind === "kid" ? family(k + 50) : crowd(k);
         wait(g, kind === "kid" ? "family" : kind, d, sg, x, yaw, face);
       }
-      // And the people who get off here, on the train's platform (the right-hand one, but on the UP North the left:
-      // S.our), shown once the doors have been open a while. Most are walking to the stair and up it; anyone on
+      // And the people who get off here, on the train's platform (S.our: the left-hand one, but from 47th to 18th the
+      // island on its right), shown once the doors have been open a while. Most are walking to the stair and up it; anyone on
       // wheels heads back along the platform, to a lift that is out of shot behind the cab.
       const EXL = S.exits ? S.exits[S.our] : S.stop + 17, RUNL = S.stairRun || 11.5, TOPL = S.exitTop ?? (S.outdoor ? VIA_DECK : CEIL + 0.6);
       const leaveAt = (g, d, side, face, yaw, up) => { stand(g, "leaving", si, d, side, yaw, face, up, false, S.our); g.visible = false; leavers[si].push(g); };
       const leave = (g, d, x, face, yaw = 0) => leaveAt(g, d, platAt(S, S.our, x, d), face, yaw, PLAT_UP);
       // on the stair: an island's is down its middle; a side platform's at its back
       const stairLat = (d, u) => (S.stairLat ? S.stairLat(d) + (u - 0.5) * 1.2 : S.our * (6.7 + u * 1.2));
-      const walker = (k) => { const st = hash(k + 0.3) < 0.5 ? 1 : -1; return standing(look(k), [0.4 * st, -0.4 * st], true, st); };
       for (let i = 0; i < 7; i++) {                          // along the platform, drifting over to the foot of the stair
         const k = K + 200 + i, u = (i + 0.25 + 0.5 * hash(k + 0.1)) / 7;
         leave(i === 4 ? family(k) : walker(k), S.stop + 5.5 + u * (EXL - S.stop - 6.5), 2.3 + hash(k + 0.2) * 1.2 + u * 0.7, "ahead", (hash(k + 0.5) - 0.5) * 0.3);
@@ -2190,21 +3031,19 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
       });
       // (on an island, behind its stair: they're off to a lift, not down the stair)
       const offStair = (d, k) => (SPAN && d > SPAN[0] - 1 ? SPAN[0] - 1.5 - 2.5 * k : d);
-      leave(withBike(look(K + 231)), offStair(S.stop + 6, 0), 1.6, "behind");
-      leave(wheelchairUser(look(K + 232)), offStair(S.stop + 9.5, 1), 1.5, "behind", 0.1);
-      leave(withStroller(look(K + 233), pick(SKIN, K + 233.5)), offStair(S.stop + 13.5, 2), 1.7, "behind");
+      leave(withBike(K + 231), offStair(S.stop + 6, 0), 1.6, "behind");
+      leave(wheelchairUser(K + 232), offStair(S.stop + 9.5, 1), 1.5, "behind", 0.1);
+      leave(withStroller(K + 233), offStair(S.stop + 13.5, 2), 1.7, "behind");
     });
-  }
-
-  /* ---- "CHICAGO" down the casino's corner drum (no operator's name on the building) ---- */
-  if (ballysSite) {
-    const drum = textTexture(160, 1024, (c) => {
-      c.fillStyle = "#2a1c12"; c.fillRect(0, 0, 160, 1024);
-      c.fillStyle = "#fff6e0"; c.textAlign = "center"; c.textBaseline = "middle"; c.font = "700 120px Georgia, 'Times New Roman', serif";
-      [..."CHICAGO"].forEach((ch, i) => c.fillText(ch, 80, 90 + i * 140));
+    // Each station's people, merged into one mesh for each lot that comes and goes together (those waiting for our
+    // train, those waiting for the other, those who got off), coloured by vertex: a few draws instead of thousands.
+    ALL.forEach((S, si) => {
+      for (const lot of [boarders, farBoarders, leavers]) {
+        if (!lot[si].length) continue;
+        const m = bake(lot[si]); m.visible = lot[si][0].visible; scene.add(m);
+        lot[si].forEach((g) => scene.remove(g)); lot[si] = [m];
+      }
     });
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 21), new THREE.MeshBasicMaterial({ map: drum, side: THREE.DoubleSide }));
-    m.position.set(ballysSite.x0 + 12 - 11.6 * 0.82, 17, ballysSite.z0 + 14 + 11.6 * 0.57); m.rotation.y = -Math.PI / 2 - 0.6; scene.add(m);
   }
 
   /* ---- camera in the operator's seat, and the cab around it ---- */
@@ -2218,8 +3057,34 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
   };
   box(2.6, 0.5, 0.5, 0, -0.85, -0.9);                     // dash
   box(2.6, 0.3, 0.1, 0, 0.75, -0.9);                      // header
-  box(0.1, 1.6, 0.1, -1.0, 0.05, -0.9, cabMat, 0, -0.06);    // windscreen pillars
-  box(0.1, 1.6, 0.1, 1.0, 0.05, -0.9, cabMat, 0, 0.06);
+  // The windscreen's pillars and the cab's sides, where the train's own nose has them (assets/crosstowner-train.js,
+  // FLIRT_CAB): the windscreen wraps round each corner, back along the side as it rises (0.76 m behind the face at its
+  // foot, 1.38 m at its top), so from the seat its edges run up and out toward the corners of the view. Each pillar is
+  // the strip from there back 0.35 m (to the side window, with its lining); below the side window the cab's side runs
+  // back past the seat, and above it the side of the roof. Seen from an eye EYE_S behind the face and EYE_Y up (the
+  // seated operator's; the camera itself stays where it is, the cab drawn about it).
+  {
+    const EYE_S = 2.1, EYE_Y = 2.75, C = FLIRT_CAB, W = C.SIDE_WIN;
+    const P = (side, s2, y) => [side * C.halfWidth(s2, y), y - EYE_Y, s2 - EYE_S];   // nose (s back, y up) to the camera's frame
+    const sheet = (side, n, at) => {                       // a strip: at(i/n) gives its two edge points [s, y] at step i
+      const pos = [];
+      for (let i = 0; i < n; i++) {
+        const [a0, b0] = at(i / n), [a1, b1] = at((i + 1) / n);
+        const q = [a0, b0, b1, a1].map(([s2, y]) => P(side, s2, y));
+        pos.push(...q[0], ...q[1], ...q[2], ...q[0], ...q[2], ...q[3]);
+      }
+      const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+      const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: 0x0c0f10, fog: false, side: THREE.DoubleSide }));
+      m.renderOrder = 2; camera.add(m);
+    };
+    const FOOT = C.glassFoot(1.3), TOP = C.glassTop(1.3);
+    for (const side of [-1, 1]) {
+      sheet(side, 16, (u) => { const y = FOOT + (TOP - FOOT) * u, s2 = C.glassWrap(y); return [[s2, y], [s2 + 0.35, y]]; });   // the pillar
+      sheet(side, 8, (u) => { const s2 = C.glassWrap(FOOT) + (EYE_S + 0.6 - C.glassWrap(FOOT)) * u; return [[s2, 1.2], [s2, Math.min(W.y0, FOOT + 0.02)]]; });   // below the side window
+      sheet(side, 8, (u) => { const s2 = C.glassWrap(TOP) + (EYE_S + 0.6 - C.glassWrap(TOP)) * u; return [[s2, W.y1], [s2, 3.75]]; });   // above it
+      sheet(side, 8, (u) => { const y = W.y0 + (W.y1 - W.y0) * u; return [[W.back, y], [EYE_S + 0.6, y]]; });   // behind it, beside the seat
+    }
+  }
   // console: a hooded display in front of the operator, a lamp panel and the controller
   const TILT = -0.42;
   box(0.62, 0.3, 0.06, -0.3, -0.46, -1.0, trim, TILT);    // display housing
@@ -2237,9 +3102,9 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
   screen(0.3, 0.115, (c, w, h) => {                       // train status: the consist and its doors
     c.fillStyle = "#0b1a24"; c.fillRect(0, 0, w, h);
     c.fillStyle = "#8fa5b3"; c.font = "600 26px Helvetica, Arial, sans-serif"; c.fillText("X1  Highland Park", 18, 36);
-    for (let i = 0; i < 6; i++) {
-      c.fillStyle = "#1d3a4a"; c.fillRect(18 + i * 80, 70, 72, 46);
-      c.fillStyle = "#35d07f"; c.fillRect(26 + i * 80, 100, 14, 10); c.fillRect(60 + i * 80, 100, 14, 10);
+    for (let i = 0; i < 4; i++) {                        // the consist: four cars and their doors
+      c.fillStyle = "#1d3a4a"; c.fillRect(18 + i * 120, 70, 112, 46);
+      c.fillStyle = "#35d07f"; c.fillRect(32 + i * 120, 100, 14, 10); c.fillRect(102 + i * 120, 100, 14, 10);
     }
     c.fillStyle = "#16303d"; for (let i = 0; i < 4; i++) c.fillRect(18 + i * 122, 150, 110, 78);
     c.fillStyle = "#5f7887"; c.font = "500 20px Helvetica, Arial, sans-serif";
@@ -2381,6 +3246,8 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
   // running on through what is skipped), by when the people waiting have boarded and those getting off are on their way out.
   const DWELL = 6, DWELL_SHORT = 3, DWELL_REAL = 60, XFADE = 2.2, XFADE_SHORT = 1.2;
   const dwellOf = (S) => (FULL_STOPS.includes(S) ? DWELL : DWELL_SHORT), xfadeOf = (S) => (FULL_STOPS.includes(S) ? XFADE : XFADE_SHORT);
+  // what a stop takes on the clock: DWELL_REAL, but 30 s north of Clybourn (Steven, 2026-11-27)
+  const realDwellOf = (S) => (NORTH_STOPS.includes(S) ? 30 : DWELL_REAL);
   // The train (assumed: a 4-car FLIRT; typical figures, not from a data sheet). SI units.
   // top: 79 mph, the most Metra's lines allow (the FLIRT itself could do 160 km/h)
   const TRAIN = { mass: 145e3 * 1.06, effort: 200e3, power: 2.6e6, accel: 1.2, brake: 1.0, top: 79 / 2.23694, length: 75 };
@@ -2447,13 +3314,20 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
     const away = withFilmTime(fastest(LAST.stop, END, false));
     phases.push({ run: away, T: away.tf[away.n] });
   }
-  let tAcc = 0, realAcc = 0;
+  // The film opens on a shot from high over Jackson Park (SHOTS[4]), the train already standing at 59th; the ride, and
+  // everything timed to it, starts INTRO seconds in, the shot dissolving into the cab over its last INTRO_FADE.
+  const INTRO = 11, INTRO_FADE = 1.4;
+  let tAcc = INTRO, realAcc = 0;
   for (const ph of phases) {
     ph.t0 = tAcc; tAcc += ph.T; ph.real0 = realAcc;
-    if (ph.station) { ph.k = speedupAt(ph.station.stop); ph.xf = xfadeOf(ph.station); realAcc += DWELL_REAL; } else realAcc += ph.run.T;
+    if (ph.station) {
+      ph.real = realDwellOf(ph.station);
+      ph.k = Math.min(speedupAt(ph.station.stop), ph.real / ph.T);   // (the clock slows, rather than runs back, at a stop shorter than its time on screen)
+      ph.xf = xfadeOf(ph.station); realAcc += ph.real;
+    } else realAcc += ph.run.T;
   }
   const RIDE = tAcc, DURATION = Math.ceil(RIDE + REVEAL_TAIL + END_CREDITS);
-  const clampT = (t) => Math.min(Math.max(t, 0), RIDE - 1e-6);
+  const clampT = (t) => Math.min(Math.max(t, INTRO), RIDE - 1e-6);   // (through the opening shot, the moment the ride begins)
   const phaseAt = (t) => { t = clampT(t); let p = phases[0]; for (const q of phases) { if (q.t0 <= t) p = q; else break; } return p; };
   // where a run has got to, `tau` film seconds into it: [metres along the alignment, real m/s, real seconds into the run]
   const runAt = (p, tau) => {
@@ -2474,11 +3348,11 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
   const stopPhases = phases.filter((q) => q.station);
   const dwellMid = new Map(stopPhases.map((q) => [q.station, q.t0 + q.T / 2]));   // the middle of each stop's dissolve
   // the time of day, seconds after midnight: each run's real time, and at each stop the speed-up there, plus what its
-  // dissolve skips (so that every stop takes DWELL_REAL on the clock)
+  // dissolve skips (so that every stop takes its realDwellOf on the clock)
   const clockAt = (t) => {
     const p = phaseAt(t), tau = clampT(t) - p.t0;
     if (p.run) return ARRIVE_59 + p.real0 + runAt(p, tau)[2];
-    return ARRIVE_59 + p.real0 + p.k * tau + (DWELL_REAL - p.k * p.T) * smooth((tau - (p.T - p.xf) / 2) / p.xf);
+    return ARRIVE_59 + p.real0 + p.k * tau + (p.real - p.k * p.T) * smooth((tau - (p.T - p.xf) / 2) / p.xf);
   };
   // Show each station's platform as it is before (`after` false) or after its dissolve; `force` sets that for a station mid-dissolve.
   let peopleForce = null;
@@ -2489,242 +3363,31 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
     if (S === STN[2] || BOARD_FAR.includes(S)) for (const g of farBoarders[si]) g.visible = !after;   // the oncoming train's riders board it too
   });
 
-  /* ---- the train from outside (assumed: four single-deck cars in CrossTowner
-          teal, with a rounded cab at each end), only ever seen from outside the cab ---- */
-  const makeTrain = (lit) => {                            // lit: seen in the dark, so its windows and lamps glow
-    const train = new THREE.Group();
+  /* ---- the train from outside (a four-car Stadler FLIRT, Metra's battery train without its PowerPack, in CrossTowner
+          teal), only ever seen from outside the cab ---- */
+  const makeTrain = (lit, sign) => {                      // (assets/crosstowner-train.js); doors at our platforms' height
+    const train = buildCrossTowner({ THREE, lit, sill: PLAT_UP, sign });
     train.visible = false; scene.add(train);
-    const paint = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.55, metalness: 0.25, ...extra });
-    const body = paint(0xd3d9dc), dark = paint(0x1a2226, { roughness: 0.3 }), stripe = paint(0x0b7285),
-      roofMat = paint(0x9aa2a6, { roughness: 0.8 }), under = paint(0x23282b, { roughness: 0.9 });
-    const lampMat = new THREE.MeshBasicMaterial({ color: 0xfff4d6, fog: !lit });
-    // A headlamp's glow, as a camera would see it: a soft bloom that fades smoothly to nothing (a radial gradient on a
-    // sprite, so it always faces the lens), and a faint horizontal streak through it, as lens flare spreads in a camera.
-    const glowTex = (stops) => {
-      const cv = document.createElement("canvas"); cv.width = cv.height = 256;
-      const c = cv.getContext("2d"), g = c.createRadialGradient(128, 128, 0, 128, 128, 128);
-      stops.forEach(([at, a]) => g.addColorStop(at, `rgba(255,246,228,${a})`));
-      c.fillStyle = g; c.fillRect(0, 0, 256, 256);
-      const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; return t;
-    };
-    const glowMat = lit ? new THREE.SpriteMaterial({ map: glowTex([[0, 1], [0.08, 0.85], [0.25, 0.32], [0.55, 0.08], [1, 0]]), color: 0xfff3dc,
-      transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }) : null;
-    const streakMat = lit ? new THREE.SpriteMaterial({ map: glowTex([[0, 0.55], [0.3, 0.12], [1, 0]]), color: 0xdfe9ff,
-      transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }) : null;
-    const housingMat = new THREE.MeshStandardMaterial({ color: 0x14181a, roughness: 0.3, metalness: 0.6 });
-    const windowMat = lit ? new THREE.MeshBasicMaterial({ color: 0x8d8973 }) : dark;
-    // The windscreen never shows the cab behind it: it is a mirror. What it reflects is a painted
-    // surround (an equirectangular picture): in daylight the sky, brightest low in the south-east; in the
-    // tunnel, darkness and the lamps, which drawScene turns about the train so that they slide over the glass.
-    const glare = (() => {
-      const cv = document.createElement("canvas"); cv.width = 512; cv.height = 256;
-      const c = cv.getContext("2d");
-      if (lit) {
-        c.fillStyle = "#06090b"; c.fillRect(0, 0, 512, 256);
-        const blob = (x, y, rx, ry, a) => {
-          const g = c.createRadialGradient(0, 0, 0, 0, 0, 1);
-          g.addColorStop(0, `rgba(255,247,226,${a})`); g.addColorStop(0.55, `rgba(255,244,214,${a * 0.75})`); g.addColorStop(1, "rgba(255,240,205,0)");
-          c.save(); c.translate(x, y); c.scale(rx, ry); c.fillStyle = g; c.beginPath(); c.arc(0, 0, 1, 0, Math.PI * 2); c.fill(); c.restore();
-        };
-        const haze = c.createLinearGradient(0, 30, 0, 170);          // their light on the tunnel wall: the glass is never quite dark
-        haze.addColorStop(0, "rgba(255,244,214,0)"); haze.addColorStop(0.5, "rgba(255,244,214,0.12)"); haze.addColorStop(1, "rgba(255,244,214,0)");
-        c.fillStyle = haze; c.fillRect(0, 30, 512, 140);
-        for (let i = 0; i < 8; i++) {                              // the lamps: long soft bars, one after another round the horizon
-          const x = (i + 0.5) / 8 * 512;
-          blob(x, 96, 16, 60, 0.9); blob(x, 96, 6, 42, 1);
-          if (x < 40) blob(x + 512, 96, 16, 60, 0.9);
-        }
-      } else {
-        const g = c.createLinearGradient(0, 0, 0, 256);
-        g.addColorStop(0, "#6f9fd0"); g.addColorStop(0.42, "#dbe8f3"); g.addColorStop(0.5, "#f6f8f8"); g.addColorStop(0.56, "#8f9a9c"); g.addColorStop(1, "#4d5557");
-        c.fillStyle = g; c.fillRect(0, 0, 512, 256);
-      }
-      const tex = new THREE.CanvasTexture(cv);
-      tex.mapping = THREE.EquirectangularReflectionMapping; tex.colorSpace = THREE.SRGBColorSpace;
-      return tex;
-    })();
-    // In daylight it is dark glass, like the side windows, with a faint sheen of sky; in the tunnel, a dark mirror for the lamps.
-    const screenMat = lit ? new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 1, roughness: 0.06, envMap: glare, envMapIntensity: 1.3 })
-      : new THREE.MeshStandardMaterial({ color: 0x1a2329, metalness: 0, roughness: 0.12, envMap: glare, envMapIntensity: 0.3 });
-    train.userData.glass = screenMat;
-    const FLOOR = 1.05, TOP = 3.8, WIDE = 3.05, CAB = 3.4;        // body bottom and top above the rail, width, cab length
-    // The body's cross-section, bottom left round over the roof to bottom right ([x, y], metres): the sides tuck in
-    // toward the bottom (tumblehome), stand straight from 1.65 m, and turn over in a rounded shoulder to a low-arched roof.
-    const PROFILE = (() => {
-      const W = WIDE / 2, R = 0.42, SH = 3.3, half = [[W - 0.1, FLOOR], [W - 0.035, FLOOR + 0.28], [W, FLOOR + 0.6], [W, SH]];
-      for (let k = 1; k <= 7; k++) { const a = k / 7 * Math.PI / 2; half.push([W - R + R * Math.cos(a), SH + R * Math.sin(a)]); }
-      for (let j = 1; j <= 5; j++) { const x = (W - R) * (1 - j / 5); half.push([x, SH + R + 0.1 * (1 - (x / (W - R)) ** 2)]); }
-      return [...half.map(([x, y]) => [-x, y]), ...half.slice(0, -1).reverse()];   // up the left side to the crown, down the right
-    })();
-    const ARC = [0];
-    for (let j = 1; j < PROFILE.length; j++) ARC.push(ARC[j - 1] + Math.hypot(PROFILE[j][0] - PROFILE[j - 1][0], PROFILE[j][1] - PROFILE[j - 1][1]));
-    const ARC_ALL = ARC[ARC.length - 1];
-    // how far round the profile (0..1, from bottom left) the left side is at height y; the right side is 1 minus it
-    const vLeft = (y) => {
-      for (let j = 1; j < PROFILE.length; j++) if (PROFILE[j][1] >= y) {
-        const [, y0] = PROFILE[j - 1], [, y1] = PROFILE[j], f = (y - y0) / ((y1 - y0) || 1);
-        return (ARC[j - 1] + f * (ARC[j] - ARC[j - 1])) / ARC_ALL;
-      }
-      return 0.5;
-    };
-    // The profile swept from z = 0 to len, squeezed at each step by shape(u) -> [x scale, y scale about FLOOR]; caps at
-    // the ends as asked. u = z / len, v = how far round the profile: the side texture's coordinates.
-    const sweep = (len, nz, shape, caps = [true, true]) => {
-      const pos = [], uv = [], idx = [], np = PROFILE.length;
-      for (let i = 0; i <= nz; i++) {
-        const u = i / nz, [sx, sy] = shape(u);
-        PROFILE.forEach(([x, y], j) => { pos.push(x * sx, FLOOR + (y - FLOOR) * sy, u * len); uv.push(u, ARC[j] / ARC_ALL); });
-        if (i < nz) for (let j = 0; j < np - 1; j++) { const a = i * np + j, b = a + np; idx.push(a, a + 1, b, a + 1, b + 1, b); }
-      }
-      const g = new THREE.BufferGeometry();
-      g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
-      g.setIndex(idx); g.computeVertexNormals();
-      const parts = [g];
-      [0, 1].forEach((e) => {
-        if (!caps[e]) return;
-        const [sx, sy] = shape(e), c = new THREE.ShapeGeometry(new THREE.Shape(PROFILE.map(([x, y]) => V2(x * sx, FLOOR + (y - FLOOR) * sy))));
-        c.translate(0, 0, e * len);
-        const cuv = new Float32Array(c.attributes.position.count * 2);   // all of it at one spot of plain grey paint on the texture
-        for (let k = 0; k < cuv.length; k += 2) { cuv[k] = 0.004; cuv[k + 1] = vLeft(1.45); }
-        c.setAttribute("uv", new THREE.BufferAttribute(cuv, 2)); parts.push(c);
-      });
-      return parts;
-    };
-    // The side of a car, painted: grey, the teal band, a row of windows between pillars, and plug doors, the same on
-    // both sides. Its width is the car's length (u); its height runs round the profile (v). glow: the windows alone,
-    // white on black, for the lit train's emissive map.
-    const PX = 64, TH = 512;                                       // texture pixels per metre along the car; height
-    const sideTexture = (len, doors, glow = false) => {
-      const cv = document.createElement("canvas"); cv.width = Math.round(len * PX); cv.height = TH;
-      const c = cv.getContext("2d"), zx = (z) => (z / len) * cv.width;   // z from the car's start
-      const rows = (y0, y1) => [[(1 - vLeft(y1)) * TH, (1 - vLeft(y0)) * TH], [vLeft(y0) * TH, vLeft(y1) * TH]];   // [top, bottom] on each side
-      const band = (y0, y1, z0, z1, fill, r = 0) => rows(y0, y1).forEach(([t, b]) => {
-        c.fillStyle = fill; c.beginPath(); c.roundRect(zx(z0), t, zx(z1) - zx(z0), b - t, r); c.fill();
-      });
-      c.fillStyle = glow ? "#000" : "#d3d9dc"; c.fillRect(0, 0, cv.width, TH);
-      if (!glow) {
-        band(FLOOR, FLOOR + 0.16, 0, len, "#59636a");                 // a dark skirt along the bottom
-        band(1.7, 2.0, 0, len, "#0b7285");                            // the CrossTowner teal band
-        band(3.27, 3.31, 0, len, "#8f989d");                          // a rain strip over the windows
-      }
-      const doorAt = (z) => doors.some((d) => Math.abs(z - d) < 1.0);
-      for (let z = 0.9; z + 1.6 < len - 0.6; z += 2.2) {             // windows, two to a bay, between dark pillars
-        if (doorAt(z + 0.8)) continue;
-        band(2.42, 3.2, z, z + 1.65, glow ? "#fff" : "#1a2329", 7);
-        if (!glow) band(2.95, 3.18, z + 0.08, z + 1.57, "rgba(190,215,230,0.18)", 5);   // sky caught in the glass
-      }
-      for (const d of doors) {                                       // a pair of plug doors, each with a tall window
-        if (!glow) { band(FLOOR + 0.06, 3.22, d - 0.72, d + 0.72, "#59636a", 6); band(FLOOR + 0.1, 3.18, d - 0.68, d + 0.68, "#c9d0d3", 5); band(FLOOR + 0.1, 3.18, d - 0.015, d + 0.015, "#59636a"); }
-        for (const sg of [-1, 1]) band(2.2, 3.08, d + (sg < 0 ? -0.58 : 0.12), d + (sg < 0 ? -0.12 : 0.58), glow ? "#fff" : "#1a2329", 5);
-        if (!glow) band(1.75, 1.95, d - 0.68, d + 0.68, "#0b7285");   // the band runs on across the doors
-      }
-      if (!glow) {                                                   // the name, small, on the band near one end
-        rows(1.72, 1.98).forEach(([t, b]) => { c.fillStyle = "#e9f6f8"; c.font = `700 ${Math.round((b - t) * 0.72)}px Helvetica, Arial, sans-serif`; c.textBaseline = "middle"; c.fillText("CrossTowner", zx(1.2), (t + b) / 2 + 1); });
-      }
-      const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8;
-      return tex;
-    };
-    // Paint with a little sheen: it reflects the same painted surround as the windscreen, blurred by its roughness.
-    const bodyMat = (len, doors) => new THREE.MeshStandardMaterial({ map: sideTexture(len, doors), roughness: 0.4, metalness: 0.12, envMap: glare, envMapIntensity: lit ? 0.35 : 0.4, side: THREE.DoubleSide,
-      ...(lit ? { emissive: 0xfff0c8, emissiveIntensity: 0.55, emissiveMap: sideTexture(len, doors, true) } : {}) });
-    const plainBody = new THREE.MeshStandardMaterial({ color: 0xd3d9dc, roughness: 0.4, metalness: 0.12, envMap: glare, envMapIntensity: lit ? 0.35 : 0.4, side: THREE.DoubleSide });
-    const meshes = (geos, mat) => geos.map((g) => new THREE.Mesh(g, mat));
-    // A box that narrows and leans back toward the front in a quarter-ellipse: the rounded cab end.
-    const noseShape = (u) => { const f = Math.sqrt(1 - Math.min(u, 1) ** 2); return [0.42 + 0.58 * f, 0.62 + 0.38 * f]; };
-    const noseBox = (w, lo, hi, mat, proud = 0) => {
-      const g = new THREE.BoxGeometry(w, hi - lo, CAB + proud, 10, 4, 16);
-      g.translate(0, (lo + hi) / 2, (CAB + proud) / 2);
-      const p = g.attributes.position;
-      for (let k = 0; k < p.count; k++) {
-        const [sx, sy] = noseShape(p.getZ(k) / (CAB + proud));
-        p.setX(k, p.getX(k) * sx);
-        p.setY(k, FLOOR + (p.getY(k) - FLOOR) * sy);
-      }
-      g.computeVertexNormals();
-      return new THREE.Mesh(g, mat);
-    };
-    const cabEnd = () => {                                        // origin where the cab meets the car body, +z outward
-      const end = new THREE.Group();
-      meshes(sweep(CAB, 24, noseShape, [false, true]), plainBody).forEach((m) => end.add(m));   // the nose, the body's own section carried round
-      end.add(noseBox(WIDE + 0.06, 2.45, 3.3, screenMat, 0.03));  // wraparound windscreen
-      end.add(noseBox(WIDE + 0.06, 1.7, 2.0, stripe, 0.03));
-      end.add(noseBox(WIDE - 0.3, 0.2, FLOOR, under, -0.5));
-      for (const x of [-0.42, 0.42]) {
-        // a dark housing with a slim LED headlamp in it, and a small marker lamp outboard
-        const hs = rounded(0.4, 0.17, 0.08, 0.04, housingMat); hs.position.set(x, 1.38, CAB + 0.01); end.add(hs);
-        const led = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.06, 0.02), lampMat); led.position.set(x, 1.39, CAB + 0.055); end.add(led);
-        const mk = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.04, 0.02), lampMat); mk.position.set(x * 1.42, 1.39, CAB - 0.02); end.add(mk);
-        if (lit) {
-          const g = new THREE.Sprite(glowMat); g.scale.set(1.25, 1.25, 1); g.position.set(x, 1.39, CAB + 0.25); end.add(g);
-          const st = new THREE.Sprite(streakMat); st.scale.set(3.2, 0.09, 1); st.position.set(x, 1.39, CAB + 0.26); end.add(st);
-        }
-      }
-      return end;
-    };
-    // a box with rounded edges, w x h x l, centred
-    const rounded = (w, h, l, r, mat) => {
-      const sh = new THREE.Shape(), a = w / 2 - r, b = h / 2 - r;
-      sh.moveTo(-a, -h / 2); sh.lineTo(a, -h / 2); sh.quadraticCurveTo(w / 2, -h / 2, w / 2, -b); sh.lineTo(w / 2, b); sh.quadraticCurveTo(w / 2, h / 2, a, h / 2);
-      sh.lineTo(-a, h / 2); sh.quadraticCurveTo(-w / 2, h / 2, -w / 2, b); sh.lineTo(-w / 2, -b); sh.quadraticCurveTo(-w / 2, -h / 2, -a, -h / 2);
-      const g = new THREE.ExtrudeGeometry(sh, { depth: l - 2 * r, bevelEnabled: true, bevelThickness: r, bevelSize: r * 0.6, bevelSegments: 4, curveSegments: 6 });
-      g.translate(0, 0, -(l - 2 * r) / 2); g.computeVertexNormals();
-      return new THREE.Mesh(g, mat);
-    };
-    const rod = (a, b, r, mat) => {                                // a round bar from a to b
-      const A = new THREE.Vector3(...a), d = new THREE.Vector3(...b).sub(A), m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, d.length(), 10), mat);
-      m.position.copy(A).addScaledVector(d, 0.5); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()); return m;
-    };
-    const roofGrey = paint(0x8f979b, { roughness: 0.7 }), fanMat = paint(0x2a3034, { roughness: 0.6 }), wheelMat = paint(0x3a3f42, { roughness: 0.5, metalness: 0.6 });
-    const ROOF = PROFILE.reduce((m, [, y]) => Math.max(m, y), 0);  // the crown of the roof
-    for (let i = 0; i < CARS; i++) {
-      const car = new THREE.Group();                              // origin on the rail at the car's middle, +z forward
-      const cabF = i === 0, cabR = i === CARS - 1;
-      const len = CAR_LEN - (cabF ? CAB : 0) - (cabR ? CAB : 0), zc = ((cabR ? CAB : 0) - (cabF ? CAB : 0)) / 2;
-      const part = (w, h, l, y, mat, z = 0, x = 0) => {
-        const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, l), mat); m.position.set(x, y, z); car.add(m); return m;
-      };
-      const doors = [len * 0.25, len * 0.75];                      // two doors a side, a quarter of the way in from each end
-      meshes(sweep(len, 1, () => [1, 1], [!cabR, !cabF]), bodyMat(len, doors)).forEach((m) => { m.position.z = zc - len / 2; car.add(m); });
-      // underneath: two bogies, each a frame on four wheels, and the equipment slung between them
-      for (const bz of [CAR_LEN / 2 - 3.4, -CAR_LEN / 2 + 3.4]) {
-        part(2.2, 0.38, 2.9, 0.62, under, bz);
-        for (const wz of [-1.05, 1.05]) for (const wx of [-0.74, 0.74]) {
-          const w = new THREE.Mesh(new THREE.CylinderGeometry(0.43, 0.43, 0.14, 24), wheelMat); w.rotation.z = Math.PI / 2; w.position.set(wx, 0.43, bz + wz); car.add(w);
-        }
-      }
-      part(2.5, 0.55, CAR_LEN - 9.2 - (cabF || cabR ? CAB : 0) * 0.4, 0.8, under, zc * 0.4);
-      if (!cabR) part(2.1, 2.5, CAR_GAP + 0.25, 2.3, under, -CAR_LEN / 2 - CAR_GAP / 2);   // the gangway's bellows, to the next car
-      // on the roof: two rounded air-conditioning units with their fans, and on alternate cars a single-arm pantograph
-      for (const z of [-len / 4, len / 4]) {
-        const ac = rounded(1.9, 0.34, 3.2, 0.12, roofGrey); ac.position.set(0, ROOF + 0.15, zc + z); car.add(ac);
-        for (const fz of [-0.75, 0.75]) { const f = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.36, 0.03, 24), fanMat); f.position.set(0, ROOF + 0.33, zc + z + fz); car.add(f); }
-      }
-      if (i % 2 === 0) {
-        const z = zc - len / 2 + 2.6, y0 = ROOF + 0.12;
-        part(1.3, 0.1, 0.9, y0, under, z);                         // its base, on insulators
-        for (const sx of [-0.5, 0.5]) for (const sz of [-0.35, 0.35]) part(0.1, 0.16, 0.1, y0 - 0.08, fanMat, z + sz, sx);
-        const knee = [0, y0 + 0.75, z + 1.25], head = [0, 5.42, z + 0.15];
-        car.add(rod([0, y0 + 0.05, z - 0.3], knee, 0.045, under), rod(knee, head, 0.03, under));   // lower and upper arms
-        car.add(rod([0, y0 + 0.05, z - 0.1], [0, y0 + 0.62, z + 1.0], 0.015, under));               // the link that keeps the head level
-        car.add(rod([-0.85, 5.45, z + 0.15], [0.85, 5.45, z + 0.15], 0.035, under));                // the pan, on the wire
-      }
-      if (cabF) { const e = cabEnd(); e.position.z = CAR_LEN / 2 - CAB; car.add(e); }
-      if (cabR) { const e = cabEnd(); e.position.z = -CAR_LEN / 2 + CAB; e.rotation.y = Math.PI; car.add(e); }
-      car.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
-      train.add(car);
-    }
     return train;
   };
-  const train = makeTrain(false), oncoming = makeTrain(true);     // oncoming: stands in for ours in the dark shot (1)
-  const meetTrain = makeTrain(true);                              // the train the other way, which meets ours at Union Station
-  const southbound = makeTrain(false);                            // in the closing shot, a train the other way pulls in to Chicago/Halsted
+  // ...and the CrossTowner double-decker (a four-car KISS, assets/kiss-train/), the trains seen the other way and on
+  // the other lines; its pantograph raised to the wire (WIRE_OUT, or WIRE_IN in the tunnel)
+  const makeKiss = (lit, sign, wire = 5.7) => {
+    const k = buildKiss({ THREE, lit, sign, wire });
+    k.visible = false; scene.add(k);
+    return k;
+  };
+  const TO_NORTH = "X1 Highland Park", TO_SOUTH = "X1 South Chicago";   // the destination signs, each way
+  const train = makeTrain(false, TO_NORTH), oncoming = makeTrain(true, TO_NORTH);   // oncoming: stands in for ours in the dark shot (1)
+  const meetTrain = makeKiss(true, TO_SOUTH, 5.3);                // the train the other way, which meets ours at Union Station
+  const southbound = makeKiss(false, TO_SOUTH);                   // in the closing shot, a train the other way pulls in to Chicago/Halsted
   shadowCatcher = along(0, LENGTH, -4.3, 0.045, 4.3, 0.045, new THREE.ShadowMaterial({ opacity: 0.32, depthWrite: false }), 4);
   shadowCatcher.receiveShadow = true; shadowCatcher.visible = false;
   // Stand a train on a track with its nose at `front`, heading up (dir 1) or down (dir -1) the alignment.
   const placeTrain = (cars, front, side, dir) => {
     const sd = sideFn(side);
-    cars.children.forEach((car, i) => {
-      const f = front - dir * i * (CAR_LEN + CAR_GAP), g = f - dir * CAR_LEN;
+    cars.children.forEach((car) => {                              // each car from its front joint (or coupler) to its back one
+      const f = front - dir * car.userData.from, g = f - dir * car.userData.len;
       const a = at(f, sd(f)).p, b = at(g, sd(g)).p;
       car.position.copy(a).add(b).multiplyScalar(0.5);
       car.lookAt(a);
@@ -2732,8 +3395,8 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
   };
   // A train the other way, on the other track: it brakes into Union Station's far platform as ours pulls in (its
   // service brake, TRAIN.brake, at SPEEDUP), stands beside ours through the stop, and is still there as ours leaves.
-  // It stops with its tail at the north end of the platform, a car or so ahead of our cab, so the operator sees it there.
-  const MEET_D = STN[2].platTo - 3 - TRAIN_LONG, ON_BRAKE = 6.0;  // where its nose stops; seconds of braking (film)
+  // It stops filling the platform (its tail just past the north end), beside and ahead of our cab, so the operator sees it there.
+  const MEET_D = STN[2].platTo + 0.5 - KISS_LENGTH, ON_BRAKE = 6.0;   // where its nose stops; seconds of braking (film)
   const ON_A = TRAIN.brake * SPEEDUP * SPEEDUP, ON_V = ON_A * ON_BRAKE;   // film m/s^2, and its film speed before braking
   let MEET_T = 0;                                                 // when it stops (set once the timing below exists)
   const oncomingAt = (t) => {
@@ -2763,6 +3426,8 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
     { from: timeAtDist(PORTAL2 - 120), to: HERO_END, fadeOut: HERO_FADE },
     // 3: the Webster Ave bridge from above, cut to as the train nears it and cut away once its tail is over
     { from: timeAtDist(BRIDGE.d0 - 140), to: timeAtDist(BRIDGE.d1 + TRAIN_LONG + 15), cut: true },
+    // 4: the opening, from high over Jackson Park south of 59th, past the Obama Center, down into the station
+    { from: -1, to: INTRO, fadeOut: INTRO_FADE, intro: true },
   ];
   const shotAt = (t) => SHOTS.findIndex((s) => t > s.from && t < s.to);
   const airWeight = (t) => {
@@ -2773,10 +3438,10 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
   MEET_T = arrive(STN[2]) + 0.8;                                  // a moment after ours has stopped
   const MEET_GONE = arrive(STN[2]) + DWELL + 10;                  // by when ours has left it well behind
 
-  /* ---- the other railways' trains, met at our stops (at 8x a train passing on the open line is gone in a blink). Their
-          looks are assumed, from the real fleets: the Metra Electric's Highliners (four stainless bilevel EMU cars), a
-          South Shore Line train (six single-level stainless EMU cars with orange accents) and a UP North push-pull train
-          (a cab car leading south, four gallery cars, and a Metra-blue diesel pushing at the north end) ---- */
+  /* ---- the other trains met at our stops (at 8x a train passing on the open line is gone in a blink): on the Metra
+          Electric and the UP North, CrossTowner double-deckers (makeKiss); at 27th, on the outer eastern track (an
+          express track, as the South Shore's trains use), a FLIRT like ours; and overhead before Addison/Lincoln a CTA Brown Line train (cta: eight
+          stainless cars) ---- */
   const makeConsist = (kind) => {
     const g = new THREE.Group(); g.visible = false; scene.add(g);
     const mat = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.45, metalness: 0.4, ...extra });
@@ -2807,24 +3472,9 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
       }
       return c;
     };
-    const L = 25.9;
-    if (kind === "highliner") for (let i = 0; i < 4; i++) g.add(car({ len: L, h: 4.85, rows: [2.25, 3.75], cab: i === 0 ? 1 : i === 3 ? -1 : 0, pan: true, doors: [-0.17, 0.17] }));
-    if (kind === "southshore") for (let i = 0; i < 6; i++) g.add(car({ len: L, h: 4.15, rows: [2.75], stripe: { y: 1.75, color: 0xe8731c }, cab: i === 0 ? 1 : i === 5 ? -1 : 0, pan: true, doors: [-0.42, 0.42] }));
-    if (kind === "upnorth") {
-      for (let i = 0; i < 5; i++) g.add(car({ len: L, h: 4.8, rows: [2.2, 3.7], cab: i === 0 ? 1 : 0, doors: [0] }));
-      g.add(car({ len: 21, h: 4.6, body: mat(0x1d4a8c, { metalness: 0.3 }), rows: [3.7], stripe: { y: 2.2, color: 0xc6cbce }, cab: -1 }));
-    }
+    if (kind === "cta") for (let i = 0; i < 8; i++) g.add(car({ len: 14.6, h: 3.75, rows: [2.35], stripe: { y: 1.75, color: 0x1f4e9c }, cab: i === 0 ? 1 : i === 7 ? -1 : 0, doors: [-0.28, 0, 0.28] }));
     g.userData.len = g.children.reduce((sum, c) => sum + c.userData.len + 0.9, -0.9);
     return g;
-  };
-  // Stand a consist on a track (side: a function of d), its nose at `front`, heading up (dir 1) or down (dir -1) the line.
-  const placeConsist = (g, front, side, dir) => {
-    let off = 0;
-    for (const car of g.children) {
-      const f = front - dir * off, r = f - dir * car.userData.len, a = at(f, side(f)).p, b = at(r, side(r)).p;
-      car.position.copy(a).add(b).multiplyScalar(0.5); car.lookAt(a);
-      off += car.userData.len + 0.9;
-    }
   };
   // Where a train's nose is at film time t. Arriving (`ts`), it brakes to stop at `stopD` (its service brake at the
   // speed-up there), stands, and from `tl` pulls away; passing (`pass`), it runs through at `mph` throughout.
@@ -2839,22 +3489,58 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
     const at8 = (S, mph) => { const k = speedupAt(S.stop); return { v: mph / 2.23694 * k, a: TRAIN.brake * k * k, acc: 0.6 * k * k }; };
     const shown = (S) => [arrive(S) - 12, arrive(S) + phases.find((q) => q.station === S).T + 8];
     const list = [];
-    const add = (kind, m) => { const train = makeConsist(kind); list.push({ train, ...m, len: train.userData.len }); };
-    // 59th: a southbound Highliner at the western pair's island, beside us as the film opens, pulling out past us
-    add("highliner", { dir: -1, track: otherAt, ...at8(FIRST, 40), ts: -Infinity, tl: 4.6, vis: [0, 16] });
-    // McCormick Place: a southbound Highliner draws in on the far side of our island; those waiting there get on
-    add("highliner", { dir: -1, track: otherAt, ...at8(McC, 50), ts: arrive(McC) + 0.5, tl: Infinity, vis: shown(McC) });
-    // 27th: a South Shore train runs through on the outer western track
-    add("southshore", { dir: -1, track: (d) => meSide(0, d), ...at8(McC27, 50), pass: McC27.stop + 20, tp: arrive(McC27) + 1.3, vis: shown(McC27) });
-    // Addison/Lincoln: a UP North express runs through southbound on the other track
-    add("upnorth", { dir: -1, track: otherAt, ...at8(ADD, 55), pass: ADD.stop, tp: arrive(ADD) + 1.4, vis: shown(ADD) });
-    // Rogers Park: a southbound UP North train draws in at the east platform as the film ends; its riders get on
-    add("upnorth", { dir: -1, track: otherAt, ...at8(LAST, 45), ts: arrive(LAST) + 0.8, tl: Infinity, vis: [arrive(LAST) - 12, DURATION] });
+    const add = (kind, m) => {
+      const train = kind === "kiss" ? makeKiss(false, TO_SOUTH) : makeTrain(false, TO_SOUTH);
+      list.push({ train, ...m, len: kind === "kiss" ? KISS_LENGTH : TRAIN_LONG });
+    };
+    // (each on its own left, the track to the east of ours)
+    // 59th: a southbound double-decker at the eastern pair's island, across the tracks as the film opens, pulling out past us
+    add("kiss", { dir: -1, track: otherAt, ...at8(FIRST, 40), ts: -Infinity, tl: 4.6, vis: [0, 16] });
+    // McCormick Place: a southbound double-decker draws in on the far side of our island; those waiting there get on
+    add("kiss", { dir: -1, track: otherAt, ...at8(McC, 50), ts: arrive(McC) + 0.5, tl: Infinity, vis: shown(McC) });
+    // 27th: a FLIRT like ours runs through southbound on the outer eastern track, beyond the island (assumed: an express
+    // track, as the South Shore's trains use)
+    add("flirt", { dir: -1, track: (d) => meSide(2, d), ...at8(McC27, 50), pass: McC27.stop + 20, tp: arrive(McC27) + 1.3, vis: shown(McC27) });
+    // Addison/Lincoln: a double-decker runs through southbound on the other track
+    add("kiss", { dir: -1, track: otherAt, ...at8(ADD, 55), pass: ADD.stop, tp: arrive(ADD) + 1.4, vis: shown(ADD) });
+    // Rogers Park: a southbound double-decker draws in at the east platform as the film ends; its riders get on
+    add("kiss", { dir: -1, track: otherAt, ...at8(LAST, 45), ts: arrive(LAST) + 0.8, tl: Infinity, vis: [arrive(LAST) - 12, DURATION] });
     // The standing ones stop with their tail at the platform's far (north) end, so the cab sees them there
     for (const [m, S] of [[list[0], FIRST], [list[1], McC], [list[4], LAST]]) m.stopD = S.platTo - 3 - m.len;
     return list;
   })();
   const BOARD_FAR = [McC, LAST];                                  // where those on the far platform board the train that meets ours
+  // A Brown Line train inbound overhead before Addison/Lincoln (CTA-style: eight stainless cars), crossing above the line
+  // a little ahead of our cab, at 35 mph (and the speed-up there), along OSM's track.
+  const brownTrain = makeConsist("cta");
+  const BROWN_RUN = (() => {
+    const { pts, cum } = BROWN_IN;
+    let k = 0, best = Infinity, dc = 0;                             // where it crosses our line: its nearest point to it
+    for (let i = 0; i < pts.length; i++) for (let d = NORTH_STOPS[0].d - 800; d < NORTH_STOPS[0].d; d += 4) {
+      const q = at(d).p, dd = Math.hypot(q.x - pts[i].x, q.z - pts[i].z);
+      if (dd < best) { best = dd; k = i; dc = d; }
+    }
+    const v = 35 / 2.23694 * speedupAt(dc);
+    return { sCross: cum[k], tCross: timeAtDist(dc - 120), v };
+  })();
+  const brownAlong = (s) => {                                    // a point s metres along the inbound track, and its heading
+    const { pts, cum } = BROWN_IN;
+    let i = 1;
+    while (i < cum.length - 1 && cum[i] < s) i++;
+    const f = Math.min(Math.max((s - cum[i - 1]) / (cum[i] - cum[i - 1]), 0), 1);
+    return pts[i - 1].clone().lerp(pts[i], f);
+  };
+  const placeBrown = (t) => {
+    const len = brownTrain.userData.len, head = BROWN_RUN.sCross + len / 2 + (t - BROWN_RUN.tCross) * BROWN_RUN.v;
+    brownTrain.visible = head - len > 0 && head < BROWN_IN.len && Math.abs(t - BROWN_RUN.tCross) < 8;
+    if (!brownTrain.visible) return;
+    let off = 0;
+    for (const c of brownTrain.children) {
+      const a = brownAlong(head - off), b = brownAlong(head - off - c.userData.len);
+      c.position.copy(a).add(b).multiplyScalar(0.5); c.lookAt(a);
+      off += c.userData.len + 0.9;
+    }
+  };
   const airCam = new THREE.PerspectiveCamera(40, width / height, 1, 10000);
   scene.add(airCam);
   const airLamp = new THREE.PointLight(0xfff0d8, 0, 70, 1.4);     // lights the tunnel and the train's face in shot 1
@@ -2874,27 +3560,38 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
   const HIGH = chAt.clone().addScaledVector(loopward, -950).setY(380);
   const HIGH_LOOK = chAt.clone().addScaledVector(loopward, 900).setY(60);
   const ease = (x) => { x = Math.min(Math.max(x, 0), 1); return x * x * x * (x * (x * 6 - 15) + 10); };
+  // The opening shot's flight: from 240 m up, 650 m south of where the plan begins (over Woodlawn and the south of
+  // Jackson Park), looking at the Obama Center's tower; past it to the west, coming down; then in over 59th St's
+  // platforms to just behind and above the operator's seat, looking where the cab looks (so it dissolves into it).
+  const INTRO_FLIGHT = (() => {
+    const eye = distAt(INTRO), tower = at(40, 229).p.setY(35);
+    const pos = [atFar(-650, 120).p.setY(240), atFar(-260, 70).p.setY(150), at(eye - 95, 18, 38).p, at(eye - 9, sideAt(eye) + 0.9, 4.0).p];
+    const look = [tower, at(150, 120).p.setY(12), at(eye, 0, 3).p, at(eye + 30, sideAt(eye + 30) - 0.2, 1.75).p];
+    return { pos: new THREE.CatmullRomCurve3(pos, false, "centripetal"), look: new THREE.CatmullRomCurve3(look, false, "centripetal") };
+  })();
 
   function drawScene(t, shot = -1) {
     const dist = distAt(t), air = shot >= 0, dark = air && !!SHOTS[shot].dark;
     setPeople(t);
     const on = oncomingAt(t);
-    meetTrain.visible = t > MEET_T - 14 && t < MEET_GONE && on + TRAIN_LONG < PORTAL2 - 30;
+    meetTrain.visible = t > MEET_T - 14 && t < MEET_GONE && on + KISS_LENGTH < PORTAL2 - 30;
+    placeBrown(t);
     for (const m of OTHERS) {
       const f = frontAt(m, t), r = f - m.dir * m.len;              // its nose and its tail
       m.train.visible = t >= m.vis[0] && t <= m.vis[1] && Math.abs(f - dist) < 1500 && Math.min(f, r) > 0 && Math.max(f, r) < LENGTH;
-      if (m.train.visible) placeConsist(m.train, f, m.track, m.dir);
+      if (m.train.visible) placeTrain(m.train, f, m.track, m.dir);
     }
-    if (meetTrain.visible) { placeTrain(meetTrain, on, otherAt, -1); meetTrain.userData.glass.envMapRotation.y = on / 26; }
+    if (meetTrain.visible) placeTrain(meetTrain, on, otherAt, -1);
     // 0 in daylight, 1 underground: the eyes (and the lights) adjust as the cab passes each portal
-    const under = air ? +dark : smooth((dist - (PORTAL - 14)) / 40) * (1 - smooth((dist - (PORTAL2 - 34)) / 40));
+    let under = air ? +dark : smooth((dist - (PORTAL - 14)) / 40) * (1 - smooth((dist - (PORTAL2 - 34)) / 40));
+    if (!air && COVER[0] < COVER[1]) under = Math.max(under, 0.7 * smooth((dist - (COVER[0] - 12)) / 25) * (1 - smooth((dist - (COVER[1] - 10)) / 25)));   // under McCormick Place
     scene.fog.color.copy(HAZE).lerp(DARK, under);
     scene.fog.density = HAZE_DENSITY + (0.0105 - HAZE_DENSITY) * under;
     hemi.intensity = 1.5 * (1 - under); sun.intensity = 2.2 * (1 - under);
     head.intensity = 30 + 230 * under;
     camera.visible = !air; train.visible = air && !dark;         // the cab interior and the train's outside never share a frame
     const sbFront = southboundAt(t);
-    southbound.visible = shot === 2 && sbFront + TRAIN_LONG < LENGTH - 5;
+    southbound.visible = shot === 2 && sbFront + KISS_LENGTH < LENGTH - 5;
     if (southbound.visible) placeTrain(southbound, sbFront, otherAt, -1);
     airLamp.intensity = dark ? 30 : 0;
     if (air) {
@@ -2905,15 +3602,23 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
         const u = (t - S.from) / (S.to - S.from);                 // a slow push in over the shot
         const q = at(PORTAL + 30 - 10 * u, -27 + 4 * u);
         airCam.position.set(q.p.x, 40 - 6 * u, q.p.z);
-        airCam.lookAt(at(PORTAL - 34 + 10 * u, OFF, 1).p);
+        const look = PORTAL - 34 + 10 * u;
+        airCam.lookAt(at(look, sideAt(look), 1).p);
       } else if (dark) {
-        // a few metres ahead of the nose and a little to one side, drawing slowly closer; the lit train stands in for ours
-        const u = (t - S.from) / (S.to - S.from), front = dist + NOSE;
+        // a few metres ahead of the nose and a little to one side (its right, over the middle of the bore), drawing slowly
+        // closer; the lit train stands in for ours
+        const u = (t - S.from) / (S.to - S.from), front = dist + NOSE, s = sideAt(front);
         airCam.fov = 46;
-        airCam.position.copy(at(front + 10 - 3 * u, OFF - 2.4 + 0.6 * u, 2.9).p);
-        airCam.lookAt(at(front - 1.5, OFF, 2.5).p);
-        placeTrain(oncoming, front, OFF, 1);
+        airCam.position.copy(at(front + 10 - 3 * u, s + 2.4 - 0.6 * u, 2.9).p);
+        airCam.lookAt(at(front - 1.5, s, 2.5).p);
+        placeTrain(oncoming, front, sideAt, 1);
         oncoming.userData.glass.envMapRotation.y = dist / 26;     // the lamps' reflections cross the glass as the train moves
+      } else if (SHOTS[shot].intro) {
+        const u = ease(Math.min(1, t / (INTRO - 0.1)));
+        airCam.fov = 40 + 18 * smooth(u * 1.4 - 0.4);           // widening toward the cab's, for the dissolve
+        airCam.position.copy(INTRO_FLIGHT.pos.getPointAt(u));
+        airCam.lookAt(INTRO_FLIGHT.look.getPointAt(u));
+        scene.fog.density = HAZE_DENSITY * (0.55 + 0.45 * u);    // a clearer day from up high
       } else if (shot === 3) {
         // high over the east bank, a little south of the bridge, drifting toward it as the train crosses
         const u = (t - S.from) / (S.to - S.from), mid = (BRIDGE.d0 + BRIDGE.d1) / 2;
@@ -2941,7 +3646,7 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
         if (frame !== shadowFrame) { renderer.shadowMap.needsUpdate = true; shadowFrame = frame; }
       }
       shadowCatcher.visible = !dark;
-      renderer.render(scene, airCam);
+      if (cubeShot) cubeShot(); else renderer.render(scene, airCam);   // (or the web page's 360 view: see cube)
       shadowCatcher.visible = false;
       return;
     }
@@ -2961,7 +3666,7 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
           stations, how far the train has come, and where it is now ---- */
   let drawMini = () => {}, drawOpening = () => {};
   // when the opening map does what (film seconds): fades in, shows today's terminals, draws the tunnel on, shrinks into the corner
-  const OPENING = { in: 0.2, today: 0.9, tunnel: 4.9, drawn: 7.4, shrink: 8.6, done: 9.9 };
+  const OPENING = Object.fromEntries(Object.entries({ in: 0.2, today: 0.9, tunnel: 4.9, drawn: 7.4, shrink: 8.6, done: 9.9 }).map(([k, v]) => [k, INTRO + v]));
   if (mini) {
     const { img, geo } = mini, K = width / 1280;                 // sizes below are for a 1280-wide frame
     const M = geo.win_px, MS = 250 * K, PS = MS / M, PAD = 6 * K;   // the window is 250 px at 1280 wide, whatever the plate's own resolution
@@ -2978,12 +3683,21 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
     // Beyond the north portal the line joins the "Low Line" (the existing tracks) and carries on north to Clybourn.
     const lonLatPx = (lon, lat) => platePx((lon - city.origin[0]) * KX, (city.origin[1] - lat) * KY);
     const lowJoin = lonLatPx(-87.645813, 41.894225);              // "Low Line connection" in lines.js
+    // The landmarks the ride passes, each labelled on the side away from the line: [name, lon, lat]
+    const SIGHTS = [["Obama Center", -87.585879, 41.786262], ["Museum of Science and Industry", -87.5829253, 41.7905495],
+      ["McCormick Place", -87.6155, 41.8524], ["Soldier Field", -87.6167, 41.8623], ["Bally's Chicago", -87.6448, 41.8953]]
+      .map(([name, lon, lat]) => {
+        const p = lonLatPx(lon, lat);
+        let near = line[0];
+        for (const q of line) if (Math.hypot(q[0] - p[0], q[1] - p[1]) < Math.hypot(near[0] - p[0], near[1] - p[1])) near = q;
+        return { name, p, right: p[0] >= near[0] };
+      });
     const rr = (x, y, w, h, r) => { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); };
     // Downtown Metra's four terminals (stop positions from Metra's GTFS), where its trains end their runs today.
     // Each label sits to the east of its dot, clear of the new line (which passes to the west, under Clinton St).
     const TERMINALS = [["Ogilvie", -87.6405556, 41.8822222, -4], ["Union Station", -87.6388889, 41.8788889, 2],
       ["LaSalle St", -87.6322222, 41.8763889, 4], ["Millennium", -87.6230556, 41.8841667, 0]]
-      .map(([name, lon, lat, dy]) => ({ name, p: lonLatPx(lon, lat), dy }));
+      .map(([name, lon, lat, dy]) => ({ name, p: lonLatPx(lon, lat), dy, onTunnel: name === "Ogilvie" || name === "Union Station" }));
     const iTun0 = Math.round(RAMP_START / MSTEP), iTun1 = Math.min(Math.round(RAMP_END / MSTEP), line.length - 1);   // the new piece: ramp to ramp
     // The window onto the plate the corner minimap shows: MS square, the train in the middle of it.
     const follow = (dist) => {
@@ -2995,7 +3709,7 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
     // minimap's own line, stations and progress; existing, the tracks the line joins at each end (the opening
     // map); tunnel, how much of the new tunnel is drawn on, bold (0..1); terminals, how many of the four (0..4).
     const drawMap = (v, dist, o) => {
-      const { alpha = 1, route = 1, existing = 0, tunnel = 0, terminals = 0 } = o;
+      const { alpha = 1, route = 1, existing = 0, tunnel = 0, terminals = 0, xfer = 0 } = o;
       const sx = (p) => v.x + (p[0] - v.sx) * v.w / v.sw, sy = (p) => v.y + (p[1] - v.sy) * v.h / v.sh;
       const f = Math.min(dist / MSTEP, line.length - 1.001), i = Math.floor(f), u = f - i;
       const cx = line[i][0] + (line[i + 1][0] - line[i][0]) * u, cy = line[i][1] + (line[i + 1][1] - line[i][1]) * u;
@@ -3029,6 +3743,17 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
         path(line); stroke("rgba(255,255,255,0.9)", 7);           // the whole line: a light casing...
         path(line); stroke("rgba(84,104,118,0.85)", 3.5);         // ...and a grey line
         path([...line.slice(0, i + 1), [cx, cy]]); stroke("#0B7285", 5.5);   // travelled so far, in CrossTowner teal
+        for (const S of SIGHTS) {                                  // landmarks: an amber diamond and its name
+          const x = sx(S.p), y = sy(S.p), r = 5.5 * K;
+          if (x < v.x - 150 * K || x > v.x + v.w + 150 * K || y < v.y - 20 * K || y > v.y + v.h + 20 * K) continue;
+          ctx.beginPath(); ctx.moveTo(x, y - r); ctx.lineTo(x + r, y); ctx.lineTo(x, y + r); ctx.lineTo(x - r, y); ctx.closePath();
+          ctx.fillStyle = "#d9822b"; ctx.fill(); ctx.lineWidth = 2 * K; ctx.strokeStyle = "#fff"; ctx.stroke();
+          ctx.font = `700 ${10.5 * K}px Helvetica, Arial, sans-serif`;
+          const tw = ctx.measureText(S.name).width;                 // (below it instead, kept inside the window, if it would run off)
+          const fits = S.right ? x + 9 * K + tw < v.x + v.w - 6 * K : x - 9 * K - tw > v.x + 6 * K;
+          if (fits) label(S.name, x + (S.right ? 9 : -9) * K, y, S.right ? "left" : "right", 10.5, "#8a4b0f");
+          else label(S.name, Math.min(Math.max(x, v.x + 6 * K + tw / 2), v.x + v.w - 6 * K - tw / 2), y + 13 * K, "center", 10.5, "#8a4b0f");
+        }
         for (const p of pins) dot(p, "#fff", "#2c3e50");          // stations
         {                                                          // where the new line meets the Low Line
           const jx = sx(lowJoin), jy = sy(lowJoin);
@@ -3052,10 +3777,25 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
       TERMINALS.forEach((T, k) => {                               // today's terminals, one after another
         const a = Math.min(Math.max(terminals - k, 0), 1);
         if (a <= 0) return;
-        ctx.globalAlpha = alpha * a * (o.terminalAlpha ?? 1);
-        dot(T.p, "#f72f3a", "#fff", 6.5);
-        ctx.fillStyle = "#fff"; ctx.fillRect(sx(T.p) - 3.2 * K, sy(T.p) - 1.1 * K, 6.4 * K, 2.2 * K);   // a "no through" bar
-        label(T.name, sx(T.p) + 12 * K, sy(T.p) + T.dy * K, "left", 13, "#b3141d");
+        const x = T.onTunnel ? xfer : 0;                          // with the tunnel drawn, the two it passes become transfers
+        const tx = sx(T.p), ty = sy(T.p), lx = tx + 12 * K, ly = ty + T.dy * K;
+        if (x < 1) {
+          ctx.globalAlpha = alpha * a * (1 - x) * (o.terminalAlpha ?? 1);
+          dot(T.p, "#f72f3a", "#fff", 6.5);
+          ctx.fillStyle = "#fff"; ctx.fillRect(tx - 3.2 * K, ty - 1.1 * K, 6.4 * K, 2.2 * K);   // a "no through" bar
+          label(T.name, lx, ly, "left", 13, "#b3141d");
+        }
+        if (x > 0) {                                              // a transfer: a white disc in a teal ring, two arrows passing
+          ctx.globalAlpha = alpha * a * x * (o.transferAlpha ?? 1);
+          dot(T.p, "#fff", "#0B7285", 7.5);
+          ctx.strokeStyle = "#0B7285"; ctx.fillStyle = "#0B7285"; ctx.lineWidth = 1.6 * K; ctx.lineCap = "round";
+          for (const [y, d] of [[-2.2, 1], [2.2, -1]]) {
+            const y0 = ty + y * K, e = tx + d * 3.6 * K;
+            ctx.beginPath(); ctx.moveTo(tx - d * 3.6 * K, y0); ctx.lineTo(e, y0); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(e + d * 0.8 * K, y0); ctx.lineTo(e - d * 1.8 * K, y0 - 1.7 * K); ctx.lineTo(e - d * 1.8 * K, y0 + 1.7 * K); ctx.closePath(); ctx.fill();
+          }
+          label(T.name, lx + 2 * K, ly, "left", 13, "#0B7285");
+        }
       });
       ctx.globalAlpha = alpha;
       const tx = sx([cx, cy]), ty = sy([cx, cy]);                 // the train
@@ -3074,15 +3814,18 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
       const sw0 = (o.x1 - o.x0) * geo.px_per_merc, sh0 = (o.y1 - o.y0) * geo.px_per_merc;
       const dist = distAt(t), H = 600 * K, W = H * sw0 / sh0;
       const big = { sx: sx0, sy: sy0, sw: sw0, sh: sh0, x: width - W - 70 * K, y: 56 * K, w: W, h: H };
-      const fin = follow(dist), m = ease((t - OPENING.shrink) / (OPENING.done - OPENING.shrink));
+      // (with no minimap to become, it fades away where it would have shrunk into one)
+      const fin = follow(dist), m = MINIMAP ? ease((t - OPENING.shrink) / (OPENING.done - OPENING.shrink)) : 0;
+      const fade = MINIMAP ? 1 : 1 - smooth((t - OPENING.shrink) / (OPENING.done - OPENING.shrink));
       const v = {};
       for (const key in big) v[key] = big[key] + (fin[key] - big[key]) * m;
       const tun = smooth((t - OPENING.tunnel) / 0.6);             // 0 today, 1 with the tunnel
       drawMap(v, dist, {
-        alpha: smooth((t - OPENING.in) / 0.5),
+        alpha: smooth((t - OPENING.in) / 0.5) * fade,
         route: m, existing: tun * (1 - m),
         tunnel: Math.max(0, (t - OPENING.tunnel) / (OPENING.drawn - OPENING.tunnel)), tunnelAlpha: 1 - m,
         terminals: Math.max(0, (t - OPENING.today) / 0.32), terminalAlpha: (1 - 0.45 * tun) * (1 - m),
+        xfer: smooth((t - OPENING.drawn) / 0.5), transferAlpha: 1 - m,     // Union Station and Ogilvie, once the tunnel is drawn
       });
     };
   }
@@ -3091,15 +3834,18 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
           each timed to something on screen (a stop, a shot) rather than to a fixed second. Facts from the
           site: the homepage, the popular-trips page and the O'Hare workforce analysis ---- */
   const TEAL = "#15a3bb", RED = "#f72f3a", GOLD = "#f4a300";
-  const WHOLE_RIDE = Math.round((clockAt(arrive(CLY)) - clockAt(arrive(M18)) - DWELL_REAL) / 60);   // minutes, leaving 18th to arriving at Clybourn
+  const WHOLE_RIDE = Math.round((clockAt(arrive(CLY)) - clockAt(arrive(M18)) - realDwellOf(M18)) / 60);   // minutes, leaving 18th to arriving at Clybourn
   const STORY = [
     // the opening map's two halves
-    { from: OPENING.today - 0.2, to: OPENING.tunnel, kicker: "TODAY", color: RED,
+    { from: OPENING.today - 0.2, to: OPENING.tunnel, kicker: "TODAY", color: RED, keep: true,
       text: "Metra trains end their runs at four downtown terminals. To cross the region, you change trains." },
-    { from: OPENING.tunnel + 0.1, to: OPENING.done, kicker: "WITH THE TUNNEL", color: TEAL,
+    { from: OPENING.tunnel + 0.1, to: OPENING.done, kicker: "WITH THE TUNNEL", color: TEAL, keep: true,
       text: "A new tunnel links the lines, so trains run through downtown. This X1 runs from South Chicago to Highland Park." },
+    // and that it's a proposal (cards marked `keep` stay when the rest are left out: see drawStory)
+    { from: OPENING.done + 0.3, to: OPENING.done + 6.3, kicker: "A PROPOSAL", color: GOLD, keep: true,
+      text: "The CrossTowner and its new tunnel are proposed, not built. This ride shows how they could work." },
     // the Metra Electric: 59th, Hyde Park, and where the X1 leaves it
-    { from: OPENING.done + 0.2, to: OPENING.done + 5.4, kicker: "THE OBAMA CENTER", color: TEAL,
+    { from: 0.9, to: INTRO - 0.7, kicker: "THE OBAMA CENTER", color: TEAL,      // over the opening shot, as it passes
       text: "59th St, where this ride begins, is the Metra stop closest to the Obama Presidential Center in Jackson Park." },
     { from: arrive(SOUTH_STOPS[2]) - 1.5, to: arrive(SOUTH_STOPS[2]) + 4.5, kicker: "TODAY'S TRACKS", color: TEAL,
       text: "From Hyde Park to 18th St, the X1 runs on the Metra Electric, as it runs today, stopping where its trains stop." },
@@ -3114,7 +3860,7 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
     { from: arrive(STN[2]) + 0.4, to: SHOTS[1].from + 0.2, kicker: "UNION STATION", color: TEAL,
       text: "Today, Metra trains here end their runs and turn back. With the tunnel, they could run through." },
     { from: SHOTS[1].from + 0.4, to: SHOTS[1].to + 1.6, kicker: "SIX ROUTES", color: TEAL,
-      text: "Six CrossTowner routes, X1 to X6, would share this new tunnel. Beyond it, they'd run mostly on Metra tracks that already exist." },
+      text: "X1 to X4 would share this new tunnel; X5 and X6 would run through Union Station. All six would use mostly existing Metra tracks." },
     { from: arrive(STN[3]) + DWELL + 4.0, to: arrive(STN[3]) + DWELL + 12.0, kicker: "ONE TRIP, COMPARED", color: GOLD,
       trip: { from: "Rogers Park", to: "McCormick Place", today: 63, with: 39 }, note: "CrossTowner Trip Planner" },
     { from: PULL_FROM + 0.6, to: PULL_FROM + 6.6, kicker: "O'HARE JOBS", color: GOLD,
@@ -3122,7 +3868,7 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
     { from: HERO_END + 0.3, to: HERO_END + 7.3, kicker: "TODAY'S TRACKS", color: TEAL,
       text: "North of Chicago/Halsted, the X1 would join Metra's Union Pacific North tracks, as they run today." },
     { from: arrive(NORTH_STOPS[1]) - 2.0, to: arrive(NORTH_STOPS[1]) + 4.5, kicker: "ON THE LEFT", color: TEAL,
-      text: "Like the Chicago & North Western lines it was built as, the UP North runs on the left-hand track." },
+      text: "Trains on the UP North keep to the left-hand track, a holdover from the Chicago & North Western, which built the line." },
     // 18th (by Soldier Field) to Clybourn (by Foundry Park), on the film's own clock, against today's fastest trip in the
     // CrossTowner Trip Planner (8 AM, two transfers)
     { from: arrive(CLY) + 0.4, to: Math.min(arrive(CLY) + DWELL + 3.4, SHOTS[3].from - 0.2), kicker: WHOLE_RIDE < 20 ? "UNDER 20 MINUTES" : "THE WHOLE RIDE", color: GOLD,
@@ -3135,7 +3881,7 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
         trip: { from: "59th St", to: "Rogers Park", today: 78, with: 47 },
         note: "CrossTowner Trip Planner, 8 AM, station to station" },
       { from: e + 5.6, to: e + 10.2, kicker: "ONE SEAT", color: TEAL,
-        text: "No transfer. Today the same trip takes the Metra Electric, a 10-minute walk, and the Red Line." },
+        text: "No transfer needed! Today the same trip takes the Metra Electric, a 10-minute walk, and the Red Line." },
       { from: e + 10.4, to: e + 15.0, kicker: "CAMPUS TO CAMPUS", color: TEAL,
         text: "From the University of Chicago to Rogers Park, home of Loyola University, in one ride." },
       { from: e + 15.2, to: e + 20.2, kicker: "MORE JOBS IN REACH", color: GOLD,
@@ -3143,8 +3889,9 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
       { from: e + 20.4, to: DURATION - END_CREDITS - 1.0, cta: true },
     ])(arrive(LAST) + 0.4),
   ];
-  const drawStory = (t) => {
-    const card = STORY.find((q) => t >= q.from && t < q.to);
+  // (keepOnly: just the cards marked `keep`, the opening's and the note that it's a proposal, for a film without the rest)
+  const drawStory = (t, keepOnly = false) => {
+    const card = STORY.find((q) => t >= q.from && t < q.to && (!keepOnly || q.keep));
     if (!card) return;
     const K = width / 1280 * 1.3, x0 = 48 * K, y = 186 * K, PAD = 15 * K, SANS = "Helvetica, Arial, sans-serif";
     const a = Math.min(1, (t - card.from) / 0.35, (card.to - t) / 0.35), slide = (1 - smooth((t - card.from) / 0.45)) * -22 * K, x = x0 + slide;
@@ -3186,7 +3933,7 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
       return;
     }
     if (card.cta) {                                               // the call to action, bigger
-      const url = "tunnel.stevevance.net/planner";
+      const url = "tunnel.stevevance.net";
       ctx.font = `700 ${16 * K}px ${SANS}`; const wu = ctx.measureText(url).width + 34 * K;
       ctx.font = `800 ${34 * K}px ${SANS}`; const wt = ctx.measureText("Plan your own trip").width;
       const w = Math.max(wt, wu) + PAD * 2 + 8 * K, h = 150 * K;
@@ -3263,10 +4010,12 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
     for (const dx of [0, 9 * K]) { ctx.beginPath(); ctx.moveTo(x + 13 * K + dx, y + 10 * K); ctx.lineTo(x + 22 * K + dx, y + h / 2); ctx.lineTo(x + 13 * K + dx, y + h - 10 * K); ctx.fill(); }
     ctx.fillStyle = "#fff"; ctx.font = `700 ${16 * K}px Helvetica, Arial, sans-serif`; ctx.fillText(a, x + 38 * K, y + h / 2 + K);
     // while a stop's dissolve skips ahead, the clock lights up and a second pill says what the stop really takes
-    const skipping = Math.max(0, ...stopPhases.map((q) => { const m = q.t0 + q.T / 2; return smooth((t - (m - q.xf / 2 - 0.3)) / 0.3) * (1 - smooth((t - (m + q.xf / 2 + 0.5)) / 0.4)); }));
+    // (only where the dissolve skips at least a second; the stop's own time on the pill)
+    const skipOf = (q) => { const m = q.t0 + q.T / 2; return q.real - q.k * q.T < 1 ? 0 : smooth((t - (m - q.xf / 2 - 0.3)) / 0.3) * (1 - smooth((t - (m + q.xf / 2 + 0.5)) / 0.4)); };
+    const skipStop = stopPhases.reduce((a, q) => (skipOf(q) > skipOf(a) ? q : a), stopPhases[0]), skipping = skipOf(skipStop);
     ctx.fillStyle = skipping > 0.5 ? "#f4c400" : "rgba(255,255,255,0.78)"; ctx.font = `${skipping > 0.5 ? 700 : 500} ${15 * K}px Helvetica, Arial, sans-serif`; ctx.fillText(clock, x + 38 * K + wa + 14 * K, y + h / 2 + K);
     if (skipping > 0) {
-      const label = `${DWELL_REAL}-second stop`, y2 = y, x2 = x + w + 10 * K;
+      const label = `${skipStop.real}-second stop`, y2 = y, x2 = x + w + 10 * K;
       ctx.globalAlpha = skipping; ctx.font = `700 ${15 * K}px Helvetica, Arial, sans-serif`;
       const w2 = 46 * K + ctx.measureText(label).width + 18 * K;
       ctx.fillStyle = "#f4c400"; ctx.beginPath(); ctx.roundRect(x2, y2, w2, h, h / 2); ctx.fill();
@@ -3323,12 +4072,13 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
       if (air < 1) { ctx.globalAlpha = air; ctx.drawImage(airCanvas, 0, 0); ctx.globalAlpha = 1; }
     }
     // once the doors close at Rogers Park, the view dims under the ending's cards
-    const dim = 0.45 * smooth((t - (arrive(LAST) + DWELL)) / 1.5);
+    // (without the cards there's nothing over the ending to dim for)
+    const dim = CARDS ? 0.45 * smooth((t - (arrive(LAST) + DWELL)) / 1.5) : 0;
     if (dim > 0) { ctx.fillStyle = `rgba(0,0,0,${dim})`; ctx.fillRect(0, 0, width, height); }
-    if (t < OPENING.done) drawOpening(t); else drawMini(distAt(t));
-    drawBadge(t);
-    drawCaption(t);
-    drawStory(t);
+    if (t < OPENING.done) drawOpening(t); else if (MINIMAP) drawMini(distAt(t));
+    if (t > INTRO - INTRO_FADE) { ctx.save(); ctx.globalAlpha = smooth((t - (INTRO - INTRO_FADE)) / INTRO_FADE); drawBadge(t); ctx.restore(); }
+    if (CAPTIONS) drawCaption(t);
+    if (CARDS) drawStory(t); else if (!WEB) drawStory(t, true);
     // the end: fade to black over two seconds, then the credits
     const fade = smooth((t - (DURATION - END_CREDITS - 1.9)) / 2.0);
     if (fade > 0) {
@@ -3411,7 +4161,8 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
   }
   // Still views of the people at one station, for approving them without rendering the film:
   // close on the wheelchair user, the stroller, the bike, a family, a traveller and a couple, then
-  // each platform from the track, then the way out (tools/stills.mjs p<i>@<station>).
+  // each platform from the track, then the way out (tools/stills.mjs p<i>@<station>); 15 to 18: close on four of
+  // the crowd, one at a time.
   const previewCam = new THREE.PerspectiveCamera(42, width / height, 0.1, 2000);
   scene.add(previewCam);
   function preview(i, station = 0) {
@@ -3419,26 +4170,116 @@ export function createCabRide(THREE, city, out, width, height, mini = null, logo
     if (S.outdoor) { scene.fog.color.copy(HAZE); scene.fog.density = HAZE_DENSITY; scene.background.copy(HAZE); hemi.intensity = 1.5; sun.intensity = 2.2; }
     else { scene.fog.color.copy(DARK); scene.fog.density = 0.0105; scene.background.copy(DARK); hemi.intensity = 0; sun.intensity = 0; }
     camera.visible = false; train.visible = false; oncoming.visible = false; meetTrain.visible = false;
-    const close = (kind) => {
-      const o = spots.find((q) => q.kind === kind), sg = Math.sign(o.side), q = at(o.d + 2.1, o.side - sg * 2.9, PLAT_UP + 1.35);
+    const close = (kind, n = 0) => {
+      const o = spots.filter((q) => q.kind === kind)[n], sg = Math.sign(o.side), q = at(o.d + 2.1, o.side - sg * 2.9, PLAT_UP + 1.35);
       previewCam.fov = 42; previewCam.position.copy(q.p); previewCam.lookAt(at(o.d + 0.25, o.side, PLAT_UP + 0.8).p);
     };
     const wide = (sg, back) => {
       previewCam.fov = 58; previewCam.position.copy(at(S.stop - back, sg * 1.2, 2.6).p); previewCam.lookAt(at(S.stop + 16, sg * 5.6, 1.9).p);
     };
-    const exit = () => {                                          // the way out on the right-hand platform, from just behind the cab
-      previewCam.fov = 55; previewCam.position.copy(at(S.stop + 3, 5.0, 2.9).p); previewCam.lookAt(at(S.stop + 16, 7.3, 0).p);
+    const exit = () => {                                          // the way out on the train's own platform (an island's middle), from just behind the cab
+      const mid = (d) => { const [lo, hi] = S.island.edges(d); return (lo + hi) / 2; };
+      const [a, b] = S.island ? [mid(S.stop + 3), mid(S.stop + 16)] : [S.our * 5.0, S.our * 7.3];
+      previewCam.fov = 55; previewCam.position.copy(at(S.stop + 3, a, 2.9).p); previewCam.lookAt(at(S.stop + 16, b, 0).p);
     };
+    // the embankment (for checking it): from the street under the nearest bridge, and from above, off to one side
+    const g = GAPS.reduce((m, q) => (Math.abs((q[0] + q[1]) / 2 - S.d) < Math.abs((m[0] + m[1]) / 2 - S.d) ? q : m), [Infinity, Infinity]), gd = (g[0] + g[1]) / 2;
+    const street = (sg) => { previewCam.fov = 60; previewCam.position.copy(at(gd, sg * 30).p.setY(1.7)); previewCam.lookAt(at(gd, 0).p.setY(EMB(gd) - 1.5)); };
+    const above = (sg) => { previewCam.fov = 50; previewCam.position.copy(at(S.d - 60, sg * 70).p.setY(45)); previewCam.lookAt(at(S.d + 40, 0).p.setY(EMB(S.d))); };
     [() => close("wheelchair"), () => close("stroller"), () => close("bike"), () => close("family"), () => close("traveller"), () => close("couple"),
-      () => wide(1, 4), () => wide(-1, 4), exit][i % 9]();
+      () => wide(1, 4), () => wide(-1, 4), exit, () => street(1), () => street(-1), () => above(1), () => above(-1),
+      () => { const d = (CLY.d + BRIDGE.d0) / 2; previewCam.fov = 50; previewCam.position.copy(at(d - 25, 48).p.setY(1.7)); previewCam.lookAt(at(d + 15, 0).p.setY(3)); },
+      () => { const d = (CLY.d + BRIDGE.d0) / 2; previewCam.fov = 50; previewCam.position.copy(at(d - 200, 90).p.setY(55)); previewCam.lookAt(at(d, 0).p.setY(3)); },
+      ...[0, 1, 2, 3].map((n) => () => close("standing", n))][i % 19]();
     previewCam.updateProjectionMatrix();
     renderer.render(scene, previewCam);
     ctx.globalAlpha = 1; ctx.drawImage(gl, 0, 0);
   }
-  return { render, preview, duration: DURATION, info: { LENGTH, PORTAL, PORTAL2, speedup: SPEEDUP, ride: RIDE, duration: DURATION, peakMph: phases.filter((ph) => ph.run).map((ph) => +(ph.run.peak * 2.23694).toFixed(1)), runSeconds: phases.filter((ph) => ph.run).map((ph) => Math.round(ph.run.T)),
+  // Any view, for checking the scene (tools/stills.mjs v<d>,<lat>,<y>,<d2>,<lat2>,<y2>): from `lat` metres right of the
+  // line `d` metres along, `y` metres up, toward the same at (d2, lat2, y2); or d = "stop<k>" for that stop's d.
+  function view(d, lat, y, d2, lat2, y2) {
+    preview(6, 0);                                                // (daylight, the train hidden)
+    previewCam.fov = 55; previewCam.position.copy(at(d, lat).p.setY(y)); previewCam.lookAt(at(d2, lat2).p.setY(y2));
+    previewCam.updateProjectionMatrix(); renderer.render(scene, previewCam); ctx.globalAlpha = 1; ctx.drawImage(gl, 0, 0);
+  }
+  const KXo = 111320 * Math.cos(city.origin[1] * Math.PI / 180), KYo = 111070;
+  const toLonLat = (p) => [+(city.origin[0] + p.x / KXo).toFixed(6), +(city.origin[1] - p.z / KYo).toFixed(6)];
+  const bearingOf = (v) => +((Math.atan2(v.x, -v.z) * 180 / Math.PI + 360) % 360).toFixed(1);   // degrees clockwise from north
+  // The web page's 360 view (tools/cubemap.mjs): the scene as the film has it at t in outside shot `shot` (the train seen
+  // from outside, the cab hidden), from `pos` ([d, side, up], as for at(); or null, the shot's own camera), as six square
+  // 90-degree views with the front to the north. The faces are JPEG data URLs named as Photo Sphere Viewer's cubemap
+  // adapter names them; `look` is the shot's own view (bearing and pitch in degrees, and its fov), to open the 360 view on.
+  // With `tiles` (n), each face comes as an n x n grid instead (tiles[face][row][col], row 0 at the top), plus a small
+  // whole face (base[face], `base` px) to show while the tiles load: for faces too big to draw at once. `ss`: each tile
+  // is drawn that many times larger and shrunk, which smooths edges and the shimmer of distant windows. `only`: just
+  // these faces (for big faces, a face at a time).
+  let cubeShot = null;
+  function cube(t, shot, pos = null, size = 2048, { tiles = 1, ss = 1, base = 1024, only = null } = {}) {
+    const cam = new THREE.PerspectiveCamera(90, 1, 0.5, 12000), out = tiles > 1 ? { tiles: {}, base: {} } : { faces: {} };
+    const ts = size / tiles, tile = document.createElement("canvas"), small = document.createElement("canvas");
+    tile.width = tile.height = ts; small.width = small.height = base;
+    const tg = tile.getContext("2d"), sg = small.getContext("2d");
+    tg.imageSmoothingQuality = sg.imageSmoothingQuality = "high";
+    // [where it looks, its up]: the top's foot and the bottom's head meet the front
+    const FACES = { front: [0, 0, -1, 0, 1, 0], right: [1, 0, 0, 0, 1, 0], back: [0, 0, 1, 0, 1, 0], left: [-1, 0, 0, 0, 1, 0],
+      top: [0, 1, 0, 0, 0, 1], bottom: [0, -1, 0, 0, 0, -1] };
+    cubeShot = () => {
+      const dir = airCam.getWorldDirection(new THREE.Vector3());
+      out.look = { yaw: bearingOf(dir), pitch: +(Math.asin(dir.y) * 180 / Math.PI).toFixed(1), fov: airCam.fov };
+      const p = pos ? at(...pos).p : airCam.position.clone();
+      out.at = { lonlat: toLonLat(p), y: +p.y.toFixed(1), x: +p.x.toFixed(1), z: +p.z.toFixed(1) };
+      renderer.setSize(ts * ss, ts * ss, false);
+      sky.position.set(p.x, 0, p.z);
+      for (const [k, [dx, dy, dz, ux, uy, uz]] of Object.entries(FACES)) {
+        if (only && !only.includes(k)) continue;
+        cam.position.copy(p); cam.up.set(ux, uy, uz); cam.lookAt(p.x + dx, p.y + dy, p.z + dz);
+        const grid = [];
+        for (let r = 0; r < tiles; r++) {
+          grid.push([]);
+          for (let c = 0; c < tiles; c++) {
+            if (tiles > 1) cam.setViewOffset(size * ss, size * ss, c * ts * ss, r * ts * ss, ts * ss, ts * ss);
+            renderer.render(scene, cam);
+            tg.drawImage(gl, 0, 0, ts, ts);
+            if (tiles > 1) { grid[r].push(tile.toDataURL("image/jpeg", 0.88)); sg.drawImage(tile, c * base / tiles, r * base / tiles, base / tiles, base / tiles); }
+          }
+        }
+        cam.clearViewOffset();
+        if (tiles > 1) { out.tiles[k] = grid; out.base[k] = small.toDataURL("image/jpeg", 0.85); }
+        else out.faces[k] = tile.toDataURL("image/jpeg", 0.9);
+      }
+    };
+    try { drawScene(t, shot); } finally { cubeShot = null; renderer.setSize(width, height, false); }
+    return out;
+  }
+  // What the web page needs (tools/export-web.mjs), in lon/lat and film seconds: the stops and the story cards; the train
+  // (its cab) every `step` s from `from` to `to`, as [t, lon, lat, bearing, d, air] (air: 0 in the cab's view, 1 in a shot
+  // from outside); and the alignment every 10 m, with the tunnel's portals as distances along it.
+  function webData(from, to, step = 0.25) {
+    const track = [];
+    for (let i = 0; from + i * step <= to + 1e-6; i++) {
+      const t = from + i * step, d = distAt(t), a = at(d, sideAt(d));
+      track.push([+t.toFixed(2), ...toLonLat(a.p), bearingOf(a.tan), Math.round(d), +airWeight(t).toFixed(2)]);
+    }
+    const route = [];
+    for (let d = 0; d < LENGTH; d += 10) route.push(toLonLat(at(d).p));
+    route.push(toLonLat(at(LENGTH).p));
+    return {
+      from, to, step, length: LENGTH, portals: [PORTAL, PORTAL2], routeStep: 10, route, track,
+      stops: stopPhases.map((q) => ({ name: q.station.name, t: +q.t0.toFixed(2), dwell: +q.T.toFixed(2), d: Math.round(q.station.stop), lonlat: toLonLat(at(q.station.stop).p) })),
+      story: STORY.map((c) => ({ ...c, from: +c.from.toFixed(2), to: +c.to.toFixed(2) })),
+      shots: SHOTS.map((s) => ({ from: +s.from.toFixed(2), to: +s.to.toFixed(2) })),
+      hero: { pullFrom: +PULL_FROM.toFixed(2), pullTo: +PULL_TO.toFixed(2), end: +HERO_END.toFixed(2) },
+    };
+  }
+  return { render, preview, view, cube, webData, duration: DURATION, info: { LENGTH, PORTAL, PORTAL2, speedup: SPEEDUP, ride: RIDE, duration: DURATION, peakMph: phases.filter((ph) => ph.run).map((ph) => +(ph.run.peak * 2.23694).toFixed(1)), runSeconds: phases.filter((ph) => ph.run).map((ph) => Math.round(ph.run.T)),
     curves: curveLimits.map((q) => ({ from: Math.round(q.from), to: Math.round(q.to), radius: Math.round(q.radius), mph: +q.mph.toFixed(1) })), overhead: [SHOTS[0].from, SHOTS[0].to], shots: SHOTS.map((q) => [q.from, Math.min(q.to, DURATION)]), meet: MEET_T, tunnel: [timeAtDist(PORTAL), timeAtDist(PORTAL2)],
     mph: Array.from({ length: Math.ceil(DURATION * 10) }, (_, i) => +(realSpeedAt(i / 10) * 2.23694).toFixed(1)),   // every 0.1 s, for the sound of the train
-    dwell: DWELL, rampStart: RAMP_START, rampEnd: RAMP_END, banked: (() => { const r = []; let from = null; bankTable.forEach((v, i) => { const on = Math.abs(v) > 0.004; if (on && from === null) from = i; if (!on && from !== null) { r.push([from * BANK_STEP, i * BANK_STEP, +Math.max(...bankTable.slice(from, i).map(Math.abs)).toFixed(3), Math.sign(bankTable[from + 1])]); from = null; } }); return r; })(),
+    spots: Object.fromEntries([["lakeside", [-87.612514, 41.852671]], ["addison", BROWN_ADDISON[0][0]]].map(([k, [lon, lat]]) => {
+      const x = (lon - city.origin[0]) * 111320 * Math.cos(city.origin[1] * Math.PI / 180), z = (city.origin[1] - lat) * 111070, d = planD({ x, z });
+      const a = at(d, 0, 0).p, b = at(d + 1, 0, 0).p, r = at(d, 1, 0).p;      // the side +1 direction, to read lat's sign
+      return [k, [Math.round(d), +((x - a.x) * (r.x - a.x) + (z - a.z) * (r.z - a.z)).toFixed(1)]];
+    })),
+    dwell: DWELL, cover: COVER, gaps: GAPS, overs: OVERS.map((o) => [o.name, o.d]), calls: CALLS.map((S) => [S.name, S.d]), bridge: [BRIDGE.d0, BRIDGE.d1], upnwEnd: UPNW_END, rampStart: RAMP_START, rampEnd: RAMP_END, banked: (() => { const r = []; let from = null; bankTable.forEach((v, i) => { const on = Math.abs(v) > 0.004; if (on && from === null) from = i; if (!on && from !== null) { r.push([from * BANK_STEP, i * BANK_STEP, +Math.max(...bankTable.slice(from, i).map(Math.abs)).toFixed(3), Math.sign(bankTable[from + 1])]); from = null; } }); return r; })(),
     stations: CALLS.map((S) => ({ name: S.name, d: S.d, off: S.best, platFrom: S.platFrom, platTo: S.platTo })),
     arrivals: phases.filter((ph) => ph.station).map((ph) => ({ name: ph.station.name, t: ph.t0, dwell: ph.T })), wholeRide: WHOLE_RIDE } };
 }

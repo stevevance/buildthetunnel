@@ -16,7 +16,7 @@ const TOP_Y = 7.5;
 const HEEL_TOP = 13.5;
 const FLOOR_Y = -1.5;
 
-export function buildRiverBridge({ THREE, scene, at, d0, d1, trackLats }) {
+export function buildRiverBridge({ THREE, scene, at, d0, d1, trackLats, ground = 0 }) {   // ground: the rail's height above the street
   const group = new THREE.Group();
   group.name = 'deering-bridge';
 
@@ -59,11 +59,11 @@ export function buildRiverBridge({ THREE, scene, at, d0, d1, trackLats }) {
   };
 
   // Heel pier, wide enough for both counterweight blocks; far abutment under the toe.
-  const pierYc = (-4 + -0.15) / 2;
+  const pierBot = -ground - 4, pierYc = (pierBot + -0.15) / 2;    // down into the river bed
   const pier = at(d0 - 2, 0, pierYc);
-  add(frameBox(pier.p, pier.right, 30, 3.85, 20, concrete));
+  add(frameBox(pier.p, pier.right, 30, -0.15 - pierBot, 20, concrete));
   const far = at(d1 + 2, 0, pierYc);
-  add(frameBox(far.p, far.right, 18, 3.85, 8, concrete));
+  add(frameBox(far.p, far.right, 18, -0.15 - pierBot, 8, concrete));
 
   // Counterweights: tall, thin concrete blocks on each side, outside the trusses, never over the tracks
   // (2.8 m thick, 7 m along the line, as in the aerial photo). They hang clear of the ground, CW_BOT up,
@@ -154,9 +154,9 @@ export function buildRiverBridge({ THREE, scene, at, d0, d1, trackLats }) {
   add(beam(at(dAt(n), -TRUSS, toeMidY).p, at(dAt(n), TRUSS, toeMidY).p, 0.5, 0.5, bracing));
 
   // Operator's house beyond the west counterweight, on the bank at ground level.
-  const house = at(d0 - 18, -11, 1.75);
+  const house = at(d0 - 18, -19, 1.75 - ground);
   add(frameBox(house.p, house.right, 3.5, 3.5, 6, wall));
-  const roofP = at(d0 - 18, -11, 3.65);
+  const roofP = at(d0 - 18, -19, 3.65 - ground);
   add(frameBox(roofP.p, roofP.right, 3.8, 0.3, 6.2, roof));
 
   scene.add(group);

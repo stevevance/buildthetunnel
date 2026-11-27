@@ -1,268 +1,273 @@
 // Written by tools/place-audio.mjs: the announcements' open captions, in film seconds.
 export default [
  {
-  "start": 1.55,
-  "end": 3.9,
+  "start": 12.55,
+  "end": 14.9,
   "text": "This is an X1 train to Highland Park."
  },
  {
-  "start": 3.95,
-  "end": 5.7,
+  "start": 14.95,
+  "end": 16.7,
   "text": "Doors closing."
  },
  {
-  "start": 5.75,
-  "end": 8.76,
+  "start": 16.75,
+  "end": 19.83,
   "text": "Next stop, 55th, 56th, and 57th Streets."
  },
  {
-  "start": 8.81,
-  "end": 11.51,
+  "start": 19.88,
+  "end": 22.65,
   "text": "Transfer to South Shore Line trains."
  },
  {
-  "start": 11.56,
-  "end": 14.1,
-  "text": "Doors open on the right."
+  "start": 22.7,
+  "end": 25.2,
+  "text": "Doors open on the left."
  },
  {
-  "start": 16.81,
-  "end": 19.16,
+  "start": 27.81,
+  "end": 30.21,
   "text": "Next stop, 51st and 53rd Streets."
  },
  {
-  "start": 19.21,
-  "end": 21.66,
-  "text": "Doors open on the right."
+  "start": 30.26,
+  "end": 32.66,
+  "text": "Doors open on the left."
  },
  {
-  "start": 27.52,
-  "end": 29.82,
+  "start": 38.52,
+  "end": 40.78,
   "text": "Next stop, 47th Street, Kenwood."
  },
  {
-  "start": 29.87,
-  "end": 32.27,
-  "text": "Doors open on the left."
+  "start": 40.83,
+  "end": 43.27,
+  "text": "Doors open on the right."
  },
  {
-  "start": 42.38,
-  "end": 44.19,
+  "start": 53.38,
+  "end": 55.16,
   "text": "Next stop, Oakwood Boulevard."
  },
  {
-  "start": 44.24,
-  "end": 46.43,
-  "text": "Doors open on the left."
+  "start": 55.21,
+  "end": 57.43,
+  "text": "Doors open on the right."
  },
  {
-  "start": 58.05,
-  "end": 59.72,
+  "start": 69.14,
+  "end": 70.73,
   "text": "Next stop, 27th Street."
  },
  {
-  "start": 59.77,
-  "end": 62.2,
-  "text": "Doors open on the left."
+  "start": 70.78,
+  "end": 73.19,
+  "text": "Doors open on the right."
  },
  {
-  "start": 67.21,
-  "end": 68.87,
+  "start": 78.21,
+  "end": 79.86,
   "text": "Next stop, McCormick Place."
  },
  {
-  "start": 68.92,
-  "end": 71.16,
+  "start": 79.91,
+  "end": 82.11,
   "text": "Transfer to South Shore Line trains."
  },
  {
-  "start": 71.21,
-  "end": 73.36,
-  "text": "Doors open on the left."
+  "start": 82.16,
+  "end": 84.36,
+  "text": "Doors open on the right."
  },
  {
-  "start": 81.16,
-  "end": 82.68,
+  "start": 92.16,
+  "end": 93.65,
   "text": "Next stop, 18th Street."
  },
  {
-  "start": 82.73,
-  "end": 85.01,
-  "text": "Doors open on the left."
+  "start": 93.7,
+  "end": 96.01,
+  "text": "Doors open on the right."
  },
  {
-  "start": 95.78,
-  "end": 102.03,
+  "start": 104.9,
+  "end": 111.15,
   "text": "Eating, smoking, gambling, and drinking out of glass containers is prohibited on CrossTowner trains."
  },
  {
-  "start": 104.02,
-  "end": 105.37,
+  "start": 113.09,
+  "end": 114.45,
   "text": "Next stop, Roosevelt."
  },
  {
-  "start": 105.42,
-  "end": 110.63,
+  "start": 114.5,
+  "end": 119.75,
   "text": "Transfer to Red, Green, and Orange Line trains, and buses to the Museum Campus."
  },
  {
-  "start": 110.68,
-  "end": 112.97,
-  "text": "Doors open on the right."
+  "start": 119.8,
+  "end": 122.04,
+  "text": "Doors open on the left."
  },
  {
-  "start": 132.02,
-  "end": 133.72,
+  "start": 140.59,
+  "end": 142.33,
   "text": "Next stop, Taylor and Clinton."
  },
  {
-  "start": 133.77,
-  "end": 135.87,
-  "text": "Doors open on the right."
+  "start": 142.38,
+  "end": 144.44,
+  "text": "Doors open on the left."
  },
  {
-  "start": 141.42,
-  "end": 143.44,
+  "start": 149.99,
+  "end": 152.03,
   "text": "Next stop, Union Station."
  },
  {
-  "start": 143.49,
-  "end": 151.73,
+  "start": 152.08,
+  "end": 160.37,
   "text": "Transfer to Blue Line, X5, and X6 trains, the G, J, K, M, and P lines, Amtrak, and the O'Hare Flyer."
  },
  {
-  "start": 151.78,
-  "end": 154.47,
-  "text": "Doors open on the right."
+  "start": 160.42,
+  "end": 163.04,
+  "text": "Doors open on the left."
  },
  {
-  "start": 155.12,
-  "end": 157.07,
+  "start": 163.69,
+  "end": 165.64,
   "text": "This is Union Station."
  },
  {
-  "start": 157.12,
-  "end": 159.12,
+  "start": 165.69,
+  "end": 167.69,
   "text": "Doors closing."
  },
  {
-  "start": 164.11,
-  "end": 166.14,
+  "start": 172.68,
+  "end": 174.73,
   "text": "Next stop, Randolph and Clinton."
  },
  {
-  "start": 166.19,
-  "end": 170.44,
+  "start": 174.78,
+  "end": 179.07,
   "text": "Transfer to Green and Pink Line trains, and the A, C, and E lines."
  },
  {
-  "start": 170.49,
-  "end": 172.76,
-  "text": "Doors open on the right."
+  "start": 179.12,
+  "end": 181.33,
+  "text": "Doors open on the left."
  },
  {
-  "start": 190.28,
-  "end": 192.23,
+  "start": 198.83,
+  "end": 200.82,
   "text": "Next stop, Chicago and Halsted."
  },
  {
-  "start": 192.28,
-  "end": 194.53,
-  "text": "Doors open on the right."
+  "start": 200.87,
+  "end": 203.08,
+  "text": "Doors open on the left."
  },
  {
-  "start": 196.18,
-  "end": 198.13,
+  "start": 204.73,
+  "end": 206.68,
   "text": "This is Chicago and Halsted."
  },
  {
-  "start": 198.18,
-  "end": 200.18,
+  "start": 206.73,
+  "end": 208.73,
   "text": "Doors closing."
  },
  {
-  "start": 208.64,
-  "end": 210.51,
+  "start": 217.14,
+  "end": 219.01,
   "text": "Next stop, Division and Elston."
  },
  {
-  "start": 210.56,
-  "end": 212.69,
+  "start": 219.06,
+  "end": 221.19,
   "text": "Doors open on the left."
  },
  {
-  "start": 219.72,
-  "end": 220.98,
+  "start": 228.21,
+  "end": 229.47,
   "text": "Next stop, Clybourn."
  },
  {
-  "start": 221.03,
-  "end": 223.8,
+  "start": 229.52,
+  "end": 232.3,
   "text": "Transfer to Union Pacific Northwest trains."
  },
  {
-  "start": 223.85,
-  "end": 226.07,
+  "start": 232.35,
+  "end": 234.56,
   "text": "Doors open on the left."
  },
  {
-  "start": 235.67,
-  "end": 237.07,
+  "start": 243.03,
+  "end": 244.42,
   "text": "This is a walkthrough train."
  },
  {
-  "start": 237.12,
-  "end": 239.82,
+  "start": 244.47,
+  "end": 247.18,
   "text": "Please make use of all available space."
  },
  {
-  "start": 245.99,
-  "end": 247.75,
+  "start": 252.3,
+  "end": 254.15,
   "text": "Next stop, Addison and Lincoln."
  },
  {
-  "start": 247.8,
-  "end": 249.84,
+  "start": 254.2,
+  "end": 255.99,
+  "text": "Transfer to Brown Line trains."
+ },
+ {
+  "start": 256.04,
+  "end": 258.15,
   "text": "Doors open on the left."
  },
  {
-  "start": 262.23,
-  "end": 263.62,
+  "start": 270.54,
+  "end": 271.93,
   "text": "Next stop, Ravenswood."
  },
  {
-  "start": 263.67,
-  "end": 265.88,
+  "start": 271.98,
+  "end": 274.19,
   "text": "Doors open on the left."
  },
  {
-  "start": 278.19,
-  "end": 280.03,
+  "start": 286.5,
+  "end": 288.34,
   "text": "Next stop, Peterson and Ridge."
  },
  {
-  "start": 280.08,
-  "end": 282.24,
+  "start": 288.39,
+  "end": 290.55,
   "text": "Doors open on the left."
  },
  {
-  "start": 292.72,
-  "end": 294.24,
+  "start": 301.02,
+  "end": 302.55,
   "text": "Next stop, Rogers Park."
  },
  {
-  "start": 294.29,
-  "end": 296.57,
+  "start": 302.6,
+  "end": 304.87,
   "text": "Doors open on the left."
  },
  {
-  "start": 298.22,
-  "end": 300.17,
+  "start": 306.52,
+  "end": 308.47,
   "text": "This is Rogers Park."
  },
  {
-  "start": 300.22,
-  "end": 302.22,
+  "start": 308.52,
+  "end": 310.52,
   "text": "Doors closing."
  }
 ];

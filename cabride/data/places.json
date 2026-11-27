@@ -1,0 +1,154 @@
+[
+ {
+  "id": "willis",
+  "name": "Willis Tower",
+  "kind": "landmark",
+  "lon": -87.6359,
+  "lat": 41.8789,
+  "y": 300,
+  "text": "The Willis (Sears) Tower: 110 stories, 1,451 ft to its roof. Union Station, two stops back, is two blocks west of it.",
+  "draft": true
+ },
+ {
+  "id": "ballys",
+  "name": "Bally's Chicago",
+  "kind": "destination",
+  "lon": -87.6448,
+  "lat": 41.8953,
+  "y": 25,
+  "text": "Bally's Chicago, the city's casino resort, a short walk east along Chicago Ave.",
+  "walk": "About a 4-minute walk east along Chicago Ave (300 m)",
+  "draft": true,
+  "source": "Walk: OpenStreetMap's streets from the top of the station's stairs at 2.75 mph, with the Chicago Ave and Halsted St viaducts rebuilt"
+ },
+ {
+  "id": "halsted-pointe",
+  "name": "Halsted Pointe",
+  "kind": "destination",
+  "lon": -87.64677,
+  "lat": 41.89899,
+  "y": 90,
+  "text": "Onni Group's riverfront neighborhood at the south tip of Goose Island: homes in five towers, a hotel, a riverwalk and a beach. The first tower opens in 2028.",
+  "walk": "About a 5-minute walk north on Halsted St (340 m)",
+  "draft": true,
+  "source": "Walk: OpenStreetMap's streets from the top of the station's stairs at 2.75 mph, with the Chicago Ave and Halsted St viaducts rebuilt"
+ },
+ {
+  "id": "prairie",
+  "name": "Prairie Material",
+  "kind": "job",
+  "lon": -87.6492485,
+  "lat": 41.8974148,
+  "y": 15,
+  "text": "Prairie Material's Yard 32, a ready-mix concrete plant on the North Branch: sand and gravel come up the river by barge, and trucks carry the concrete to job sites. A 2025 job posting for CDL truck drivers listed this yard.",
+  "walk": "About a 4-minute walk to the gate at the north end of Peoria St (280 m)",
+  "draft": true,
+  "source": "Prairie Materials (prairie.com); a Votorantim Cimentos job posting, February 2025. Walk: OpenStreetMap's streets from the top of the station's stairs at 2.75 mph, with the Chicago Ave and Halsted St viaducts rebuilt"
+ },
+ {
+  "id": "elizabeth-410",
+  "name": "410 N Elizabeth",
+  "kind": "destination",
+  "lon": -87.659319,
+  "lat": 41.88923,
+  "y": 30,
+  "views": [
+   "hero"
+  ],
+  "text": "The first of two towers at 400 N Elizabeth, by Tree Street Group and Mark Goodman & Associates: 33 stories and 383 apartments over a five-level podium, about 1.2 km southwest of the station. Building began in July 2026; this view shows it at level 7.",
+  "draft": true,
+  "source": "The City's planned development ordinance (PD 1528, May 2024); Chicago YIMBY's construction reports, November 2026"
+ },
+ {
+  "id": "foundry-park",
+  "name": "Foundry Park",
+  "kind": "destination",
+  "lon": -87.66286,
+  "lat": 41.91741,
+  "y": 110,
+  "views": [
+   "hero"
+  ],
+  "text": "JDL Development and Kayne Anderson's neighborhood on the old A. Finkl & Sons steel works, on the North Branch at Cortland St, about 450 m east of the X1's Clybourn stop. Its first phase, a hotel, two apartment buildings and a 39-story tower, broke ground in October 2026.",
+  "draft": true,
+  "source": "The City's Plan Commission deck for Foundry Park (the amendment of PD 1439, January 2026); Chicago YIMBY"
+ },
+ {
+  "id": "bus-8",
+  "name": "#8 Halsted bus",
+  "kind": "bus",
+  "lon": -87.647606,
+  "lat": 41.896724,
+  "y": 8,
+  "text": "CTA's #8 Halsted: north to Lincoln Park and Lakeview, south through Pilsen and Bridgeport. It stops at the corner of Chicago Ave, a few steps from the station's stairs.",
+  "every": "Every 6 minutes around 8 AM on weekdays, and all night",
+  "draft": true,
+  "source": "CTA's weekday schedule (GTFS) for spring 2025, before the Chicago Ave and Halsted St viaducts closed for rebuilding",
+  "stops": [
+   {
+    "id": "5941",
+    "name": "Halsted & Chicago (northbound)",
+    "lon": -87.647606,
+    "lat": 41.896724
+   },
+   {
+    "id": "15347",
+    "name": "Halsted & Chicago (southbound)",
+    "lon": -87.647853,
+    "lat": 41.896104
+   }
+  ],
+  "walk": "Under a minute's walk from the station's stairs"
+ },
+ {
+  "id": "bus-66",
+  "name": "#66 Chicago bus",
+  "kind": "bus",
+  "lon": -87.647269,
+  "lat": 41.896297,
+  "y": 8,
+  "text": "CTA's #66 Chicago: east to Streeterville and Navy Pier, west to Austin. It stops at the corner of Halsted St.",
+  "every": "Every 4 to 8 minutes around 8 AM on weekdays, and all night",
+  "draft": true,
+  "source": "CTA's weekday schedule (GTFS) for spring 2025, before the Chicago Ave and Halsted St viaducts closed for rebuilding",
+  "stops": [
+   {
+    "id": "565",
+    "name": "Chicago & Halsted (eastbound)",
+    "lon": -87.647269,
+    "lat": 41.896297
+   },
+   {
+    "id": "613",
+    "name": "Chicago & Halsted (westbound)",
+    "lon": -87.648183,
+    "lat": 41.896518
+   }
+  ],
+  "walk": "Under a minute's walk from the station's stairs"
+ },
+ {
+  "id": "division-elston",
+  "name": "Division/Elston",
+  "kind": "station",
+  "lon": -87.660303,
+  "lat": 41.903372,
+  "y": 6,
+  "views": [
+   "hero"
+  ],
+  "text": "The X1's next stop, at Division St and Elston Ave, about 1.4 km up the line."
+ },
+ {
+  "id": "clybourn",
+  "name": "Clybourn",
+  "kind": "station",
+  "lon": -87.668029,
+  "lat": 41.917074,
+  "y": 6,
+  "views": [
+   "hero"
+  ],
+  "text": "Metra's Clybourn station, the stop after Division/Elston, where the X1 runs on the UP North's tracks. Transfer to Union Pacific Northwest trains."
+ }
+]

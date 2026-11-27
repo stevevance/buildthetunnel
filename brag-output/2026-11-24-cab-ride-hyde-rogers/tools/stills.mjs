@@ -5,6 +5,7 @@
  *
  *   node tools/stills.mjs <out-dir> 12.5 150 186 ...
  *   node tools/stills.mjs <out-dir> p8@7          preview view 8 (see preview() in assets/cab-ride.js) of stop 7
+ *   PARAMS="nocards&nominimap" node tools/stills.mjs ...   with index.html's options (web, nocards, nominimap, nocaptions)
  */
 import fs from "node:fs";
 import http from "node:http";
@@ -27,15 +28,17 @@ await new Promise((r) => server.listen(0, "127.0.0.1", r));
 const browser = await puppeteer.launch({ executablePath: CHROME, headless: true, protocolTimeout: 0, args: ["--ignore-gpu-blocklist", "--use-angle=metal"] });
 const page = await browser.newPage();
 page.on("pageerror", (e) => console.error("page error:", e.message));
-await page.goto(`http://127.0.0.1:${server.address().port}/index.html`, { waitUntil: "load" });
+await page.goto(`http://127.0.0.1:${server.address().port}/index.html${process.env.PARAMS ? "?" + process.env.PARAMS : ""}`, { waitUntil: "load" });
 await page.waitForFunction(() => !!window.__cabRide, { timeout: 180000 });
 for (const t of times) {
+  if (t.startsWith("info:")) { console.log(JSON.stringify(await page.evaluate((keys) => Object.fromEntries(keys.map((k) => [k, window.__cabRide.info[k]])), t.slice(5).split(",")))); continue; }   // info:key,key
   const data = await page.evaluate((t) => {
     const m = /^p(\d+)@(\d+)$/.exec(t);
-    if (m) window.__cabRide.preview(+m[1], +m[2]); else window.__cabRide.render(+t);
+    const v = /^v(.+)$/.exec(t);
+    if (m) window.__cabRide.preview(+m[1], +m[2]); else if (v) window.__cabRide.view(...v[1].split(",").map(Number)); else window.__cabRide.render(+t);
     return document.getElementById("cab").toDataURL("image/png");
   }, t);
-  const file = path.join(outDir, `${t.startsWith("p") ? t.replace("@", "-") : "t" + String(t).padStart(6, "0")}.png`);
+  const file = path.join(outDir, `${t.startsWith("p") ? t.replace("@", "-") : t.startsWith("v") ? "v" + t.slice(1).replace(/,/g, "_") : "t" + String(t).padStart(6, "0")}.png`);
   fs.writeFileSync(file, Buffer.from(data.split(",")[1], "base64"));
   console.log(file);
 }

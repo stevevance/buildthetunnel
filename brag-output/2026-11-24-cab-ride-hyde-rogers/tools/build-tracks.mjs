@@ -189,7 +189,7 @@ for (let run = 0; kEnd < up.length - 1 && run < PAST; kEnd++) run += dist(loc(up
 // cab shows as soft bends. Douglas-Peucker at TOL metres keeps the real curves and drops the wander (buildPlan smooths
 // the corners that are left).
 const TOL = 2.0;
-const simplify = (pts) => {
+const simplify = (pts, tol = TOL) => {
   if (pts.length < 3) return pts;
   const a = loc(pts[0]), b = loc(pts.at(-1)), L = dist(a, b);
   let far = 0, k = 0;
@@ -197,17 +197,30 @@ const simplify = (pts) => {
     const p = loc(pts[i]), off = Math.abs((b[0] - a[0]) * (a[1] - p[1]) - (a[0] - p[0]) * (b[1] - a[1])) / L;
     if (off > far) { far = off; k = i; }
   }
-  return far < TOL ? [pts[0], pts.at(-1)] : [...simplify(pts.slice(0, k + 1)).slice(0, -1), ...simplify(pts.slice(k))];
+  return far < tol ? [pts[0], pts.at(-1)] : [...simplify(pts.slice(0, k + 1), tol).slice(0, -1), ...simplify(pts.slice(k), tol)];
 };
-const upn = simplify(up.slice(k0, kEnd + 1)).slice(1);
+// It starts UPN_FROM_PAST metres past Clybourn (the main film's LOW_LINE wanders like OSM's nodes from there on too;
+// buildPlan cuts LOW_LINE at UPN_FROM, the first point here).
+const CLYBOURN = [-87.668152, 41.917096], UPN_FROM_PAST = 250;
+let kFrom = 0;
+up.forEach((p, k) => { if (k < k0 && dist(loc(p), loc(CLYBOURN)) < dist(loc(up[kFrom]), loc(CLYBOURN))) kFrom = k; });
+for (let run = 0; kFrom < k0 && run < UPN_FROM_PAST; kFrom++) run += dist(loc(up[kFrom]), loc(up[kFrom + 1]));
+let upn = simplify(up.slice(kFrom, kEnd + 1));
+// Between Ravenswood and Peterson/Ridge OSM's track steps ~3.5 m sideways off the 6.8 km straight (by Foster and
+// Berwyn), which the cab shows as a pointless S-bend: straightened there at a looser tolerance.
+const STRAIGHT = [41.955, 42.005], inS = (p) => p[1] > STRAIGHT[0] && p[1] < STRAIGHT[1];
+const s0 = upn.findIndex(inS) - 1, s1 = upn.findLastIndex(inS) + 1;
+upn = [...upn.slice(0, s0), ...simplify(upn.slice(s0, s1 + 1), 4.0), ...upn.slice(s1 + 1)];
 
 /* ---- the Brown Line (CTA's Ravenswood Branch), on its elevated structure over the UP North just south of
-        Addison/Lincoln: its two tracks within BROWN_REACH metres of the crossing, as OSM's ways ---- */
-const BROWN_REACH = 450;
-const brownWays = (await overpass("brown-line", '[out:json][timeout:55];way["railway"="subway"]["name"="Ravenswood Branch"](41.936,-87.690,41.952,-87.655);out tags geom;'))
+        Addison/Lincoln: its two tracks within BROWN_REACH metres of the crossing (far enough that the structure runs
+        on out of the cab's view either way, rather than stopping in mid-air), as OSM's ways, and the Addison
+        station's two platforms ---- */
+const BROWN_REACH = 2500;
+const brownWays = (await overpass("brown-line-3", '[out:json][timeout:55];way["railway"="subway"]["name"="Ravenswood Branch"](41.920,-87.705,41.970,-87.640);out tags geom;'))
   .filter((w) => w.tags.service !== "crossover").map((w) => w.geometry.map((g) => [g.lon, g.lat]));
 // where it crosses the UP North: the nearest approach of any of its points to the UP North's line
-const upLine = [up[k0], ...upn].map(loc);
+const upLine = upn.map(loc);
 let cross = null, cd = Infinity;
 for (const w of brownWays) for (const q of w) for (let i = 1; i < upLine.length; i++) {
   const a = upLine[i - 1], b = upLine[i], p = loc(q), dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz;
@@ -216,6 +229,8 @@ for (const w of brownWays) for (const q of w) for (let i = 1; i < upLine.length;
   if (dd < cd) { cd = dd; cross = p; }
 }
 const brown = brownWays.map((w) => w.filter((q) => dist(loc(q), cross) < BROWN_REACH)).filter((w) => w.length >= 2);
+const brownPlatforms = (await overpass("brown-addison-platforms", '[out:json][timeout:55];way["railway"="platform"](41.9455,-87.6760,41.9490,-87.6735);out tags geom;'))
+  .map((w) => w.geometry.map((g) => [g.lon, g.lat]));
 
 const fmt = (line) => "[" + line.map(([lon, lat]) => `[${lon.toFixed(6)}, ${lat.toFixed(6)}]`).join(",\n  ") + "]";
 fs.writeFileSync(path.join(HERE, "..", "assets", "tracks.js"),
@@ -226,9 +241,12 @@ export const ME_LINE = ${fmt(me.map(unloc))};
 export const JOIN_SIGMA = ${JOIN_SIGMA};
 // ME_SIDES: at each point of ME_LINE on the real track, the other three tracks' offsets from the line, [w1, w2, e2]
 export const ME_SIDES = ${JSON.stringify(sides.slice(0, nReal))};
-// UPN_LINE: the UP North, on from where LOW_LINE ends to ~${PAST} m past Rogers Park, [lon, lat] (OSM's nodes).
+// UPN_LINE: the UP North, from ${UPN_FROM_PAST} m past Clybourn (buildPlan cuts LOW_LINE at its first point) to ~${PAST} m past
+// Rogers Park, [lon, lat]: OSM's nodes, straightened (Douglas-Peucker).
 export const UPN_LINE = ${fmt(upn)};
 // BROWN_LINE: the Brown Line's tracks (OSM's ways) within ${BROWN_REACH} m of where it crosses over the UP North, [lon, lat].
 export const BROWN_LINE = [${brown.map(fmt).join(",\n ")}];
+// BROWN_ADDISON: the two platforms of the Brown Line's Addison station (OSM's outlines), [lon, lat].
+export const BROWN_ADDISON = [${brownPlatforms.map(fmt).join(",\n ")}];
 `);
-console.log(`ME_LINE ${me.length} points (${(me.length * 10 / 1609).toFixed(2)} mi), ease from ${unloc(easeFrom)} (${lam0.toFixed(1)} m off the straight); UPN_LINE ${upn.length} points to ${upn.at(-1)}; BROWN_LINE ${brown.length} ways, crossing at ${unloc(cross)}`);
+console.log(`ME_LINE ${me.length} points (${(me.length * 10 / 1609).toFixed(2)} mi), ease from ${unloc(easeFrom)} (${lam0.toFixed(1)} m off the straight); UPN_LINE ${upn.length} points to ${upn.at(-1)}; BROWN_LINE ${brown.length} ways, ${brownPlatforms.length} platforms at Addison, crossing at ${unloc(cross)}`);

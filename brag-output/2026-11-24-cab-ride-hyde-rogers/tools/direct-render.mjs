@@ -3,6 +3,7 @@
  * Render the film straight from three.js to MP4, without HyperFrames' screenshot capture.
  *
  *   node tools/direct-render.mjs [--size 720|1080|2k|4k] [--output file.mp4] [--start 0] [--end 157] [--bitrate 30]
+ *                                [--web | --no-cards --no-minimap --no-captions]
  *
  * Every frame of the film is a pure function of time (assets/cab-ride.js: render(t)), so this opens
  * index.html in Google Chrome (new headless mode, which draws on the GPU), steps t through the film a
@@ -15,6 +16,9 @@
  * It reaches the page as index.html?size=WxH and leaves index.html as it is (build.py --size sets that, for
  * HyperFrames). The bitrate defaults to suit the size: 8, 12, 20 or 30 Mbit/s. HyperFrames still does the previews
  * and the check; this only replaces its render.
+ *
+ * --web renders the cut for the web page (tunnel.stevevance.net/cabride/): no story cards, captions or minimap, which
+ * the page shows beside the video instead (index.html?web). --no-cards, --no-minimap and --no-captions leave out one each.
  *
  * Where Chrome has no H.264 encoder for the frame size (Linux has none at 4K), or with RAW=1, each frame is sent back
  * as a JPEG (quality 0.97: raw pixels are 33 MB a frame at 4K, far too slow to send) and ffmpeg encodes them: on an
@@ -62,7 +66,8 @@ const server = http.createServer((req, res) => {
   }
   if (req.method === "POST" && url.pathname === "/__start") {        // raw mode: start ffmpeg for frames W x H
     const W = +url.searchParams.get("w"), H = +url.searchParams.get("h");
-    const nvenc = execFileSync("ffmpeg", ["-hide_banner", "-encoders"]).toString().includes("h264_nvenc");
+    // ffmpeg may list h264_nvenc on a GPU that has no encoder (H100, H200): try a frame before trusting it
+    const nvenc = (() => { try { execFileSync("ffmpeg", ["-hide_banner", "-loglevel", "error", "-f", "lavfi", "-i", "color=s=256x256", "-frames:v", "1", "-c:v", "h264_nvenc", "-f", "null", "-"]); return true; } catch { return false; } })();
     const codec = nvenc ? ["-c:v", "h264_nvenc", "-preset", "p6", "-rc", "vbr", "-cq", "18", "-b:v", `${bitrate}`, "-maxrate", `${bitrate * 1.5}`]
       : ["-c:v", "libx264", "-preset", "medium", "-crf", "16"];
     enc = spawn("ffmpeg", ["-v", "error", "-y", "-f", "image2pipe", "-c:v", "mjpeg", "-framerate", `${FPS}`, "-i", "-",
@@ -97,7 +102,8 @@ const page = await browser.newPage();
 await page.setViewport({ width: 1280, height: 720 });
 page.on("console", (m) => { const t = m.text(); if (t.startsWith("[direct]")) console.log(t.slice(9)); });
 page.on("pageerror", (e) => console.error("page error:", e.message));
-await page.goto(`http://127.0.0.1:${port}/index.html?size=${frameW}x${frameH}`, { waitUntil: "load" });
+const overlays = ["web", "nocards", "nominimap", "nocaptions"].filter((k) => process.argv.includes("--" + k.replace(/^no/, "no-"))).map((k) => "&" + k).join("");
+await page.goto(`http://127.0.0.1:${port}/index.html?size=${frameW}x${frameH}${overlays}`, { waitUntil: "load" });
 await page.waitForFunction(() => !!window.__cabRide, { timeout: 180000 });
 
 const t0 = Date.now();

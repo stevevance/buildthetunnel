@@ -61,12 +61,12 @@ if (fs.existsSync(path.join(ROOT, "assets/audio/rumble.m4a"))) add("rumble", "ru
 const NOTICE_SEED = 7;
 const rand = (() => { let a = NOTICE_SEED >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let x = Math.imul(a ^ (a >>> 15), 1 | a); x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x; return ((x ^ (x >>> 14)) >>> 0) / 4294967296; }; })();
 const gaps = [];                                                  // [from, to] in film seconds, filled in below
-// 59th, where the film opens standing: the welcome, then the doors close
+// 59th, where the ride opens standing (after the opening shot: first.t in): the welcome, then the doors close
 const first = info.arrivals[0];
-add("prechime0", "prechime.m4a", 0.2, 2, 0.8);
-add("welcome", "welcome.m4a", 1.5, 1, 1);
-add("closing0", "closing.m4a", first.dwell - 2.1, 1, 1);
-add("closechime0", "closechime.m4a", first.dwell - 1.1, 2, 0.7);
+add("prechime0", "prechime.m4a", first.t + 0.2, 2, 0.8);
+add("welcome", "welcome.m4a", first.t + 1.5, 1, 1);
+add("closing0", "closing.m4a", first.t + first.dwell - 2.1, 1, 1);
+add("closechime0", "closechime.m4a", first.t + first.dwell - 1.1, 2, 0.7);
 info.arrivals.slice(1).forEach(({ t, name, dwell }, k) => {
   // "Next stop…" ends just before the train stops, after the doors have closed at the stop before. Where the run is too
   // short for the chime before it as well, it goes without.

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cab ride: Union Station to Chicago/Halsted | Build the Tunnel</title>
+<meta name="description" content="Ride the proposed CrossTowner X1 from Union Station to Chicago/Halsted through the Clinton–Roosevelt Connector tunnel, with a live map, the story beside the video, and a 360° view over Chicago/Halsted.">
+<link rel="canonical" href="https://tunnel.stevevance.net/cabride/">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Build the Tunnel">
+<meta property="og:title" content="Cab ride: Union Station to Chicago/Halsted">
+<meta property="og:description" content="A one-minute ride on the proposed CrossTowner X1 through a new tunnel under Clinton St, with a map that follows the train and a 360° view over Chicago/Halsted.">
+<meta property="og:url" content="https://tunnel.stevevance.net/cabride/">
+<meta property="og:image" content="https://tunnel.stevevance.net/cabride/img/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="A rendered view of downtown Chicago from 380 meters above the Chicago/Halsted stop">
+<meta name="twitter:card" content="summary_large_image">
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+<link href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.1/dist/maplibre-gl.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.15.1/index.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/markers-plugin@5.15.1/index.css" rel="stylesheet">
+<link href="style.css" rel="stylesheet">
+
+<!-- Photo Sphere Viewer and three.js are ES modules, loaded (only when the 360 view is near) through this map.
+     MapLibre 5 ships only a UMD bundle, so it loads as a classic script below. -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.185.1/build/three.module.min.js",
+    "@photo-sphere-viewer/core": "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.15.1/index.module.js",
+    "@photo-sphere-viewer/cubemap-adapter": "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/cubemap-adapter@5.15.1/index.module.js",
+    "@photo-sphere-viewer/cubemap-tiles-adapter": "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/cubemap-tiles-adapter@5.15.1/index.module.js",
+    "@photo-sphere-viewer/markers-plugin": "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/markers-plugin@5.15.1/index.module.js",
+    "@photo-sphere-viewer/gyroscope-plugin": "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/gyroscope-plugin@5.15.1/index.module.js",
+    "@photo-sphere-viewer/visible-range-plugin": "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/visible-range-plugin@5.15.1/index.module.js"
+  }
+}
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.1/dist/maplibre-gl.js"></script>
+<script type="module" src="app.js"></script>
+</head>
+<body>
+
+<header class="site-header bg-crcl text-white px-3 py-2">
+  <h1 class="h5 mb-0">Cab ride: Union Station to Chicago/Halsted</h1>
+  <p class="small opacity-75 mb-0">A one-minute ride on CrossTowner's X1 through the Clinton&ndash;Roosevelt Connector; the tunnel and its trains are proposed, not built.</p>
+  <nav class="small mt-2 d-flex flex-wrap column-gap-3 row-gap-1" aria-label="Site">
+    <a href="../" class="text-white text-decoration-none opacity-75">Home</a>
+    <a href="../planner/" class="text-white text-decoration-none opacity-75">Trip planner</a>
+    <a href="../popular.html" class="text-white text-decoration-none opacity-75">Popular trips</a>
+    <a href="../ohareaccess.html" class="text-white text-decoration-none opacity-75">O'Hare workforce</a>
+    <a href="../planner/methodology.html" class="text-white text-decoration-none opacity-75">Methodology</a>
+    <a href="../flythrough/" class="text-white text-decoration-none opacity-75">3D map</a>
+    <a href="./" class="text-white text-decoration-none fw-semibold nav-current" aria-current="page">Cab ride</a>
+    <a href="../signup.html" class="text-white text-decoration-none opacity-75">Get updates</a>
+    <a href="https://www.stevencanplan.com/2026/11/regional-rail-ride/" class="text-white text-decoration-none opacity-75">Virtual ride<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true" style="vertical-align:baseline;margin-left:2px"><path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5"/><path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z"/></svg></a>
+  </nav>
+</header>
+
+<!-- shown only on phones and tablets (app.js), until dismissed -->
+<div class="mobile-note" id="mobile-note" role="note" hidden>
+  <span>This page is best viewed on a desktop computer, where the 360&deg; views are sharper when you zoom in.</span>
+  <button type="button" class="btn-close btn-close-white" id="mobile-note-close" aria-label="Dismiss"></button>
+</div>
+
+<main class="app">
+  <div class="col-video">
+    <div class="stage" id="stage">
+      <video id="video" controls playsinline preload="auto" poster="img/poster.jpg"
+             aria-label="Cab ride video: Union Station to Chicago/Halsted, about one minute">
+        <track kind="captions" src="data/captions.vtt" srclang="en" label="English">
+      </video>
+
+      <!-- the 360 view: Photo Sphere Viewer, opened over the paused frame -->
+      <section class="pano-layer" id="pano-layer" aria-label="360-degree view">
+        <div class="psv" id="psv" tabindex="0"
+             aria-label="360-degree view. Drag, or use the arrow keys, to look around; plus and minus zoom."></div>
+        <div class="pano-bar">
+          <button type="button" class="btn btn-sm pano-btn pano-btn-primary" id="pano-back">&#9654; Back to the video</button>
+          <button type="button" class="btn btn-sm pano-btn" id="pano-switch">Down to the platform</button>
+        </div>
+      </section>
+      <div class="pano-loading" id="pano-loading" role="status" hidden>Loading the 360&deg; view&hellip;</div>
+
+      <!-- the end of the cut -->
+      <section class="end-layer" id="end-layer" aria-label="End of the ride" hidden>
+        <div class="end-card">
+          <p class="end-kicker">End of this cut</p>
+          <p class="end-title">How much faster would your trip be?</p>
+          <div class="d-flex flex-wrap gap-2 justify-content-center">
+            <button type="button" class="btn btn-light" id="replay">&#8635; Watch again</button>
+            <a class="btn btn-gain" href="../planner/">Plan your own trip &rarr;</a>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="below-stage">
+      <div class="d-flex flex-wrap align-items-center gap-3">
+        <div class="form-check form-switch mb-0">
+          <input class="form-check-input" type="checkbox" role="switch" id="stop360" checked>
+          <label class="form-check-label small" for="stop360">Stop for the 360 view</label>
+        </div>
+        <div class="form-check form-switch mb-0">
+          <input class="form-check-input" type="checkbox" role="switch" id="captions">
+          <label class="form-check-label small" for="captions">Captions</label>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-crcl" id="open360">Open the 360 view</button>
+      </div>
+
+      <div class="hotspots" id="hotspots" hidden>
+        <h2 class="h6 mb-1" id="hotspots-h">What you can see from here</h2>
+        <ul class="hotspot-list" id="hotspot-list" aria-labelledby="hotspots-h"></ul>
+      </div>
+    </div>
+
+    <footer class="page-notes small text-secondary">
+      <p class="mb-1">The film is a 3D rendering, not footage: the stations, the trains and the new buildings in it are modeled.</p>
+      <p class="mb-0">Made by Steven Vance, using the
+      <a href="https://buildthetunnelchicago.org/" target="_blank" rel="noopener">Star:Line Chicago CrossTowner</a>
+      map and synthetic schedule. This site is otherwise unaffiliated with Star:Line Chicago.</p>
+    </footer>
+  </div>
+
+  <div class="col-side">
+    <div class="map-wrap">
+      <div id="map" class="map" role="region" aria-label="Map of the X1 route, following the train"></div>
+    </div>
+
+    <section class="story" id="story" aria-labelledby="story-h">
+      <section class="place-card" id="place-card" aria-labelledby="place-name" hidden>
+        <div class="d-flex align-items-start gap-2">
+          <div class="flex-grow-1">
+            <p class="place-kind" id="place-kind"></p>
+            <h2 class="h5 mb-1" id="place-name"></h2>
+          </div>
+          <button type="button" class="btn-close" id="place-close" aria-label="Close this place and return to the story"></button>
+        </div>
+        <p class="mb-1" id="place-text"></p>
+        <dl class="place-facts" id="place-facts"></dl>
+        <p class="place-source small text-secondary mb-0" id="place-source" hidden></p>
+      </section>
+
+      <h2 class="h6 story-h" id="story-h">Along the way</h2>
+      <ol class="cards" id="cards" aria-live="polite">
+        <li class="cards-empty" id="cards-empty">Press play. Notes about the ride appear here as the train reaches them.</li>
+      </ol>
+    </section>
+  </div>
+</main>
+
+<!-- Cloudflare Web Analytics, on the live site only (its collector rejects other origins, which shows as console errors) -->
+<script>
+  if (location.hostname === "tunnel.stevevance.net") {
+    const s = document.createElement("script");
+    s.type = "module";
+    s.src = "https://static.cloudflareinsights.com/beacon.min.js";
+    s.dataset.cfBeacon = '{"token": "998e0617479743128964a1b458776630"}';
+    document.body.append(s);
+  }
+</script>
+<!-- End Cloudflare Web Analytics -->
+</body>
+</html>

@@ -1,0 +1,8 @@
+# Serves the cab ride page's videos (tunnel.stevevance.net/cabride/) from R2. Deploy from this folder: npx wrangler deploy
+name = "buildthetunnel-media"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "cabride-media"
