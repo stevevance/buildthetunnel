@@ -46,6 +46,20 @@
   "source": "Prairie Materials (prairie.com); a Votorantim Cimentos job posting, February 2025. Walk: OpenStreetMap's streets from the top of the station's stairs at 2.75 mph, with the Chicago Ave and Halsted St viaducts rebuilt"
  },
  {
+  "id": "foundry-park",
+  "name": "Foundry Park",
+  "kind": "destination",
+  "lon": -87.66286,
+  "lat": 41.91741,
+  "y": 110,
+  "views": [
+   "hero"
+  ],
+  "text": "JDL Development and Kayne Anderson's neighborhood on the old A. Finkl & Sons steel works, on the North Branch at Cortland St, about 450 m east of the X1's Clybourn stop. Its first phase, a hotel, two apartment buildings and a 39-story tower, broke ground in October 2026.",
+  "draft": true,
+  "source": "The City's Plan Commission deck for Foundry Park (the amendment of PD 1439, January 2026); Chicago YIMBY"
+ },
+ {
   "id": "bus-8",
   "name": "#8 Halsted bus",
   "kind": "bus",
