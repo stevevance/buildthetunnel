@@ -84,6 +84,15 @@
     .panel{width:auto;flex:none}
     #map{min-height:60vh}
   }
+  /* "N minutes faster": the bright green pill with a tick, as on the cab ride film's trip cards */
+  .faster{ display:inline-flex; align-items:center; gap:.5rem; background:#3ee08a; color:#05331a; font-weight:800;
+           font-size:1.05rem; line-height:1.2; padding:.45rem 1.1rem .45rem .8rem; border-radius:999px;
+           box-shadow:0 0 16px rgba(53,208,127,.55); animation:faster-pop .35s ease-out both; }
+  .faster svg{ flex:none; }
+  .faster .faster-with{ font-weight:600; }
+  .not-faster{ background:#eef1f3; color:#3a4750; border-radius:8px; padding:.6rem .9rem; }
+  @keyframes faster-pop{ from{ transform:scale(.85); opacity:0; } to{ transform:none; opacity:1; } }
+  @media (prefers-reduced-motion: reduce){ .faster{ animation:none; } }
 </style>
 </head>
 <body class="d-flex flex-column">
@@ -95,9 +104,9 @@
     <a href="../" class="text-white text-decoration-none opacity-75">Home</a>
     <a href="index.html" class="text-white text-decoration-none fw-semibold" style="border-bottom:2px solid #fff;padding-bottom:1px">Trip planner</a>
     <a href="../popular.html" class="text-white text-decoration-none opacity-75">Popular trips</a>
-    <a href="../ohareaccess.html" class="text-white text-decoration-none opacity-75">O'Hare workforce</a>
-    <a href="methodology.html" class="text-white text-decoration-none opacity-75">Methodology</a>
+    <a href="../analysis.html" class="text-white text-decoration-none opacity-75">Analysis</a>
     <a href="../flythrough/" class="text-white text-decoration-none opacity-75">3D map</a>
+    <a href="../cabride/" class="text-white text-decoration-none opacity-75">Cab ride</a>
     <a href="../signup.html" class="text-white text-decoration-none opacity-75">Get updates</a>
     <a href="https://www.stevencanplan.com/2026/11/regional-rail-ride/" class="text-white text-decoration-none opacity-75">Virtual ride<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true" style="vertical-align:baseline;margin-left:2px"><path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5"/><path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z"/></svg></a>
   </nav>

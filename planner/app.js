@@ -709,10 +709,14 @@
     var delta = "";
     if (today && scen) {
       var d = Math.round(today.total - scen.total);
-      delta = '<div class="alert mb-0 text-white small" style="background:var(--crcl)">' + (d > 0
-        ? "CrossTowner is <b>" + d + " min faster</b>."
-        : d < 0 ? "CrossTowner is " + (-d) + " min slower here."
-                : "Same total time on this trip.") + '</div>';
+      // faster: the cab ride film's green pill with a tick; otherwise a plain note
+      delta = d > 0
+        ? '<div><span class="faster" role="status"><svg width="18" height="14" viewBox="0 0 18 14" aria-hidden="true">' +
+          '<path d="M2 7.5 6.5 12 16 2" fill="none" stroke="#05331a" stroke-width="3.2" stroke-linecap="round" ' +
+          'stroke-linejoin="round"/></svg><span>' + d + (d === 1 ? " minute" : " minutes") + ' faster ' +
+          '<span class="faster-with">with CrossTowner</span></span></span></div>'
+        : '<div class="not-faster small">' + (d < 0 ? "CrossTowner is " + (-d) + " min slower here."
+                                                   : "Same total time on this trip.") + '</div>';
     }
     el.innerHTML =
       card("Today", "#3A4750", today, "today") +
