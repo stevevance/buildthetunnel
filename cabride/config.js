@@ -7,14 +7,14 @@
 export const MEDIA_BASE = "https://buildthetunnel-media.buildthetunnel.workers.dev/";
 export const VIDEO = {
   local: "media/cabride-test-720.mp4",
-  r2: MEDIA_BASE + "cabride-v1-1080.mp4",          // wide screens
-  r2Narrow: MEDIA_BASE + "cabride-v1-720.mp4",     // narrow ones
+  r2: MEDIA_BASE + "cabride-v3-1080.mp4",          // wide screens
+  r2Narrow: MEDIA_BASE + "cabride-v3-720.mp4",     // narrow ones
 };
 const NARROW = "(max-width: 899.98px), (max-height: 540px)";
 
 // The 360 views' images (the small whole faces in base/ and the tiles) are on R2 too, under a version that changes with
 // every render (so no cache serves an old one); each view's meta.json stays here with the page.
-export const PANO_VERSION = "v1";
+export const PANO_VERSION = "v3";
 export function panoImages(dir) {
   return new URLSearchParams(location.search).has("local") ? dir : `${MEDIA_BASE}pano/${PANO_VERSION}/${dir.replace(/^pano\//, "")}`;
 }

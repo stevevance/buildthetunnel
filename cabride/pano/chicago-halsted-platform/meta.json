@@ -18,16 +18,16 @@
  "base": 1024,
  "at": {
   "lonlat": [
-   -87.646914,
-   41.895172
+   -87.647064,
+   41.895104
   ],
   "y": 2.7,
-  "x": -2226,
-  "z": -3465.8
+  "x": -2238.5,
+  "z": -3458.2
  },
  "look": {
-  "yaw": 342.3,
-  "pitch": -13,
+  "yaw": 341.1,
+  "pitch": -13.1,
   "fov": 40
  },
  "front": "north",
@@ -41,9 +41,9 @@
    "y": 300,
    "text": "The Willis (Sears) Tower: 110 stories, 1,451 ft to its roof. Union Station, two stops back, is two blocks west of it.",
    "draft": true,
-   "yaw": 153.21,
-   "pitch": 8.35,
-   "dist": 2025
+   "yaw": 152.8,
+   "pitch": 8.36,
+   "dist": 2024
   },
   {
    "id": "ballys",
@@ -56,9 +56,9 @@
    "walk": "About a 4-minute walk east along Chicago Ave (300 m)",
    "draft": true,
    "source": "Walk: OpenStreetMap's streets from the top of the station's stairs at 2.75 mph, with the Chicago Ave and Halsted St viaducts rebuilt",
-   "yaw": 85.36,
-   "pitch": 7.23,
-   "dist": 176
+   "yaw": 83.38,
+   "pitch": 6.73,
+   "dist": 189
   },
   {
    "id": "halsted-pointe",
@@ -71,9 +71,9 @@
    "walk": "About a 5-minute walk north on Halsted St (340 m)",
    "draft": true,
    "source": "Walk: OpenStreetMap's streets from the top of the station's stairs at 2.75 mph, with the Chicago Ave and Halsted St viaducts rebuilt",
-   "yaw": 1.61,
-   "pitch": 11.63,
-   "dist": 424
+   "yaw": 3.23,
+   "pitch": 11.42,
+   "dist": 432
   },
   {
    "id": "prairie",
@@ -86,9 +86,9 @@
    "walk": "About a 4-minute walk to the gate at the north end of Peoria St (280 m)",
    "draft": true,
    "source": "Prairie Materials (prairie.com); a Votorantim Cimentos job posting, February 2025. Walk: OpenStreetMap's streets from the top of the station's stairs at 2.75 mph, with the Chicago Ave and Halsted St viaducts rebuilt",
-   "yaw": 322.17,
-   "pitch": 2.23,
-   "dist": 315
+   "yaw": 324.81,
+   "pitch": 2.24,
+   "dist": 314
   },
   {
    "id": "elizabeth-410",
@@ -100,12 +100,12 @@
    "views": [
     "hero"
    ],
-   "text": "The first of two towers at 400 N Elizabeth, by Tree Street Group and Mark Goodman & Associates: 33 stories and 383 apartments over a five-level podium, about 1.2 km southwest of the station. Building began in July 2026; this view shows it at level 7.",
+   "text": "The first of two towers at 400 N Elizabeth, by Tree Street Group and Mark Goodman & Associates: 33 stories and 383 apartments over a five-level podium. It's about 500 m from CrossTowner's proposed Ashland/Ogden station on the X5 and X6, and 1.2 km southwest of Chicago/Halsted. Building began in July 2026; this view shows it at level 7.",
    "draft": true,
-   "source": "The City's planned development ordinance (PD 1528, May 2024); Chicago YIMBY's construction reports, November 2026",
-   "yaw": 237.3,
-   "pitch": 1.28,
-   "dist": 1222
+   "source": "The City's planned development ordinance (PD 1528, May 2024); Chicago YIMBY's construction reports, November 2026; the station from Star:Line Chicago's CrossTowner map and synthetic schedule",
+   "yaw": 237.28,
+   "pitch": 1.3,
+   "dist": 1207
   },
   {
    "id": "foundry-park",
@@ -120,9 +120,26 @@
    "text": "JDL Development and Kayne Anderson's neighborhood on the old A. Finkl & Sons steel works, on the North Branch at Cortland St, about 450 m east of the X1's Clybourn stop. Its first phase, a hotel, two apartment buildings and a 39-story tower, broke ground in October 2026.",
    "draft": true,
    "source": "The City's Plan Commission deck for Foundry Park (the amendment of PD 1439, January 2026); Chicago YIMBY",
-   "yaw": 331.86,
+   "yaw": 332.15,
    "pitch": 2.19,
-   "dist": 2801
+   "dist": 2802
+  },
+  {
+   "id": "salt-shed",
+   "name": "The Salt Shed",
+   "kind": "destination",
+   "lon": -87.659204,
+   "lat": 41.90618,
+   "y": 15,
+   "views": [
+    "hero"
+   ],
+   "text": "The old Morton Salt shed (1929-30), a Chicago Landmark with MORTON SALT painted across its roof, now a music venue with an outdoor stage, the Fairgrounds. A short walk from the X1's next stop, Division/Elston.",
+   "draft": true,
+   "source": "The City's landmark designation report for the Morton Salt Company Warehouse Complex (2021); WBEZ, June 2024",
+   "yaw": 320.73,
+   "pitch": 0.44,
+   "dist": 1589
   },
   {
    "id": "bus-8",
@@ -150,9 +167,9 @@
     }
    ],
    "walk": "Under a minute's walk from the station's stairs",
-   "yaw": 341.6,
-   "pitch": 1.67,
-   "dist": 182
+   "yaw": 345.99,
+   "pitch": 1.64,
+   "dist": 185
   },
   {
    "id": "bus-66",
@@ -180,9 +197,9 @@
     }
    ],
    "walk": "Under a minute's walk from the station's stairs",
-   "yaw": 346.75,
-   "pitch": 2.36,
-   "dist": 128
+   "yaw": 352.69,
+   "pitch": 2.27,
+   "dist": 134
   },
   {
    "id": "division-elston",
@@ -195,9 +212,9 @@
     "hero"
    ],
    "text": "The X1's next stop, at Division St and Elston Ave, about 1.4 km up the line.",
-   "yaw": 309.38,
+   "yaw": 309.93,
    "pitch": 0.13,
-   "dist": 1435
+   "dist": 1431
   },
   {
    "id": "clybourn",
@@ -210,9 +227,9 @@
     "hero"
    ],
    "text": "Metra's Clybourn station, the stop after Division/Elston, where the X1 runs on the UP North's tracks. Transfer to Union Pacific Northwest trains.",
-   "yaw": 324.27,
+   "yaw": 324.55,
    "pitch": 0.06,
-   "dist": 2997
+   "dist": 2995
   }
  ]
 }

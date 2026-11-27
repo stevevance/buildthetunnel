@@ -173,7 +173,13 @@ video.addEventListener("play", () => {
   hideEnd();
   if (S.mode === "pano") close360({ play: false });
 });
-video.addEventListener("ended", showEnd);
+// The cut ends at the top of the hero shot, the 360 view's own frame, so the end is where the 360 view opens
+// (unless the reader turned that off, or it's already open: then the end card, with its replay button).
+video.addEventListener("ended", () => {
+  if (S.mode === "pano") return;
+  if ($("stop360").checked && !viewerFailed) open360();
+  else showEnd();
+});
 
 /* ---------- story panel ---------- */
 const CARDS = story
@@ -684,7 +690,13 @@ function close360({ play = true } = {}) {
   }
 }
 
-$("pano-back").addEventListener("click", () => close360({ play: true }));
+// back to the video: playing on from where it paused, or, at the end of the cut, to the end card (playing an ended
+// video would start it over)
+$("pano-back").addEventListener("click", () => {
+  const atEnd = video.ended || video.currentTime >= video.duration - 0.1;
+  close360({ play: !atEnd });
+  if (atEnd) showEnd();
+});
 $("pano-switch").addEventListener("click", () => {
   if (viewer && S.mode === "pano") showPano(S.pano === "hero" ? "platform" : "hero", { animate: true });
 });
