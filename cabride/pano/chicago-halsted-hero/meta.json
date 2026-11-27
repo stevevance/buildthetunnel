@@ -91,6 +91,23 @@
    "dist": 715
   },
   {
+   "id": "elizabeth-410",
+   "name": "410 N Elizabeth",
+   "kind": "destination",
+   "lon": -87.659319,
+   "lat": 41.88923,
+   "y": 30,
+   "views": [
+    "hero"
+   ],
+   "text": "The first of two towers at 400 N Elizabeth, by Tree Street Group and Mark Goodman & Associates: 33 stories and 383 apartments over a five-level podium. It's about 500 m from CrossTowner's proposed Ashland/Ogden station on the X5 and X6, and 1.2 km southwest of Chicago/Halsted. Building began in July 2026; this view shows it at level 7.",
+   "draft": true,
+   "source": "The City's planned development ordinance (PD 1528, May 2024); Chicago YIMBY's construction reports, November 2026; the station from Star:Line Chicago's CrossTowner map and synthetic schedule",
+   "yaw": 199.35,
+   "pitch": -11.91,
+   "dist": 1659
+  },
+  {
    "id": "foundry-park",
    "name": "Foundry Park",
    "kind": "destination",
@@ -106,6 +123,23 @@
    "yaw": 331.69,
    "pitch": -8.64,
    "dist": 1777
+  },
+  {
+   "id": "salt-shed",
+   "name": "The Salt Shed",
+   "kind": "destination",
+   "lon": -87.659204,
+   "lat": 41.90618,
+   "y": 15,
+   "views": [
+    "hero"
+   ],
+   "text": "The old Morton Salt shed (1929-30), a Chicago Landmark with MORTON SALT painted across its roof, now a music venue with an outdoor stage, the Fairgrounds. A short walk from the X1's next stop, Division/Elston.",
+   "draft": true,
+   "source": "The City's landmark designation report for the Morton Salt Company Warehouse Complex (2021); WBEZ, June 2024",
+   "yaw": 300.45,
+   "pitch": -30.22,
+   "dist": 627
   },
   {
    "id": "bus-8",
