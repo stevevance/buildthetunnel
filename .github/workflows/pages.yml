@@ -34,8 +34,8 @@ jobs:
         run: |
           mkdir _site
           cp -R \
-            index.html popular.html ohareaccess.html signup.html \
-            flythrough planner maps img \
+            index.html popular.html ohareaccess.html signup.html analysis.html \
+            flythrough planner maps img cabride \
             lines.js favicon.svg apple-touch-icon.png \
             sitemap.xml robots.txt CNAME \
             _site/

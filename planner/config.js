@@ -78,6 +78,12 @@ window.PLANNER_CONFIG = {
       blurb: "North Side to Indiana on the X1 tunnel: the E Line downtown, X1 to 55-56-57, then the South Shore Line's new Monon branch.",
       from: { label: "Mayfair",            lat: 41.95972, lon: -87.74583 },
       to:   { ssl: "s20" }
+    },
+    {
+      title: "Evanston Main St. to the Salt Shed",
+      blurb: "Evanston to a show at the Salt Shed in one seat, a short walk from CrossTowner's new Division/Elston stop.",
+      from: { label: "Main St. (Evanston)", lat: 42.0333, lon: -87.68 },
+      to:   { label: "The Salt Shed, 1357 N Elston Ave", lat: 41.906708, lon: -87.659242 }   /* OSM way 210307434's centroid */
     }
   ],
 
