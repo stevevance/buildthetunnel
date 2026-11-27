@@ -52,3 +52,10 @@ brag-output/**/__pycache__/
 
 # Subscriber newsletters: drafts, send log and sent copies stay local
 newsletter/
+
+# the cab ride page's videos live on R2 (cabride/media holds local copies for testing)
+cabride/media/
+# the 360 views' images live on R2 too (the film's tools/upload-panos.sh); only each view's meta.json is in git
+cabride/pano/*/base/
+cabride/pano/*/tiles/
+cabride/pano/*/cross.jpg

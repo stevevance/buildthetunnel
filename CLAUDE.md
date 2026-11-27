@@ -16,7 +16,7 @@ Do **not** use `buildthetunnel.com` — that domain is not configured for this s
 
 Pushes to `main` deploy automatically via the GitHub Actions workflow
 `.github/workflows/pages.yml`. It publishes **only** the files it lists (the
-pages, `flythrough/`, `planner/`, `maps/`, `img/`, and a few root files); the
+pages, `flythrough/`, `planner/`, `maps/`, `img/`, `cabride/`, and a few root files); the
 rest of the repo (`CLAUDE.md`, `README.md`, `analysis/`, `docs/`, `newsletter/`,
 `worker/`) is not served. A new top-level file or folder must be added to that
 list to go live. Check the latest deploy with:
@@ -50,6 +50,25 @@ npx wrangler d1 execute planner_emails --remote --json \
 
 Use `--remote` to hit the deployed database; omit it and you query a local dev
 copy. Add `--json | jq '.[0].results'` to get clean result rows.
+
+## Cab ride page (cabride/)
+
+https://tunnel.stevevance.net/cabride/ plays a cut of the cab ride film with the story cards, a MapLibre map that
+follows the train, and captions beside the video; at the top of the hero shot over Chicago/Halsted the video pauses
+into a 360° view (Photo Sphere Viewer, tiled cube maps in `cabride/pano/`) with hotspots from `cabride/data/places.json`.
+Plan: `docs/plans/2026-11-26-cabride-page-plan.md`. Everything in `cabride/data/` and `cabride/pano/` is made from the
+film by its tools (`tools/export-web.mjs`, `tools/web-panos.sh`, on the cab-ride branch); `places.json` is hand-written.
+
+The video is too big for Pages, so it streams from Cloudflare R2 (bucket `cabride-media`) through a second Worker,
+`media-worker/` (`buildthetunnel-media`, https://buildthetunnel-media.buildthetunnel.workers.dev), which answers Range
+requests. File names carry a version (`cabride-v1-1080.mp4`, `cabride-v1-720.mp4`; `config.js` picks by screen size).
+Upload from `media-worker/`:
+
+```
+wrangler r2 object put cabride-media/cabride-v1-1080.mp4 --file <path> --content-type video/mp4 --remote
+```
+
+`cabride/media/` holds local copies for offline testing (gitignored; add `?local` to the page's address).
 
 ## South Shore Line (planner graft)
 
