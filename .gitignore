@@ -46,16 +46,32 @@ brag-output/**/*.mp3
 brag-output/**/*.ogg
 brag-output/**/*.wav
 brag-output/**/*.m4a
+# render logs (tools/droplet-render.sh writes one beside each video)
+brag-output/**/*.log
 # HyperFrames render caches and Python bytecode in the launch-video projects
 brag-output/**/.hyperframes/
 brag-output/**/__pycache__/
 
 # Subscriber newsletters: drafts, send log and sent copies stay local
 newsletter/
+.linode-token
 
 # the cab ride page's videos live on R2 (cabride/media holds local copies for testing)
 cabride/media/
-# the 360 views' images live on R2 too (the film's tools/upload-panos.sh); only each view's meta.json is in git
+
+# reference images for the modeled buildings: openly licensed ones are committed with their SOURCES.md; the rest stay local
+brag-output/*/refs/*/private/
+# the 360 views' images live on R2 too (tools/upload-panos.sh); only each view's meta.json is in git
 cabride/pano/*/base/
 cabride/pano/*/tiles/
 cabride/pano/*/cross.jpg
+
+# the films' review renders (contact sheets and stills; copies go to the Desktop for review), generated model exports,
+# downloaded source archives and tool caches stay local
+brag-output/*/previews/
+brag-output/*/exports/
+brag-output/*/assets/*.zip
+brag-output/*/tools/.cache/
+
+# the trip planner's walking tiles (planner/tools/build-walk-tiles.mjs) live on R2: planner/tools/upload-walk-tiles.sh
+planner/data/walk/

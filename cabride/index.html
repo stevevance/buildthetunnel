@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cab ride: Union Station to Chicago/Halsted | Build the Tunnel</title>
-<meta name="description" content="Ride the proposed CrossTowner X1 from Union Station to Chicago/Halsted through the Clinton–Roosevelt Connector tunnel, with a live map, the story beside the video, and a 360° view over Chicago/Halsted.">
+<title>Cab ride: Hyde Park to Rogers Park | Build the Tunnel</title>
+<meta name="description" content="Ride the proposed CrossTowner X1 from Hyde Park to Rogers Park through the Clinton–Roosevelt Connector tunnel, with a live map, the story beside the video, and a 360° view over Chicago/Halsted.">
 <link rel="canonical" href="https://tunnel.stevevance.net/cabride/">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Build the Tunnel">
-<meta property="og:title" content="Cab ride: Union Station to Chicago/Halsted">
-<meta property="og:description" content="A one-minute ride on the proposed CrossTowner X1 through a new tunnel under Clinton St, with a map that follows the train and a 360° view over Chicago/Halsted.">
+<meta property="og:title" content="Cab ride: Hyde Park to Rogers Park">
+<meta property="og:description" content="Ride the proposed CrossTowner X1 from Hyde Park to Rogers Park through a new tunnel under Clinton St, with a map that follows the train and a 360° view over Chicago/Halsted.">
 <meta property="og:url" content="https://tunnel.stevevance.net/cabride/">
 <meta property="og:image" content="https://tunnel.stevevance.net/cabride/img/og.jpg">
 <meta property="og:image:width" content="1200">
@@ -47,8 +47,8 @@
 <body>
 
 <header class="site-header bg-crcl text-white px-3 py-2">
-  <h1 class="h5 mb-0">Cab ride: Union Station to Chicago/Halsted</h1>
-  <p class="small opacity-75 mb-0">A one-minute ride on CrossTowner's X1 through the Clinton&ndash;Roosevelt Connector; the tunnel and its trains are proposed, not built.</p>
+  <h1 class="h5 mb-0">Cab ride: Hyde Park to Rogers Park</h1>
+  <p class="small opacity-75 mb-0">The whole X1, sped up, through the Clinton&ndash;Roosevelt Connector; the tunnel and its trains are proposed, not built.</p>
   <nav class="small mt-2 d-flex flex-wrap column-gap-3 row-gap-1" aria-label="Site">
     <a href="../" class="text-white text-decoration-none opacity-75">Home</a>
     <a href="../planner/" class="text-white text-decoration-none opacity-75">Trip planner</a>
@@ -69,7 +69,7 @@
   <div class="col-video">
     <div class="stage" id="stage">
       <video id="video" controls playsinline preload="auto" poster="img/poster.jpg"
-             aria-label="Cab ride video: Union Station to Chicago/Halsted, about one minute">
+             aria-label="Cab ride video: Hyde Park to Rogers Park, about five and a half minutes">
         <track kind="captions" src="data/captions.vtt" srclang="en" label="English">
       </video>
 
@@ -78,16 +78,16 @@
         <div class="psv" id="psv" tabindex="0"
              aria-label="360-degree view. Drag, or use the arrow keys, to look around; plus and minus zoom."></div>
         <div class="pano-bar">
-          <button type="button" class="btn btn-sm pano-btn pano-btn-primary" id="pano-back">&#9654; Back to the video</button>
+          <button type="button" class="btn btn-sm pano-btn pano-btn-primary" id="pano-back">&#9654; Continue the ride</button>
           <button type="button" class="btn btn-sm pano-btn" id="pano-switch">Down to the platform</button>
         </div>
       </section>
       <div class="pano-loading" id="pano-loading" role="status" hidden>Loading the 360&deg; view&hellip;</div>
 
-      <!-- the end of the cut -->
+      <!-- the end of the ride -->
       <section class="end-layer" id="end-layer" aria-label="End of the ride" hidden>
         <div class="end-card">
-          <p class="end-kicker">End of this cut</p>
+          <p class="end-kicker">Rogers Park: end of the line</p>
           <p class="end-title">How much faster would your trip be?</p>
           <div class="d-flex flex-wrap gap-2 justify-content-center">
             <button type="button" class="btn btn-light" id="replay">&#8635; Watch again</button>
@@ -100,19 +100,27 @@
     <div class="below-stage">
       <div class="d-flex flex-wrap align-items-center gap-3">
         <div class="form-check form-switch mb-0">
-          <input class="form-check-input" type="checkbox" role="switch" id="stop360" checked>
-          <label class="form-check-label small" for="stop360">Stop for the 360 view</label>
-        </div>
-        <div class="form-check form-switch mb-0">
           <input class="form-check-input" type="checkbox" role="switch" id="captions">
           <label class="form-check-label small" for="captions">Captions</label>
         </div>
-        <button type="button" class="btn btn-sm btn-outline-crcl" id="open360">Open the 360 view</button>
+        <!-- the 360 view's controls, together -->
+        <div class="ctl-360" role="group" aria-label="The 360-degree view at Chicago/Halsted">
+          <div class="form-check form-switch mb-0">
+            <input class="form-check-input" type="checkbox" role="switch" id="stop360" checked>
+            <label class="form-check-label small" for="stop360">Stop at Chicago/Halsted for the 360 view</label>
+          </div>
+          <button type="button" class="btn btn-sm btn-outline-crcl" id="open360">Open the 360 view at Chicago/Halsted</button>
+          <div class="form-check form-switch mb-0" id="wards-switch" hidden>
+            <input class="form-check-input" type="checkbox" role="switch" id="wards">
+            <label class="form-check-label small" for="wards">Ward boundaries</label>
+          </div>
+        </div>
       </div>
 
       <div class="hotspots" id="hotspots" hidden>
         <h2 class="h6 mb-1" id="hotspots-h">What you can see from here</h2>
         <ul class="hotspot-list" id="hotspot-list" aria-labelledby="hotspots-h"></ul>
+        <p class="wards-note small text-secondary mt-1 mb-0" id="wards-note" hidden></p>
       </div>
     </div>
 
@@ -121,10 +129,19 @@
       <p class="mb-0">Made by Steven Vance, using the
       <a href="https://buildthetunnelchicago.org/" target="_blank" rel="noopener">Star:Line Chicago CrossTowner</a>
       map and synthetic schedule. This site is otherwise unaffiliated with Star:Line Chicago.</p>
+      <p class="mb-0 mt-1">To learn how far people ride, the page notes when the video is played, how far it gets, and
+      which chapters, stops and 360 views are chosen, with a random, anonymous browser ID, how you arrived and your device
+      type (as the <a href="../planner/methodology.html">trip planner</a> does). None of it identifies you.</p>
       <!-- the release: bump it, and add a line below, with each push of the page -->
       <details class="changes mt-2">
-        <summary>Version 1.3 &middot; changes</summary>
+        <summary>Version 1.4 &middot; changes</summary>
         <dl class="mb-0">
+          <dt>1.4 <span>November 27, 2026</span></dt>
+          <dd>The whole ride, from Hyde Park to Rogers Park. It still stops for the 360 view over Chicago/Halsted, then
+          carries on; every stop on the map, and every place in the list, jumps to its moment. Street names along the way,
+          the North Ave yard, and a one-embankment Metra Electric south of 59th St with its catenary. A Ward
+          boundaries switch in the 360 view, and its controls together under the video. The map's Follow switch stays in
+          its corner: panning or zooming the map turns it off, and a click turns it back on.</dd>
           <dt>1.3 <span>November 27, 2026</span></dt>
           <dd>The video ends at the top of the climb over Chicago/Halsted and opens the 360 view there, instead of stopping
           partway through an announcement. Trains keep to the left-hand track the whole way, as on the Union Pacific lines.
@@ -165,7 +182,7 @@
 
       <h2 class="h6 story-h" id="story-h">Along the way</h2>
       <ol class="cards" id="cards" aria-live="polite">
-        <li class="cards-empty" id="cards-empty">Press play. Notes about the ride appear here as the train reaches them.</li>
+        <li class="cards-empty" id="cards-empty">Press play, or pick a stop or a place below to jump to it. Notes about the ride appear here as the train reaches them.</li>
       </ol>
     </section>
   </div>

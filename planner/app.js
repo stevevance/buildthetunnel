@@ -1136,7 +1136,17 @@
       });
       (i < PREDEFINED_VISIBLE ? box : (moreBox || box)).appendChild(b);
     });
-    if (moreWrap) moreWrap.hidden = CFG.predefined_trips.length <= PREDEFINED_VISIBLE;
+    if (moreWrap) {
+      var extra = CFG.predefined_trips.length - PREDEFINED_VISIBLE;
+      moreWrap.hidden = extra <= 0;
+      // the toggle says how many trips it holds, and how to fold them away again
+      var label = function () {
+        document.getElementById("predefined-more-label").textContent = moreWrap.open
+          ? "Show fewer example trips" : "See " + extra + " more example trip" + (extra === 1 ? "" : "s");
+      };
+      label();
+      moreWrap.addEventListener("toggle", label);
+    }
   }
 
   /* ---- permalinks ------------------------------------------------------- */

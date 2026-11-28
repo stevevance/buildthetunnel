@@ -32,13 +32,14 @@ otherwise-static planner: it stores voluntarily-provided emails and feedback, an
 proxies Geocode.earth so the API key stays server-side. Config in
 `worker/wrangler.toml`, schema in `worker/schema.sql`.
 
-The D1 database is **`planner_emails`** (binding `DB`) with three tables:
+The D1 database is **`planner_emails`** (binding `DB`) with four tables:
 
 | Table | Purpose | Key columns |
 |-------|---------|-------------|
 | `emails` | Advocacy email list; one row per address, re-submissions ignored. Dead addresses are marked, not deleted: skip rows where `bad_at` is set when emailing the list | `email` (PK), `created_at`, `source`, `user_agent`, `bad_at`, `bad_reason` |
 | `feedback` | User feedback; `trip` holds the share params for context | `id` (PK), `created_at`, `message`, `email` (optional), `trip`, `user_agent` |
 | `trips` | One row per planned trip (or failed search), for usage analytics | `origin`/`destination` (stations, not addresses), `today_min`/`scenario_min`, `transfers_*`, `x_route`, `result` (`ok`/`no_route`/…), `source`, `cid` (anonymous localStorage UUID), `ttoken`, `shared`, `device`, `ref_host`, `utm_*` |
+| `cabride_events` | The cab ride page's play events (`POST /play` from `cabride/app.js`): plays, every 10% reached by playing, arriving at the 360 stop by playing (`arrive360`) or jumping there (`jump360`), "Continue the ride", the end, chapter and stop jumps, the platform view, wards turned on. Only the live site sends them (`cabride/config.js` `STATS_URL`) | `event`, `detail`, `t` (film seconds), `sid` (one visit), `cid`, `video`, `device`, `ref_host`, `utm_*` |
 
 Query the live (remote) database with wrangler — run from `worker/`:
 
@@ -53,9 +54,11 @@ copy. Add `--json | jq '.[0].results'` to get clean result rows.
 
 ## Cab ride page (cabride/)
 
-https://tunnel.stevevance.net/cabride/ plays a cut of the cab ride film with the story cards, a MapLibre map that
-follows the train, and captions beside the video; at the top of the hero shot over Chicago/Halsted the video pauses
-into a 360° view (Photo Sphere Viewer, tiled cube maps in `cabride/pano/`) with hotspots from `cabride/data/places.json`.
+https://tunnel.stevevance.net/cabride/ plays the whole Hyde Park to Rogers Park cab ride
+(`brag-output/2026-11-24-cab-ride-hyde-rogers/`, rendered with `--web`) with the story cards, a chapter list, a
+MapLibre map that follows the train, and captions beside the video; at the top of the hero shot over Chicago/Halsted
+the video pauses into a 360° view (Photo Sphere Viewer, tiled cube maps in `cabride/pano/`) with hotspots from
+`cabride/data/places.json`, and "Continue the ride" plays on to Rogers Park.
 Plan: `docs/plans/2026-11-26-cabride-page-plan.md`. Everything in `cabride/data/` and `cabride/pano/` is made from the
 film by its tools (`tools/export-web.mjs`, `tools/web-panos.sh`, on the cab-ride branch); `places.json` is hand-written.
 

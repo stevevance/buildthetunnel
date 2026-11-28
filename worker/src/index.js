@@ -3,6 +3,7 @@
  *
  *   POST /email    { email, source } -> insert-or-ignore into D1 (advocacy list)
  *   POST /track    { origin, ... }   -> log a planned trip's stations + times (D1)
+ *   POST /play     { event, ... }    -> log one of the cab ride page's play events (D1 cabride_events)
  *   GET  /geocode?text=...           -> Geocode.earth autocomplete proxy
  *   GET  /s?...trip params           -> share page with per-trip og: tags,
  *                                        redirecting a human to the planner
@@ -42,6 +43,9 @@ export default {
       }
       if (url.pathname === "/track" && request.method === "POST") {
         return await handleTrack(request, env, cors);
+      }
+      if (url.pathname === "/play" && request.method === "POST") {
+        return await handlePlay(request, env, cors);
       }
       if (url.pathname === "/s" && request.method === "GET") {
         return handleShare(url);       // social crawlers + human redirect
@@ -197,6 +201,28 @@ async function handleTrack(request, env, cors) {
     oTyped, dTyped, oInput, dInput, oLat, oLon, dLat, dLon, oTerm, dTerm
   ).run();
   return json({ ok: true }, 200, cors);
+}
+
+/* ---- cab ride play events ---------------------------------------------- */
+// The cab ride page (cabride/app.js) sends these with navigator.sendBeacon, as text/plain so there's no preflight; the
+// browser ignores the reply. Only the allowed origins' events are kept, and only known events.
+const PLAY_EVENTS = new Set(["play", "progress", "arrive360", "jump360", "continue", "end", "replay", "chapter", "stop", "platform", "wards"]);
+async function handlePlay(request, env, cors) {
+  const allowed = (env.ALLOWED_ORIGINS || "").split(",").map((s) => s.trim());
+  if (allowed.indexOf(request.headers.get("Origin") || "") === -1) return new Response(null, { status: 204, headers: cors });
+  let body;
+  try { body = JSON.parse(await request.text()); } catch { return json({ error: "bad json" }, 400, cors); }
+  const event = String(body.event || "");
+  if (!PLAY_EVENTS.has(event)) return json({ error: "unknown event" }, 400, cors);
+  const str = (v, n) => String(v == null ? "" : v).slice(0, n) || null;
+  const t = body.t == null || !isFinite(+body.t) ? null : Math.round(+body.t * 100) / 100;
+  await env.DB.prepare(
+    "INSERT INTO cabride_events (created_at, event, detail, t, sid, cid, video, device, ref_host, utm_source, utm_medium, utm_campaign) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+  ).bind(
+    new Date().toISOString(), event, str(body.detail, 80), t, str(body.sid, 64), str(body.cid, 64), str(body.video, 40),
+    str(body.device, 12), str(body.ref_host, 100), str(body.utm_source, 60), str(body.utm_medium, 60), str(body.utm_campaign, 80)
+  ).run();
+  return new Response(null, { status: 204, headers: cors });
 }
 
 /* ---- share page (per-trip og: tags) ------------------------------------ */

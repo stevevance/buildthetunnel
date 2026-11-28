@@ -2,19 +2,19 @@
 
 // Where the video comes from: R2, through the buildthetunnel-media Worker (media-worker/), which answers Range requests
 // so the video streams and seeks. That holds on a local server too, so testing shows what visitors get. Add ?local to
-// the page's address to play the test cut in media/ instead (gitignored, never deployed; read whole, as python's
+// the page's address to play the copy in media/ instead (gitignored, never deployed; read whole, as python's
 // http.server ignores Range requests): for working offline.
 export const MEDIA_BASE = "https://buildthetunnel-media.buildthetunnel.workers.dev/";
 export const VIDEO = {
-  local: "media/cabride-test-720.mp4",
-  r2: MEDIA_BASE + "cabride-v3-1080.mp4",          // wide screens
-  r2Narrow: MEDIA_BASE + "cabride-v3-720.mp4",     // narrow ones
+  local: "media/cabride-v4-720.mp4",
+  r2: MEDIA_BASE + "cabride-v4-1080.mp4",          // wide screens
+  r2Narrow: MEDIA_BASE + "cabride-v4-720.mp4",     // narrow ones
 };
 const NARROW = "(max-width: 899.98px), (max-height: 540px)";
 
 // The 360 views' images (the small whole faces in base/ and the tiles) are on R2 too, under a version that changes with
 // every render (so no cache serves an old one); each view's meta.json stays here with the page.
-export const PANO_VERSION = "v3";
+export const PANO_VERSION = "v4";
 export function panoImages(dir) {
   return new URLSearchParams(location.search).has("local") ? dir : `${MEDIA_BASE}pano/${PANO_VERSION}/${dir.replace(/^pano\//, "")}`;
 }
@@ -24,6 +24,12 @@ export function videoSource() {
   if (q.has("local")) return VIDEO.local;
   return matchMedia(NARROW).matches ? VIDEO.r2Narrow : VIDEO.r2;
 }
+
+// Play stats (app.js stat()): small events to the planner's Worker (worker/, POST /play), kept in D1's cabride_events.
+// Only the live site sends them to the live Worker; a local server sends them to `wrangler dev` (port 8787), for
+// testing, and anywhere else (the ngrok tunnel) sends none, so tests stay out of the live numbers.
+export const STATS_URL = location.hostname === "tunnel.stevevance.net" ? "https://buildthetunnel-planner.buildthetunnel.workers.dev/play"
+  : /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? "http://127.0.0.1:8787/play" : null;
 
 // The map: OpenFreeMap's vector tiles (no key), and how close it follows the train.
 export const MAP_STYLE = "https://tiles.openfreemap.org/styles/positron";

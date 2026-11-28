@@ -38,7 +38,11 @@ a { color: var(--crcl-dark); }
   min-height: 0; overflow-y: auto; padding: 14px 18px 18px;
   /* the stage fills the column's width, but no taller than the window leaves room for */
   --stage-w: min(100%, calc((100dvh - var(--hdr) - 140px) * 16 / 9));
+  /* The notes under the controls run a little past the window's bottom, so the column scrolls; without a scroll bar,
+     which macOS would otherwise show beside the video whenever the pointer is over it. The wheel still scrolls it. */
+  scrollbar-width: none;
 }
+.col-video::-webkit-scrollbar { display: none; }
 .col-side { min-height: 0; display: flex; flex-direction: column; background: #fff; border-left: 1px solid var(--line); }
 
 .stage {
@@ -57,7 +61,9 @@ a { color: var(--crcl-dark); }
 
 .map-wrap { position: relative; flex: 0 0 46%; min-height: 220px; border-bottom: 1px solid var(--line); }
 .map { position: absolute; inset: 0; }
-.story { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 12px 14px 28px; }
+/* (positioned, so the screen-reader-only text in its buttons, Bootstrap's absolutely placed .visually-hidden, scrolls
+   inside it: placed against the page instead, the labels far down the list stretched the page to twice the window) */
+.story { position: relative; flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 12px 14px 28px; }
 
 /* ---------- layout: narrow screens ---------- */
 @media (max-width: 899.98px) {
@@ -135,6 +141,15 @@ a { color: var(--crcl-dark); }
 .end-title { font-size: 1.25rem; font-weight: 800; margin: .2rem 0 .8rem; }
 @media (max-width: 899.98px) { .end-card { padding: .7rem 1rem; } .end-title { font-size: 1rem; margin-bottom: .5rem; } }
 
+/* the 360 view's switch and button, grouped on a tint */
+.ctl-360 { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem 1rem; padding: .3rem .4rem .3rem .75rem;
+  background: rgba(11, 114, 133, .07); border-radius: 10px; }
+
+/* the wards' boundaries in the 360 view (app.js drawWards): drawn only, never in the way of a drag or a hotspot */
+.ward-line { pointer-events: none; }
+.ward-label { pointer-events: none; white-space: nowrap; font: 700 12px/1.2 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: #fff; background: rgba(176, 30, 104, .82); border-radius: 999px; padding: 2px 8px; box-shadow: 0 1px 3px rgba(0, 0, 0, .35); }
+
 /* ---------- under the stage ---------- */
 .hotspots { margin-top: 10px; }
 .hotspot-list { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 6px; }
@@ -167,6 +182,16 @@ a { color: var(--crcl-dark); }
 .card-time { margin-left: auto; font-size: .75rem; color: var(--muted); white-space: nowrap; }
 .card-text { display: block; margin-top: 3px; line-height: 1.4; }
 .card-note { display: block; margin-top: 6px; font-size: .78rem; color: var(--muted); }
+/* the chapters among the cards: a slim row each, a stop's teal ring or a place's amber diamond */
+.chapter-btn { display: flex; align-items: center; gap: 9px; width: 100%; text-align: left; background: none; border: 0; border-radius: 8px; padding: 5px 8px; font-size: .88rem; color: var(--ink, #1e2a30); }
+.chapter-btn:hover { background: #f3f8f9; }
+.ch-mark { flex: none; width: 11px; height: 11px; border-radius: 50%; border: 2.5px solid #0b7285; background: #fff; }
+.chapter-btn[data-kind="place"] .ch-mark { border: 0; border-radius: 1px; width: 9px; height: 9px; background: #d9822b; transform: rotate(45deg); margin: 0 1px; }
+.chapter-btn[data-kind="station"] .ch-name { font-weight: 700; }
+.ch-360 { font-size: .66rem; font-weight: 800; letter-spacing: .04em; color: #0b7285; border: 1px solid #9cc7cf; border-radius: 999px; padding: 0 6px; }
+.ch-time { margin-left: auto; font-size: .75rem; color: var(--muted); white-space: nowrap; }
+.chapter.is-current .chapter-btn { background: #eef7f9; }
+.chapter.is-current .ch-name { color: #0b7285; }
 
 .trip-route { display: block; font-weight: 700; margin: 3px 0 6px; }
 .bar-row { display: grid; grid-template-columns: 8.6em 1fr; align-items: center; gap: 8px; margin: 5px 0; }
@@ -215,6 +240,9 @@ a { color: var(--crcl-dark); }
   width: auto; height: auto; padding: 5px 10px; font-size: .8rem; font-weight: 600; color: var(--crcl); white-space: nowrap;
 }
 .follow-ctrl button.follow-btn:hover { background: #eef5f6; }
+.follow-ctrl button.follow-btn[aria-pressed="true"] { background: var(--crcl); color: #fff; }
+.follow-ctrl button.follow-btn[aria-pressed="true"]:hover { background: var(--crcl-dark); }
+.follow-ctrl button.follow-btn:disabled { background: #fff; color: var(--muted); opacity: .6; }
 
 /* ---------- reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {

@@ -1,5 +1,5 @@
 {
- "t": 217.28,
+ "t": 217.03,
  "shot": 2,
  "levels": [
   {
@@ -18,12 +18,12 @@
  "base": 1024,
  "at": {
   "lonlat": [
-   -87.652685,
+   -87.652684,
    41.903321
   ],
   "y": 380,
-  "x": -2704.5,
-  "z": -4371
+  "x": -2704.4,
+  "z": -4370.9
  },
  "look": {
   "yaw": 152.8,
@@ -72,7 +72,7 @@
    "draft": true,
    "source": "Walk: OpenStreetMap's streets from the top of the station's stairs at 2.75 mph, with the Chicago Ave and Halsted St viaducts rebuilt",
    "yaw": 134.47,
-   "pitch": -22.89,
+   "pitch": -22.9,
    "dist": 687
   },
   {
@@ -122,7 +122,7 @@
    "source": "The City's Plan Commission deck for Foundry Park (the amendment of PD 1439, January 2026); Chicago YIMBY",
    "yaw": 331.69,
    "pitch": -8.64,
-   "dist": 1777
+   "dist": 1778
   },
   {
    "id": "salt-shed",
@@ -167,7 +167,7 @@
     }
    ],
    "walk": "Under a minute's walk from the station's stairs",
-   "yaw": 150.13,
+   "yaw": 150.14,
    "pitch": -23.76,
    "dist": 845
   },
@@ -197,7 +197,7 @@
     }
    ],
    "walk": "Under a minute's walk from the station's stairs",
-   "yaw": 150.09,
+   "yaw": 150.1,
    "pitch": -22.46,
    "dist": 900
   },
@@ -213,7 +213,7 @@
    ],
    "text": "The X1's next stop, at Division St and Elston Ave, about 1.4 km up the line.",
    "yaw": 270.51,
-   "pitch": -30.65,
+   "pitch": -30.64,
    "dist": 631
   },
   {

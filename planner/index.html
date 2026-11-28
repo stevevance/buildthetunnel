@@ -55,6 +55,17 @@
   .trip-btn{background:#fff;border:1px solid #ced4da;color:inherit}
   .trip-btn:hover,.trip-btn:focus{background:#eef5f6;border-color:var(--crcl);color:inherit}
   .trip-btn .blurb{color:#5b6770}
+  /* "See N more example trips": a full-width row like the trips themselves, dashed, with a chevron that turns when open */
+  .more-trips>summary{list-style:none;display:flex;align-items:center;justify-content:center;gap:.5rem;cursor:pointer;
+    padding:.55rem .75rem;border:1px dashed #9cc3cb;border-radius:.375rem;background:#f7fbfc;color:var(--crcl);
+    font-weight:600;font-size:.9rem}
+  .more-trips>summary::-webkit-details-marker{display:none}
+  .more-trips>summary:hover{background:#eef5f6;border-color:var(--crcl)}
+  .more-trips>summary:focus-visible{outline:3px solid #f4a300;outline-offset:2px}
+  .more-chev{width:.5em;height:.5em;border-right:2px solid currentColor;border-bottom:2px solid currentColor;
+    transform:translateY(-.15em) rotate(45deg);transition:transform .2s}
+  .more-trips[open]>summary .more-chev{transform:translateY(.15em) rotate(-135deg)}
+  @media (prefers-reduced-motion:reduce){.more-chev{transition:none}}
   /* "Plan your trip" card: from/to fields joined by a dot-to-pin rail */
   .trip-card{background:#f3f8f9;border:1px solid #cfe3e7;border-top:4px solid var(--crcl);
     border-radius:.75rem;padding:1rem}
@@ -155,8 +166,8 @@
     <div id="predefined-trips" class="d-flex flex-column gap-2 mb-2">
       <!-- first few trips, populated from CFG.predefined_trips by app.js -->
     </div>
-    <details id="predefined-more-wrap" class="mb-2" hidden>
-      <summary class="small text-crcl" style="cursor:pointer">See more example trips</summary>
+    <details id="predefined-more-wrap" class="more-trips mb-2" hidden>
+      <summary><span id="predefined-more-label">See more example trips</span><span class="more-chev" aria-hidden="true"></span></summary>
       <div id="predefined-trips-more" class="d-flex flex-column gap-2 mt-2">
         <!-- overflow trips (beyond the first few) -->
       </div>
