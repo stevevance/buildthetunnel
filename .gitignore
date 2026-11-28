@@ -72,3 +72,6 @@ brag-output/*/previews/
 brag-output/*/exports/
 brag-output/*/assets/*.zip
 brag-output/*/tools/.cache/
+
+# the trip planner's walking tiles (planner/tools/build-walk-tiles.mjs) live on R2: planner/tools/upload-walk-tiles.sh
+planner/data/walk/

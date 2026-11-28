@@ -71,3 +71,31 @@ CREATE TABLE IF NOT EXISTS trips (
   -- "Trip made possible" is derivable: result='ok' AND today_min IS NULL
   --   AND scenario_min IS NOT NULL.
 );
+
+-- The cab ride page's play events (cabride/app.js, POST /play), to see how many people play the video, how far they
+-- get, and what they do with the 360 view and the chapters. One row per event; no IP address or user agent.
+--   play       the first press of play in a visit
+--   progress   10, 20 ... 90 (% of the ride), reached by playing (a jump ahead doesn't count)
+--   arrive360  the ride reached Chicago/Halsted and stopped for the 360 view
+--   jump360    a jump to the 360 view by hand (detail: "button", or the chapter's name for a place seen from above)
+--   continue   "Continue the ride" from the 360 view
+--   end        reached Rogers Park                         replay  "Watch again"
+--   chapter    a chapter in the side panel (detail: its name)   stop  a stop on the map (detail: its name)
+--   platform   down to the platform's 360 view             wards   ward boundaries turned on
+-- play, progress, end, platform and wards are sent once per visit (sid); the rest each time.
+CREATE TABLE IF NOT EXISTS cabride_events (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  created_at   TEXT NOT NULL,
+  event        TEXT NOT NULL,
+  detail       TEXT,      -- progress: 10 to 90; jump360: button or the chapter; chapter, stop: the name
+  t            REAL,      -- the film's time when it happened, seconds
+  sid          TEXT,      -- random id for this visit (one page load)
+  cid          TEXT,      -- anonymous per-browser id (localStorage btt_cid, as in trips)
+  video        TEXT,      -- the file played, e.g. cabride-v4-1080
+  device       TEXT,      -- mobile | tablet | desktop
+  ref_host     TEXT,      -- referring host on landing, or 'direct' / 'internal'
+  utm_source   TEXT,
+  utm_medium   TEXT,
+  utm_campaign TEXT
+);
+CREATE INDEX IF NOT EXISTS cabride_events_event ON cabride_events (event, created_at);

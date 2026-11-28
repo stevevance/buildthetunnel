@@ -1,0 +1,195 @@
+{
+ "chapters": [
+  {
+   "kind": "station",
+   "name": "59th (University of Chicago)",
+   "t": 0
+  },
+  {
+   "kind": "place",
+   "name": "Obama Presidential Center",
+   "t": 0
+  },
+  {
+   "kind": "place",
+   "name": "Museum of Science and Industry",
+   "t": 17.89
+  },
+  {
+   "kind": "station",
+   "name": "55th-56th-57th",
+   "t": 18.91
+  },
+  {
+   "kind": "place",
+   "name": "Solstice on the Park",
+   "t": 24.39
+  },
+  {
+   "kind": "station",
+   "name": "51st/53rd",
+   "t": 28.55
+  },
+  {
+   "kind": "station",
+   "name": "47th (Kenwood)",
+   "t": 39.97
+  },
+  {
+   "kind": "station",
+   "name": "Oakwood Blvd",
+   "t": 54.13
+  },
+  {
+   "kind": "station",
+   "name": "27th",
+   "t": 69.89
+  },
+  {
+   "kind": "station",
+   "name": "McCormick Place",
+   "t": 80.06
+  },
+  {
+   "kind": "station",
+   "name": "18th (Soldier Field)",
+   "t": 92.71
+  },
+  {
+   "kind": "place",
+   "name": "Soldier Field",
+   "t": 105.02
+  },
+  {
+   "kind": "station",
+   "name": "Roosevelt",
+   "t": 118.74
+  },
+  {
+   "kind": "station",
+   "name": "Taylor/Clinton",
+   "t": 141.14
+  },
+  {
+   "kind": "station",
+   "name": "Union Station",
+   "t": 158.74
+  },
+  {
+   "kind": "station",
+   "name": "Randolph/Clinton",
+   "t": 178.03
+  },
+  {
+   "kind": "place",
+   "name": "Bally's Chicago",
+   "t": 196.8
+  },
+  {
+   "kind": "station",
+   "name": "Chicago/Halsted",
+   "t": 199.78
+  },
+  {
+   "kind": "place",
+   "name": "Halsted Pointe",
+   "t": 211.94
+  },
+  {
+   "kind": "place",
+   "name": "Prairie Material",
+   "t": 212.47
+  },
+  {
+   "kind": "place",
+   "name": "Target, Division and Larrabee",
+   "t": 212.6
+  },
+  {
+   "kind": "place",
+   "name": "410 N Elizabeth",
+   "t": 215.09
+  },
+  {
+   "kind": "place",
+   "name": "Museum Park",
+   "t": 217.28,
+   "view": "hero",
+   "lonlat": [
+    -87.6222,
+    41.8662
+   ]
+  },
+  {
+   "kind": "place",
+   "name": "Willis Tower",
+   "t": 217.28,
+   "view": "hero",
+   "lonlat": [
+    -87.635895,
+    41.878885
+   ],
+   "place": "willis"
+  },
+  {
+   "kind": "place",
+   "name": "875 N Michigan",
+   "t": 217.28,
+   "view": "hero",
+   "lonlat": [
+    -87.623098,
+    41.898821
+   ]
+  },
+  {
+   "kind": "station",
+   "name": "Division/Elston",
+   "t": 217.89
+  },
+  {
+   "kind": "place",
+   "name": "The Salt Shed",
+   "t": 225.71
+  },
+  {
+   "kind": "place",
+   "name": "North Ave yard",
+   "t": 226.87
+  },
+  {
+   "kind": "place",
+   "name": "1840 N Marcey",
+   "t": 228.97
+  },
+  {
+   "kind": "place",
+   "name": "Foundry Park",
+   "t": 231.21
+  },
+  {
+   "kind": "station",
+   "name": "Clybourn",
+   "t": 231.26
+  },
+  {
+   "kind": "station",
+   "name": "Addison/Lincoln",
+   "t": 254.85
+  },
+  {
+   "kind": "station",
+   "name": "Ravenswood",
+   "t": 270.89
+  },
+  {
+   "kind": "station",
+   "name": "Peterson/Ridge",
+   "t": 287.25
+  },
+  {
+   "kind": "station",
+   "name": "Rogers Park",
+   "t": 301.57
+  }
+ ]
+}

@@ -1,6 +1,6 @@
-// The cab ride page: a one-minute cut of the cab-ride film, with the story, a map and a 360-degree view beside it.
+// The cab ride page: the cab-ride film, Hyde Park to Rogers Park, with the story, a map and a 360-degree view beside it.
 // Everything runs on film time (video.currentTime + clipStart), the clock the data in data/ is written in.
-import { videoSource, panoImages, MAP_STYLE, FOLLOW_ZOOM, PANOS, FOV, KINDS, MOBILE, MOBILE_MAX_FACE } from "./config.js";
+import { videoSource, panoImages, MAP_STYLE, FOLLOW_ZOOM, PANOS, FOV, KINDS, MOBILE, MOBILE_MAX_FACE, STATS_URL } from "./config.js";
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls, html) => {
@@ -25,13 +25,13 @@ const header = document.querySelector(".site-header");
 new ResizeObserver(() => document.documentElement.style.setProperty("--hdr", `${header.offsetHeight}px`)).observe(header);
 
 /* ---------- data ---------- */
-let film, story, track, route, places, META, mapStyle;
+let film, story, track, route, places, chapters, META, mapStyle;
 try {
   let hero, platform;
-  [film, story, track, route, places, hero, platform, mapStyle] = await Promise.all([
+  [film, story, track, route, places, hero, platform, mapStyle, chapters] = await Promise.all([
     getJSON("data/film.json"), getJSON("data/story.json"), getJSON("data/track.json"), getJSON("data/route.geojson"),
     getJSON("data/places.json"), getJSON(PANOS.hero.dir + "meta.json"), getJSON(PANOS.platform.dir + "meta.json"),
-    getJSON(MAP_STYLE),
+    getJSON(MAP_STYLE), getJSON("data/chapters.json").then((d) => d.chapters, () => []),   // (the list works without them)
   ]);
   META = { hero, platform };
 } catch (err) {
@@ -40,7 +40,9 @@ try {
 }
 
 const { clipStart, clipEnd } = film;
-const PAUSE_AT = film.hero.pullTo;          // the top of the hero shot, where the video turns into the 360 view
+// the top of the hero shot, where the video turns into the 360 view: a moment early, so the announcement that starts
+// just before the top ("Next stop, Division and Elston") is heard whole when the ride goes on
+const PAUSE_AT = film.hero.pullTo - 0.25;
 const PRELOAD_AT = PAUSE_AT - 25;           // start loading the 360 view this long before
 const placeById = Object.fromEntries(places.map((p) => [p.id, p]));
 const kindOf = (p) => KINDS[p.kind] || KINDS.destination;
@@ -106,6 +108,33 @@ if (MOBILE) {
   });
 }
 
+/* ---------- play stats ---------- */
+// Small events to the planner's Worker (config.js STATS_URL; worker/schema.sql cabride_events lists them): no IP or user
+// agent, an id for this visit, the same anonymous browser id as the trip planner's, and how the visitor arrived.
+// Some are sent once a visit (once), the rest each time.
+const STATS = (() => {
+  const q = new URLSearchParams(location.search), o = { sid: crypto.randomUUID?.() || String(Math.random()).slice(2) };
+  try {
+    o.cid = localStorage.getItem("btt_cid");
+    if (!o.cid && crypto.randomUUID) localStorage.setItem("btt_cid", (o.cid = crypto.randomUUID()));
+  } catch {}
+  try {
+    const h = document.referrer ? new URL(document.referrer).hostname.replace(/^www\./, "") : "";
+    o.ref_host = !h ? "direct" : h === location.hostname.replace(/^www\./, "") ? "internal" : h;
+  } catch {}
+  for (const k of ["utm_source", "utm_medium", "utm_campaign"]) if (q.get(k)) o[k] = q.get(k);
+  o.device = MOBILE ? (innerWidth < 768 ? "mobile" : "tablet") : "desktop";
+  return o;
+})();
+const sent = new Set();
+function stat(event, detail = null, { once = false } = {}) {
+  const key = `${event}/${detail}`;
+  if (!STATS_URL || (once && sent.has(key))) return;
+  sent.add(key);
+  const file = /^blob:/.test(video.currentSrc) ? "local" : video.currentSrc.split("/").pop().replace(/\.mp4$/, "");
+  try { navigator.sendBeacon(STATS_URL, JSON.stringify({ ...STATS, event, detail, t: +S.t.toFixed(2), video: file })); } catch {}
+}
+
 /* ---------- time ---------- */
 const HAS_RVFC = "requestVideoFrameCallback" in HTMLVideoElement.prototype;
 
@@ -126,13 +155,23 @@ function filmNow() {
   return Math.min(t, clipEnd);
 }
 
-// Pause at the top of the hero shot, but only when normal playback crosses it (a seek past it doesn't count).
+// Pause at the top of the hero shot, but only when normal playback crosses it (a seek past it doesn't count). The
+// crossing is caught a few frames early: going on from the pause, the first frame can read a frame before PAUSE_AT,
+// and its next frame mustn't count as crossing it again.
 function checkPause(t) {
   if (video.paused || video.seeking || video.ended) return;
-  const prev = S.lastPlayT;
+  const prev = S.lastPlayT, at = PAUSE_AT - 0.1;
   S.lastPlayT = t;
+  // how far people get by playing (a jump ahead doesn't count)
+  if (prev != null && t - prev < 1.5) {
+    for (let pct = 10; pct < 100; pct += 10) {
+      const mark = clipStart + ((clipEnd - clipStart) * pct) / 100;
+      if (prev < mark && t >= mark) stat("progress", String(pct), { once: true });
+    }
+  }
   if (prev == null || S.mode !== "video" || !$("stop360").checked) return;
-  if (prev < PAUSE_AT && t >= PAUSE_AT && t - prev < 1.5) {
+  if (prev < at && t >= at && t - prev < 1.5) {
+    stat("arrive360");
     video.pause();
     seekFilm(PAUSE_AT);
     open360();
@@ -170,15 +209,14 @@ video.addEventListener("seeking", () => {
   hideEnd();
 });
 video.addEventListener("play", () => {
+  stat("play", null, { once: true });
   hideEnd();
   if (S.mode === "pano") close360({ play: false });
 });
-// The cut ends at the top of the hero shot, the 360 view's own frame, so the end is where the 360 view opens
-// (unless the reader turned that off, or it's already open: then the end card, with its replay button).
+// the ride ends at Rogers Park: the end card, with its replay button
 video.addEventListener("ended", () => {
-  if (S.mode === "pano") return;
-  if ($("stop360").checked && !viewerFailed) open360();
-  else showEnd();
+  stat("end", null, { once: true });
+  showEnd();
 });
 
 /* ---------- story panel ---------- */
@@ -189,6 +227,43 @@ const CARDS = story
 const INK = { "#15a3bb": "#0b7285", "#f72f3a": "#c8102e", "#f4a300": "#8f5b00" };
 
 const cardsList = $("cards");
+// The chapters (data/chapters.json, from the film: tools/chapters.mjs): every stop and every place the film models,
+// listed among the story's cards at the moment each is reached; the cards appear as the train gets to them, the
+// chapters are there from the start, to jump to. A place seen only from above jumps to the 360 view, turned to it.
+const CHAPTERS = chapters.filter((c) => c.t >= clipStart - 0.5 && c.t <= clipEnd + 0.01).map((c) => ({ ...c, t: Math.max(c.t, clipStart) }));
+const chapterEls = CHAPTERS.map((c) => {
+  const li = el("li", "chapter");
+  const b = el("button", "chapter-btn");
+  b.type = "button";
+  b.dataset.kind = c.kind;
+  b.innerHTML = `<span class="ch-mark" aria-hidden="true"></span><span class="ch-name">${esc(c.name)}</span>`
+    + (c.view ? `<span class="ch-360">360°</span>` : "")
+    + `<span class="ch-time"><span class="visually-hidden">${c.view ? "See it in the 360° view, from" : "Jump to"} </span>&#9654;&#xFE0E; ${fmt(c.t - clipStart)}</span>`;
+  b.addEventListener("click", () => {
+    stat("chapter", c.name);
+    jumpTo(c);
+  });
+  li.append(b);
+  return li;
+});
+// jump to a chapter: play on from there, or (seen from above) open the 360 view and turn to the place
+async function jumpTo(c) {
+  if (!c.view) {
+    seekTo(c.t);
+    video.play().catch(() => {});
+    return;
+  }
+  stat("jump360", c.name);
+  hideEnd();
+  video.pause();
+  seekFilm(PAUSE_AT);
+  await open360();
+  if (S.mode !== "pano" || !viewer) return;
+  if (c.place && META.hero.targets.some((x) => x.id === c.place)) return selectPlace(c.place, { look: true });
+  const [lon0, lat0] = META.hero.at.lonlat, [lon, lat] = c.lonlat;
+  const to = { yaw: Math.atan2((lon - lon0) * Math.cos(rad(lat0)), lat - lat0), pitch: rad(-6) };   // (its bearing from the view)
+  if (reduceMotion.matches) viewer.rotate(to); else viewer.animate({ ...to, speed: 1200 });
+}
 const cardEls = CARDS.map((c) => {
   const li = el("li");
   li.hidden = true;
@@ -214,18 +289,23 @@ const cardEls = CARDS.map((c) => {
   b.addEventListener("click", () => seekTo(c.from + 0.02));
   li.addEventListener("animationend", () => li.classList.remove("is-new"));
   li.append(b);
-  cardsList.append(li);
   return li;
 });
+// both in time order (a chapter before a card at the same moment)
+[...CHAPTERS.map((c, i) => [c.t - 0.001, chapterEls[i]]), ...CARDS.map((c, i) => [c.from, cardEls[i]])]
+  .sort((a, b) => a[0] - b[0]).forEach(([, li]) => cardsList.append(li));
 
 let storySig = "";
 function updateStory(t) {
+  let chapter = -1;
+  CHAPTERS.forEach((c, i) => { if (!c.view && t >= c.t - 0.01) chapter = i; });
+  chapterEls.forEach((li, i) => li.classList.toggle("is-current", i === chapter));
   let shown = 0, current = -1;
   CARDS.forEach((c, i) => {
     if (t >= c.from - 0.01) shown = i + 1;
     if (t >= c.from - 0.01 && t < c.to) current = i;
   });
-  const sig = `${shown}/${current}`;
+  const sig = `${shown}/${current}/${chapter}`;
   if (sig === storySig) return;
   const [prevShown] = storySig.split("/").map(Number);
   storySig = sig;
@@ -238,11 +318,18 @@ function updateStory(t) {
     li.classList.toggle("is-current", i === current);
   });
   $("cards-empty").hidden = shown > 0;
-  // keep the newest card in sight (the story panel scrolls on its own only on a desktop)
-  const focusCard = cardEls[current >= 0 ? current : shown - 1];
-  if (focusCard && !narrow.matches) {
-    focusCard.scrollIntoView({ block: "nearest", behavior: reduceMotion.matches ? "auto" : "smooth" });
-  }
+  // keep the newest card, or the current chapter if it's later, in sight (the story panel scrolls on its own only on
+  // a desktop)
+  const card = current >= 0 ? current : shown - 1;
+  const focus = chapter >= 0 && (card < 0 || CHAPTERS[chapter].t > CARDS[card].from) ? chapterEls[chapter] : cardEls[card];
+  if (focus && !narrow.matches) keepInStory(focus);
+}
+// scroll the story panel, and only it, just enough to show el (scrollIntoView would scroll the page too, if it could)
+function keepInStory(el) {
+  const box = $("story"), r = el.getBoundingClientRect(), b = box.getBoundingClientRect(), pad = 8;
+  const dy = r.top < b.top + pad ? r.top - b.top - pad
+    : r.bottom > b.bottom - pad ? Math.min(r.bottom - b.bottom + pad, r.top - b.top - pad) : 0;
+  if (dy) box.scrollBy({ top: dy, behavior: reduceMotion.matches ? "auto" : "smooth" });
 }
 
 /* ---------- place card ---------- */
@@ -325,14 +412,15 @@ map.touchZoomRotate.disableRotation();
 map.keyboard.disableRotation();
 map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
 
+// "Follow": a switch, always there, lit while the map follows the train; panning or zooming the map turns it off
 class FollowControl {
   onAdd() {
     this.box = el("div", "maplibregl-ctrl maplibregl-ctrl-group follow-ctrl");
-    const b = el("button", "follow-btn", "&#9678; Follow the train");
-    b.type = "button";
-    b.addEventListener("click", () => setFollow(true));
-    this.box.append(b);
-    this.box.hidden = true;
+    this.btn = el("button", "follow-btn", "&#9678; Follow");
+    this.btn.type = "button";
+    this.btn.title = "Keep the map on the train";
+    this.btn.addEventListener("click", () => setFollow(!S.follow));
+    this.box.append(this.btn);
     return this.box;
   }
   onRemove() { this.box.remove(); }
@@ -341,12 +429,22 @@ const followCtrl = new FollowControl();
 map.addControl(followCtrl, "top-left");
 function setFollow(on) {
   S.follow = on;
-  followCtrl.box.hidden = on || S.mode === "pano";
+  followCtrl.btn.setAttribute("aria-pressed", String(on));
+  followCtrl.btn.disabled = S.mode === "pano";   // (with the 360 view open, the map frames the view instead)
 }
-// dragging or zooming the map by hand stops the following
-const byHand = (e) => { if (e.originalEvent && S.mode === "video") setFollow(false); };
-map.on("dragstart", byHand);
-map.on("zoomstart", byHand);
+setFollow(true);
+// dragging or zooming the map by hand stops the following. MapLibre marks a drag, its buttons and the keyboard as done
+// by hand, but not the wheel (or a trackpad's pinch, which comes as one), a double click or a two-finger touch.
+const unfollow = () => { if (S.mode === "video" && S.follow) setFollow(false); };
+map.on("dragstart", (e) => { if (e.originalEvent) unfollow(); });
+map.on("zoomstart", (e) => { if (e.originalEvent) unfollow(); });
+const mapBox = map.getCanvasContainer();
+mapBox.addEventListener("wheel", (e) => {
+  // (on a phone a plain wheel scrolls the page past the map: only with ctrl or cmd does it zoom)
+  if (!map.cooperativeGestures.isEnabled() || e.ctrlKey || e.metaKey) unfollow();
+}, { passive: true });
+mapBox.addEventListener("dblclick", unfollow);
+mapBox.addEventListener("touchstart", (e) => { if (e.touches.length > 1) unfollow(); }, { passive: true });
 
 // the train: a dot with a heading arrow, north-up, turned to the line's bearing
 const trainEl = el("div", "train-marker",
@@ -365,7 +463,10 @@ for (const s of film.stops.filter(inCut)) {
   b.type = "button";
   b.title = `Jump to the train's arrival at ${s.name}`;
   b.setAttribute("aria-label", `${s.name}: jump to the train's arrival`);
-  b.addEventListener("click", () => seekTo(s.t));
+  b.addEventListener("click", () => {
+    stat("stop", s.name);
+    seekTo(s.t);
+  });
   wrap.append(b);
   new maplibregl.Marker({ element: wrap, anchor: "left", offset: [-6.5, 0] }).setLngLat(s.lonlat).addTo(map);
 }
@@ -500,6 +601,7 @@ function ensureViewer() {
     viewer.addEventListener("position-updated", drawCone);
     viewer.addEventListener("zoom-updated", drawCone);
     viewer.addEventListener("size-updated", drawCone);
+    for (const ev of ["position-updated", "zoom-updated", "size-updated"]) viewer.addEventListener(ev, queueWardLabels);
     markersPlugin.addEventListener("select-marker", (e) => selectPlace(e.marker.id, { reveal: true }));
     markersPlugin.addEventListener("enter-marker", (e) => hot(e.marker.id, true));
     markersPlugin.addEventListener("leave-marker", (e) => hot(e.marker.id, false));
@@ -580,7 +682,7 @@ function labelLayout(key) {
 function setHotspots(key) {
   const layout = labelLayout(key);
   placeEls.pano = {};
-  markersPlugin.setMarkers(targetsOf(key).map((tg) => {
+  markersPlugin.setMarkers([...targetsOf(key).map((tg) => {
     const p = placeById[tg.id] || tg, k = kindOf(p);
     const node = el("div", "hs", `<span class="hs-pill">${esc(p.name)}</span><span class="hs-stem"></span>`);
     node.style.setProperty("--k", k.color);
@@ -593,7 +695,8 @@ function setHotspots(key) {
     placeEls.pano[tg.id] = node;
     return { id: tg.id, element: node, position: { yaw: rad(tg.yaw), pitch: rad(tg.pitch) },
       anchor: at.below ? "top center" : "bottom center", zIndex: 10 };
-  }));
+  }), ...wardMarkers(key)]);
+  queueWardLabels();
   // the same hotspots as plain buttons, for keyboard and screen-reader users
   const list = $("hotspot-list");
   list.replaceChildren();
@@ -614,6 +717,88 @@ function setHotspots(key) {
   markPlaces();
 }
 
+// The wards' boundaries, on a switch: lines on the ground (data/wards.json, tools/web-wards.py: the City's 2023 ward
+// map, each point's direction from this view's camera), brighter near the camera, and each ward's name. They're drawn
+// over the scene, buildings and all. Loaded the first time they're asked for.
+let wards = null;
+function wardMarkers(key) {
+  const w = $("wards").checked && wards?.views[key];
+  $("wards-note").hidden = !w;
+  wardLabels = w ? w.wards.map((x) => ({ id: `ward-label-${x.ward}`, name: x.name, pts: x.pts, at: -1 })) : null;
+  wardsShown = null;
+  if (!w) return [];
+  const line = (pts, id, style) => ({ id, polyline: pts.map(([y, p]) => [rad(y), rad(p)]), className: "ward-line", zIndex: 1,
+    svgStyle: { fill: "none", strokeLinejoin: "round", strokeLinecap: "round", ...style } });
+  return [
+    ...w.far.map((pts, i) => line(pts, `ward-far-${i}`, { stroke: "#ff5aa8", strokeWidth: "1.5px", strokeOpacity: 0.6 })),
+    ...w.near.map((pts, i) => line(pts, `ward-casing-${i}`, { stroke: "#1c2427", strokeWidth: "4.5px", strokeOpacity: 0.45 })),
+    ...w.near.map((pts, i) => line(pts, `ward-near-${i}`, { stroke: "#ff5aa8", strokeWidth: "2.5px" })),
+    ...wardLabels.map((l) => ({ id: l.id, html: esc(l.name), className: "ward-label", zIndex: 5, visible: false,
+      position: { yaw: rad(l.pts[0][0]), pitch: rad(l.pts[0][1]) }, anchor: "center center" })),
+  ];
+}
+// Each ward in sight is named at the candidate nearest the middle of its part of the view (data/wards.json: points on
+// the ground inside the ward, spread evenly in yaw and pitch, so about evenly on screen). A name moves only to a
+// candidate clearly nearer the middle, so it doesn't hop about as the view turns. Worked out again a frame after the
+// view moves; the note under the view lists the wards named.
+let wardLabels = null, wardsShown = null, wardFrame = 0;
+function placeWardLabels() {
+  wardFrame = 0;
+  if (!wardLabels || !viewer || S.mode !== "pano") return;
+  const psv = $("psv"), w = psv.clientWidth, h = psv.clientHeight;
+  const { yaw, pitch } = viewer.getPosition(), fpx = h / 2 / Math.tan(rad(viewer.state.vFov) / 2);
+  const dir = (y, p) => [Math.sin(y) * Math.cos(p), Math.sin(p), Math.cos(y) * Math.cos(p)];
+  const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  const f = dir(yaw, pitch), r = [Math.cos(yaw), 0, -Math.sin(yaw)];
+  const u = [f[1] * r[2] - f[2] * r[1], f[2] * r[0] - f[0] * r[2], f[0] * r[1] - f[1] * r[0]];
+  const box = [60, 70, w - 60, h - 60];                     // (clear of the buttons along the top and the navbar)
+  const shown = [];
+  for (const l of wardLabels) {
+    const vis = [];
+    l.pts.forEach(([py, pp], i) => {
+      const d = dir(rad(py), rad(pp)), z = dot(d, f);
+      if (z < 0.1) return;
+      const x = w / 2 + (fpx * dot(d, r)) / z, y = h / 2 - (fpx * dot(d, u)) / z;
+      if (x >= box[0] && x <= box[2] && y >= box[1] && y <= box[3]) vis.push([i, x, y]);
+    });
+    if (vis.length < 3) {                                    // (not for a sliver at the edge)
+      if (l.at >= 0) markersPlugin.hideMarker(l.id);
+      l.at = -1;
+      continue;
+    }
+    const mx = vis.reduce((a, v) => a + v[1], 0) / vis.length, my = vis.reduce((a, v) => a + v[2], 0) / vis.length;
+    const off = (v) => Math.hypot(v[1] - mx, v[2] - my);
+    const best = vis.reduce((a, v) => (off(v) < off(a) ? v : a)), cur = vis.find((v) => v[0] === l.at);
+    const pick = cur && off(cur) < off(best) + 0.12 * Math.min(w, h) ? cur : best;
+    if (pick[0] !== l.at) {
+      const [py, pp] = l.pts[pick[0]];
+      markersPlugin.updateMarker({ id: l.id, position: { yaw: rad(py), pitch: rad(pp) } });
+      if (l.at < 0) markersPlugin.showMarker(l.id);
+      l.at = pick[0];
+    }
+    shown.push(l.name.replace(" Ward", ""));
+  }
+  const sig = shown.join();
+  if (sig === wardsShown) return;
+  wardsShown = sig;
+  $("wards-note").textContent = "Ward boundaries: the City of Chicago's 2023 map. " + (!shown.length ? "Turn the view to see the wards' names."
+    : `In view: the ${shown.length > 1 ? shown.slice(0, -1).join(", ") + " and " + shown.at(-1) + " wards" : shown[0] + " Ward"}.`);
+}
+const queueWardLabels = () => { if (wardLabels && !wardFrame) wardFrame = requestAnimationFrame(placeWardLabels); };
+$("wards").addEventListener("change", async () => {
+  if ($("wards").checked) stat("wards", null, { once: true });
+  if ($("wards").checked && !wards) {
+    try {
+      wards = await getJSON("data/wards.json");
+    } catch (err) {
+      $("wards-note").textContent = "Sorry, the ward boundaries didn't load.";
+      $("wards-note").hidden = false;
+      return console.warn("The wards didn't load:", err);
+    }
+  }
+  if (viewer && S.pano) setHotspots(S.pano);
+});
+
 // show one of the views, facing the way its meta says (the paused frame's own view, for the hero)
 async function showPano(key, { animate = false } = {}) {
   const position = lookOf(key);
@@ -621,6 +806,7 @@ async function showPano(key, { animate = false } = {}) {
     viewer.rotate(position);
     viewer.zoom(50);
   } else {
+    wardLabels = null;                                       // (until the new view's are set: the switch turns the view)
     markersPlugin.clearMarkers();
     const ok = await viewer.setPanorama(faces(key), {
       position,
@@ -663,6 +849,7 @@ async function open360() {
   stage.classList.add("is-pano");
   video.setAttribute("inert", "");
   $("hotspots").hidden = false;
+  $("wards-switch").hidden = false;
   $("psv").focus({ preventScroll: true });
   // fetch the platform's faces now, so the switch is quick
   // (with CORS, as the viewer will ask for them: a copy cached without it can't be used for a texture)
@@ -675,6 +862,7 @@ function close360({ play = true } = {}) {
   stage.classList.remove("is-pano");
   video.removeAttribute("inert");
   $("hotspots").hidden = true;
+  $("wards-switch").hidden = true;
   $("open360").disabled = false;
   $("pano-loading").hidden = true;
   if (viewer) {
@@ -690,17 +878,20 @@ function close360({ play = true } = {}) {
   }
 }
 
-// back to the video: playing on from where it paused, or, at the end of the cut, to the end card (playing an ended
-// video would start it over)
+// back to the video: the ride goes on from where it paused, or, at the end of the ride, to the end card (playing an
+// ended video would start it over)
 $("pano-back").addEventListener("click", () => {
   const atEnd = video.ended || video.currentTime >= video.duration - 0.1;
+  if (!atEnd) stat("continue");
   close360({ play: !atEnd });
   if (atEnd) showEnd();
 });
 $("pano-switch").addEventListener("click", () => {
+  if (S.pano === "hero") stat("platform", null, { once: true });
   if (viewer && S.mode === "pano") showPano(S.pano === "hero" ? "platform" : "hero", { animate: true });
 });
 $("open360").addEventListener("click", () => {
+  stat("jump360", "button");
   hideEnd();
   video.pause();
   seekFilm(PAUSE_AT);
@@ -737,7 +928,7 @@ function fitMapToPano() {
   map.fitBounds(b, { padding: 24, maxZoom: 16.5, duration: reduceMotion.matches ? 0 : 900 });
 }
 
-/* ---------- the end of the cut ---------- */
+/* ---------- the end of the ride ---------- */
 function showEnd() {
   if (S.mode === "pano") return;
   $("end-layer").hidden = false;
@@ -746,6 +937,7 @@ function hideEnd() {
   $("end-layer").hidden = true;
 }
 $("replay").addEventListener("click", () => {
+  stat("replay");
   hideEnd();
   seekFilm(clipStart);
   video.play().catch(() => {});
