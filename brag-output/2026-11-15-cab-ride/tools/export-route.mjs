@@ -14,15 +14,16 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import * as THREE from "../assets/vendor/three.module.js";
 import city from "../assets/city.js";
-import { buildPlan, RUNOUT, FILM_RUNOUT } from "../assets/cab-ride.js";
+import { buildPlan, CLYBOURN, MAP_PAST_CLYBOURN } from "../assets/cab-ride.js";
 
 const outDir = process.argv[2] || path.dirname(fileURLToPath(import.meta.url));
 const KX = 111320 * Math.cos(city.origin[1] * Math.PI / 180), KY = 111070;
 const { plan: whole } = buildPlan(THREE, city);
-// The map shows the line only as far as the film's minimap does: the last RUNOUT - FILM_RUNOUT metres
-// are a straight run-out for the 3D scene, not the real line (which curves west there).
-let keep = whole.length - 1;
-for (let cut = RUNOUT - FILM_RUNOUT; keep > 0 && cut > 0; keep--) cut -= whole[keep].distanceTo(whole[keep - 1]);
+// The map shows the line only as far as the film's minimap does: MAP_PAST_CLYBOURN metres past Clybourn.
+const cly = new THREE.Vector2((CLYBOURN[0] - city.origin[0]) * KX, (city.origin[1] - CLYBOURN[1]) * KY);
+let keep = 0;
+whole.forEach((p, i) => { if (p.distanceTo(cly) < whole[keep].distanceTo(cly)) keep = i; });
+for (let run = 0; keep < whole.length - 1 && run < MAP_PAST_CLYBOURN; keep++) run += whole[keep + 1].distanceTo(whole[keep]);
 const plan = whole.slice(0, keep + 1);
 // every 4th point (~10 m) is plenty for a map
 const latlng = plan.filter((_, i) => i % 4 === 0 || i === plan.length - 1)

@@ -1,0 +1,13 @@
+{
+  "about": "The alderpersons' cut: pieces of the full film (source seconds), joined by dissolves of xfade seconds. Rendered by tools/direct-render.mjs --edit edit.json.",
+  "xfade": 0.6,
+  "pieces": [
+    { "from": 0.0,   "to": 17.2,  "what": "opening map; the stop at 18th (Soldier Field)" },
+    { "from": 25.6,  "to": 30.0,  "what": "over the south portal: the tunnel doesn't exist yet" },
+    { "from": 38.8,  "to": 47.2,  "what": "Roosevelt" },
+    { "from": 64.6,  "to": 73.2,  "what": "Taylor/Clinton" },
+    { "from": 85.2,  "to": 93.8,  "what": "Union Station" },
+    { "from": 104.5, "to": 113.0, "what": "Randolph/Clinton" },
+    { "from": 128.6, "to": 157.0, "what": "Chicago/Halsted, the closing shot, the call to action and the credits" }
+  ]
+}

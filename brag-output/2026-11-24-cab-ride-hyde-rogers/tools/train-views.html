@@ -1,0 +1,59 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>train views</title></head>
+<body style="margin:0;background:#c4d3e0">
+<canvas id="c" width="1600" height="900"></canvas>
+<script type="module">
+// The CrossTowner train (assets/crosstowner-train.js) on its own, on a stretch of track, from a few set viewpoints:
+// for checking its design without running the film; bemu: with the PowerPack (assets/flirt-powerpack.js) put back;
+// kiss: the CrossTowner double-decker (assets/kiss-train/) instead.
+// Driven by tools/train-views.mjs.
+import * as THREE from "../assets/vendor/three.module.js";
+import { buildCrossTowner, TRAIN_LENGTH } from "../assets/crosstowner-train.js";
+import { BEMU_CONSIST } from "../assets/flirt-powerpack.js";
+import { buildKiss, KISS_LENGTH } from "../assets/kiss-train/index.js";
+
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("c"), antialias: true, preserveDrawingBuffer: true });
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.1;
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+// [camera position, point looked at, field of view] with the train's nose at z = 0 and its tail at z = -L
+const viewsFor = (L, MID = -L / 2) => ({
+  front34: [[5.2, 2.0, 11.5], [0, 2.1, -3.5], 38],
+  front: [[0, 2.2, 16], [0, 2.0, 0], 26],
+  side: [[-260, 2.4, MID], [0, 2.4, MID], 19],
+  aerial: [[34, 30, 20], [0, 1, -30], 38],
+  rear34: [[-9, 4.5, -L - 14], [0, 2.4, -L + 10], 40],
+  pack: [[13, 11, -40], [0, 3, -42], 40],
+  cab: [[-7.5, 2.6, 2], [0, 2.3, -6], 42],
+  top34: [[9, 9, 14], [0, 3.2, -6], 40],
+});
+window.views = (names, lit, bemu, kiss) => {
+  const L = kiss ? KISS_LENGTH : TRAIN_LENGTH, MID = -L / 2, VIEWS = viewsFor(L);
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(lit ? 0x05080a : 0xc4d3e0);
+  scene.add(new THREE.HemisphereLight(0xdfe9f3, 0x5a5f5c, lit ? 0.12 : 1.4));
+  const sun = new THREE.DirectionalLight(0xffffff, lit ? 0.0 : 2.3); sun.position.set(60, 90, 40); sun.castShadow = true;
+  Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, near: 1, far: 300 }); sun.shadow.mapSize.set(4096, 4096); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.03;
+  sun.target.position.set(0, 0, MID); scene.add(sun, sun.target);
+  if (lit) { const lamp = new THREE.PointLight(0xfff0d8, 60, 30, 1.6); lamp.position.set(0, 4.5, 8); scene.add(lamp); }
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshStandardMaterial({ color: lit ? 0x111315 : 0x8f918c, roughness: 1 }));
+  ground.rotation.x = -Math.PI / 2; ground.position.set(0, -0.2, MID); ground.receiveShadow = true; scene.add(ground);
+  const ballast = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.2, 260), new THREE.MeshStandardMaterial({ color: lit ? 0x1b1d1e : 0x7a7670, roughness: 1 }));
+  ballast.position.set(0, -0.1, MID); ballast.receiveShadow = true; scene.add(ballast);
+  for (const x of [-0.75, 0.75]) {
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.15, 260), new THREE.MeshStandardMaterial({ color: 0x5d5a55, metalness: 0.6, roughness: 0.4 }));
+    rail.position.set(x, 0.075 - 0.15, MID); scene.add(rail);
+  }
+  const train = kiss ? buildKiss({ THREE, lit, sign: "X1 South Chicago" })
+    : buildCrossTowner({ THREE, lit, layout: true, sign: "X1 Highland Park", ...(bemu ? { consist: BEMU_CONSIST } : {}) });
+  if (kiss) for (const car of train.children) car.position.z = -(car.userData.from + car.userData.len / 2);
+  scene.add(train);
+  const cam = new THREE.PerspectiveCamera(40, 16 / 9, 0.1, 2000);
+  return names.map((n) => {
+    const [p, look, fov] = VIEWS[n];
+    cam.fov = fov; cam.position.set(...p); cam.lookAt(...look); cam.updateProjectionMatrix();
+    renderer.render(scene, cam);
+    return renderer.domElement.toDataURL("image/png");
+  });
+};
+window.ready = true;
+</script></body></html>

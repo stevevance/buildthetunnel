@@ -1,0 +1,39 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>model views</title></head>
+<body style="margin:0;background:#c4d3e0">
+<canvas id="c" width="1600" height="900"></canvas>
+<script type="module">
+// Renders any one of the film's model modules on its own, from given viewpoints, for checking a design without the
+// film. Driven by tools/model-views.mjs (lights and sky as in tools/export-models.html, plus a plain ground).
+import * as THREE from "../assets/vendor/three.module.js";
+
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("c"), antialias: true, preserveDrawingBuffer: true });
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.2;
+let built = null;
+// module: path from the project root ("assets/soldier-field.js"); fn: its builder; centre: the name of its exported
+// [lon, lat] to build round (or null for the module's default origin); opts: more options for the builder
+window.build = async (module, fn, centre, opts) => {
+  const mod = await import(`../${module}?t=${Date.now()}`);
+  const obj = await mod[fn]({ THREE, ...(centre ? { origin: mod[centre] } : {}), ...opts });
+  const scene = new THREE.Scene(); scene.background = new THREE.Color(0xc4d3e0);
+  scene.add(new THREE.HemisphereLight(0xdfe9f3, 0x5a5f5c, 1.5));
+  const sun = new THREE.DirectionalLight(0xffffff, 2.2); sun.position.set(300, 500, 300); scene.add(sun);
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(6000, 6000), new THREE.MeshLambertMaterial({ color: 0x9a9c98 }));
+  ground.rotation.x = -Math.PI / 2; ground.position.y = -0.05; scene.add(ground);
+  scene.add(obj);
+  const box = new THREE.Box3().setFromObject(obj);
+  built = { scene, obj };
+  return { min: box.min.toArray().map((v) => +v.toFixed(1)), max: box.max.toArray().map((v) => +v.toFixed(1)) };
+};
+// a view: { cam: [x, y, z], look: [x, y, z], fov } or { frame: [dx, dy, dz] } (from that direction, framed on the model)
+window.view = (v) => {
+  const cam = new THREE.PerspectiveCamera(v.fov || 40, 16 / 9, 0.1, 8000);
+  if (v.frame) {
+    const box = new THREE.Box3().setFromObject(built.obj), c = box.getCenter(new THREE.Vector3()), r = box.getSize(new THREE.Vector3()).length() * 0.62;
+    cam.position.copy(c).add(new THREE.Vector3(...v.frame).normalize().multiplyScalar(r)); cam.lookAt(c);
+  } else { cam.position.set(...v.cam); cam.lookAt(...v.look); }
+  renderer.render(built.scene, cam);
+  return renderer.domElement.toDataURL("image/png");
+};
+window.ready = true;
+</script></body></html>

@@ -92,6 +92,40 @@ To refresh the schedule, re-fetch the feed and rebuild the data file:
 `http://www.mysouthshoreline.com/google/google_transit.zip` (Transitland feed
 `mysouthshoreline.com.dmfr.json`). Ride times are the 8 AM weekday slice.
 
+## Cab ride film (brag-output)
+
+`brag-output/` holds the HyperFrames videos (not deployed). The main one is the
+operator's-eye **cab ride** along the Clinton–Roosevelt Connector,
+`brag-output/2026-11-15-cab-ride/`: the whole scene is three.js in
+`assets/cab-ride.js` (`createCabRide`; every frame is a pure function of time),
+with captions from `build.py` / `tools/place-audio.mjs`. Renders are
+`cab-ride-full-route-v<N>.mp4` (v19 is the latest published).
+
+`brag-output/2026-11-19-cab-ride-alders/` is the alderpersons' cut (ward names
+in announcements, ward outlines on the minimap; see its `NOTES.md`). It has its
+**own diverged copy** of `assets/cab-ride.js`, so port scene changes by hand.
+
+`brag-output/2026-11-22-cab-ride-reel/` is the vertical (1080x1920) Instagram reel: an intro in big type over
+the aerial shot, the cab through Union Station, and the Foundry Park → Soldier Field payoff (see its
+`NOTES.md`). It too has its own diverged `assets/cab-ride.js`; render it with
+`node tools/direct-render.mjs --size 720 --vertical`.
+
+| Task | Command (run in the film's folder) |
+|------|-------------------------------------|
+| Still frames (fast, GPU Chrome) | `node tools/stills.mjs <out-dir> 86.5 89 p6@3` (seconds, or preview view `p<i>@<stop>`; stops are 0 = 18th … 3 = Union Station, 4 = Randolph/Clinton) |
+| Render | `node tools/direct-render.mjs --size 4k --output cab-ride-full-route-v<N>.mp4` (`--size` 720 (default), 1080, 2k, 4k; `--start`/`--end` for a clip). `tools/droplet-render.sh` renders 4K on a GPU droplet (`FRAME=1080` to change) |
+| HyperFrames check | `npm run check` |
+
+Scene notes:
+- Underground stations are boxes (`PLAT_*`, `CEIL`), except **Union Station and
+  Randolph/Clinton** (`HALLS`), which are tall vaulted halls modeled on Wuhan
+  Railway Station's atrium: galleries at `GAL`, a bridge over the tracks, a
+  scalloped ribbed vault (`vaultY`), and a glazed end screen with the station
+  name. To fit the vault, the line drops a further `DEEP` (7 m) between the two
+  stations. All assumed, not from any plan.
+- Surface stops (18th, Chicago/Halsted, Division/Elston, Clybourn) are open-air
+  (`openStation`). Positions come from the CrossTowner GTFS.
+
 ## Local testing over HTTPS (ngrok)
 
 The planner can be tested over a trusted-cert HTTPS URL via ngrok. The

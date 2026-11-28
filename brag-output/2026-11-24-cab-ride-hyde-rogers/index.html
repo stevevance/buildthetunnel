@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=3840, height=2160" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; width: 3840px; height: 2160px; overflow: hidden; background: #000; }
+      #root { width: 100%; height: 100%; position: relative; }
+      #cab { position: absolute; inset: 0; width: 3840px; height: 2160px; display: block; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="342" data-width="3840" data-height="2160">
+      <canvas id="cab" class="clip" data-start="0" data-duration="342" data-track-index="0" width="3840" height="2160"></canvas>
+      <!-- audio:start: announcements (macOS voice Zoe) and chimes, placed by tools/place-audio.mjs -->
+      <audio id="rumble" class="clip" src="assets/audio/rumble.m4a" data-start="0.00" data-duration="342.00" data-track-index="3" data-volume="0.45"></audio>
+      <audio id="prechime0" class="clip" src="assets/audio/prechime.m4a" data-start="11.20" data-duration="2.20" data-track-index="2" data-volume="0.8"></audio>
+      <audio id="welcome" class="clip" src="assets/audio/welcome.m4a" data-start="12.50" data-duration="2.32" data-track-index="1" data-volume="1"></audio>
+      <audio id="closing0" class="clip" src="assets/audio/closing.m4a" data-start="14.90" data-duration="0.99" data-track-index="1" data-volume="1"></audio>
+      <audio id="closechime0" class="clip" src="assets/audio/closechime.m4a" data-start="15.90" data-duration="1.70" data-track-index="2" data-volume="0.7"></audio>
+      <audio id="next1" class="clip" src="assets/audio/next1.m4a" data-start="16.70" data-duration="8.00" data-track-index="1" data-volume="1"></audio>
+      <audio id="chime1" class="clip" src="assets/audio/chime.m4a" data-start="23.01" data-duration="1.28" data-track-index="2" data-volume="0.7"></audio>
+      <audio id="closechime1" class="clip" src="assets/audio/closechime.m4a" data-start="24.31" data-duration="1.70" data-track-index="2" data-volume="0.6"></audio>
+      <audio id="prechime2" class="clip" src="assets/audio/prechime.m4a" data-start="26.06" data-duration="2.20" data-track-index="2" data-volume="0.8"></audio>
+      <audio id="next2" class="clip" src="assets/audio/next2.m4a" data-start="27.76" data-duration="4.40" data-track-index="1" data-volume="1"></audio>
+      <audio id="chime2" class="clip" src="assets/audio/chime.m4a" data-start="32.65" data-duration="1.28" data-track-index="2" data-volume="0.7"></audio>
+      <audio id="closechime2" class="clip" src="assets/audio/closechime.m4a" data-start="33.95" data-duration="1.70" data-track-index="2" data-volume="0.6"></audio>
+      <audio id="prechime3" class="clip" src="assets/audio/prechime.m4a" data-start="36.77" data-duration="2.20" data-track-index="2" data-volume="0.8"></audio>
+      <audio id="next3" class="clip" src="assets/audio/next3.m4a" data-start="38.47" data-duration="4.30" data-track-index="1" data-volume="1"></audio>
+      <audio id="chime3" class="clip" src="assets/audio/chime.m4a" data-start="44.07" data-duration="1.28" data-track-index="2" data-volume="0.7"></audio>
+      <audio id="closechime3" class="clip" src="assets/audio/closechime.m4a" data-start="45.37" data-duration="1.70" data-track-index="2" data-volume="0.6"></audio>
+      <audio id="prechime4" class="clip" src="assets/audio/prechime.m4a" data-start="51.63" data-duration="2.20" data-track-index="2" data-volume="0.8"></audio>
+      <audio id="next4" class="clip" src="assets/audio/next4.m4a" data-start="53.33" data-duration="3.60" data-track-index="1" data-volume="1"></audio>
+      <audio id="chime4" class="clip" src="assets/audio/chime.m4a" data-start="58.23" data-duration="1.28" data-track-index="2" data-volume="0.7"></audio>
+      <audio id="closechime4" class="clip" src="assets/audio/closechime.m4a" data-start="59.53" data-duration="1.70" data-track-index="2" data-volume="0.6"></audio>
+      <audio id="prechime5" class="clip" src="assets/audio/prechime.m4a" data-start="67.39" data-duration="2.20" data-track-index="2" data-volume="0.8"></audio>
+      <audio id="next5" class="clip" src="assets/audio/next5.m4a" data-start="69.09" data-duration="3.60" data-track-index="1" data-volume="1"></audio>
+      <audio id="chime5" class="clip" src="assets/audio/chime.m4a" data-start="73.99" data-duration="1.28" data-track-index="2" data-volume="0.7"></audio>
+      <audio id="closechime5" class="clip" src="assets/audio/closechime.m4a" data-start="75.29" data-duration="1.70" data-track-index="2" data-volume="0.6"></audio>
+      <audio id="next6" class="clip" src="assets/audio/next6.m4a" data-start="78.16" data-duration="5.70" data-track-index="1" data-volume="1"></audio>
+      <audio id="chime6" class="clip" src="assets/audio/chime.m4a" data-start="84.16" data-duration="1.28" data-track-index="2" data-volume="0.7"></audio>
+      <audio id="closechime6" class="clip" src="assets/audio/closechime.m4a" data-start="85.46" data-duration="1.70" data-track-index="2" data-volume="0.6"></audio>
+      <audio id="prechime7" class="clip" src="assets/audio/prechime.m4a" data-start="90.41" data-duration="2.20" data-track-index="2" data-volume="0.8"></audio>
+      <audio id="next7" class="clip" src="assets/audio/next7.m4a" data-start="92.11" data-duration="3.40" data-track-index="1" data-volume="1"></audio>
+      <audio id="chime7" class="clip" src="assets/audio/chime.m4a" data-start="96.81" data-duration="1.28" data-track-index="2" data-volume="0.7"></audio>
+      <audio id="closechime7" class="clip" src="assets/audio/closechime.m4a" data-start="98.11" data-duration="1.70" data-track-index="2" data-volume="0.6"></audio>
+      <audio id="prechime8" class="clip" src="assets/audio/prechime.m4a" data-start="111.34" data-duration="2.20" data-track-index="2" data-volume="0.8"></audio>
+      <audio id="next8" class="clip" src="assets/audio/next8.m4a" data-start="113.04" data-duration="8.50" data-track-index="1" data-volume="1"></audio>
+      <audio id="chime8" class="clip" src="assets/audio/chime.m4a" data-start="122.84" data-duration="1.28" data-track-index="2" data-volume="0.7"></audio>
+      <audio id="closechime8" class="clip" src="assets/audio/closechime.m4a" data-start="124.14" data-duration="1.70" data-track-index="2" data-volume="0.6"></audio>
+      <audio id="prechime9" class="clip" src="assets/audio/prechime.m4a" data-start="138.84" data-duration="2.20" data-track-index="2" data-volume="0.8"></audio>
+      <audio id="next9" class="clip" src="assets/audio/next9.m4a" data-start="140.54" data-duration="3.40" data-track-index="1" data-volume="1"></audio>
+      <audio id="chime9" class="clip" src="assets/audio/chime.m4a" data-start="145.24" data-duration="1.28" data-track-index="2" data-volume="0.7"></audio>
+      <audio id="closechime9" class="clip" src="assets/audio/closechime.m4a" data-start="146.54" data-duration="1.70" data-track-index="2" data-volume="0.6"></audio>
+      <audio id="next10" class="clip" src="assets/audio/next10.m4a" data-start="149.94" data-duration="12.60" data-track-index="1" data-volume="1"></audio>
+      <audio id="chime10" class="clip" src="assets/audio/chime.m4a" data-start="162.84" data-duration="1.28" data-track-index="2" data-volume="0.7"></audio>
+      <audio id="this10" class="clip" src="assets/audio/this10.m4a" data-start="163.64" data-duration="1.24" data-track-index="1" data-volume="1"></audio>
+      <audio id="closing10" class="clip" src="assets/audio/closing.m4a" data-start="165.64" data-duration="0.99" data-track-index="1" data-volume="1"></audio>
+      <audio id="closechime10" class="clip" src="assets/audio/closechime.m4a" data-start="166.64" data-duration="1.70" data-track-index="2" data-volume="0.7"></audio>
+      <audio id="prechime11" class="clip" src="assets/audio/prechime.m4a" data-start="170.93" data-duration="2.20" data-track-index="2" data-volume="0.8"></audio>
+      <audio id="next11" class="clip" src="assets/audio/next11.m4a" data-start="172.63" data-duration="8.20" data-track-index="1" data-volume="1"></audio>
+      <audio id="chime11" class="clip" src="assets/audio/chime.m4a" data-start="182.13" data-duration="1.28" data-track-index="2" data-volume="0.7"></audio>
+      <audio id="closechime11" class="clip" src="assets/audio/closechime.m4a" data-start="183.43" data-duration="1.70" data-track-index="2" data-volume="0.6"></audio>
+      <audio id="prechime12" class="clip" src="assets/audio/prechime.m4a" data-start="197.08" data-duration="2.20" data-track-index="2" data-volume="0.8"></audio>
+      <audio id="next12" class="clip" src="assets/audio/next12.m4a" data-start="198.78" data-duration="3.80" data-track-index="1" data-volume="1"></audio>
+      <audio id="chime12" class="clip" src="assets/audio/chime.m4a" data-start="203.88" data-duration="1.28" data-track-index="2" data-volume="0.7"></audio>
+      <audio id="this12" class="clip" src="assets/audio/this12.m4a" data-start="204.68" data-duration="1.58" data-track-index="1" data-volume="1"></audio>
+      <audio id="closing12" class="clip" src="assets/audio/closing.m4a" data-start="206.68" data-duration="0.99" data-track-index="1" data-volume="1"></audio>
+      <audio id="closechime12" class="clip" src="assets/audio/closechime.m4a" data-start="207.68" data-duration="1.70" data-track-index="2" data-volume="0.7"></audio>
+      <audio id="prechime13" class="clip" src="assets/audio/prechime.m4a" data-start="215.39" data-duration="2.20" data-track-index="2" data-volume="0.8"></audio>
+      <audio id="next13" class="clip" src="assets/audio/next13.m4a" data-start="217.09" data-duration="3.60" data-track-index="1" data-volume="1"></audio>
+      <audio id="chime13" class="clip" src="assets/audio/chime.m4a" data-start="221.99" data-duration="1.28" data-track-index="2" data-volume="0.7"></audio>
+      <audio id="closechime13" class="clip" src="assets/audio/closechime.m4a" data-start="223.29" data-duration="1.70" data-track-index="2" data-volume="0.6"></audio>
+      <audio id="prechime14" class="clip" src="assets/audio/prechime.m4a" data-start="226.46" data-duration="2.20" data-track-index="2" data-volume="0.8"></audio>
+      <audio id="next14" class="clip" src="assets/audio/next14.m4a" data-start="228.16" data-duration="5.90" data-track-index="1" data-volume="1"></audio>
+      <audio id="chime14" class="clip" src="assets/audio/chime.m4a" data-start="235.36" data-duration="1.28" data-track-index="2" data-volume="0.7"></audio>
+      <audio id="closechime14" class="clip" src="assets/audio/closechime.m4a" data-start="236.66" data-duration="1.70" data-track-index="2" data-volume="0.6"></audio>
+      <audio id="prechime15" class="clip" src="assets/audio/prechime.m4a" data-start="250.55" data-duration="2.20" data-track-index="2" data-volume="0.8"></audio>
+      <audio id="next15" class="clip" src="assets/audio/next15.m4a" data-start="252.25" data-duration="5.40" data-track-index="1" data-volume="1"></audio>
+      <audio id="chime15" class="clip" src="assets/audio/chime.m4a" data-start="258.95" data-duration="1.28" data-track-index="2" data-volume="0.7"></audio>
+      <audio id="closechime15" class="clip" src="assets/audio/closechime.m4a" data-start="260.25" data-duration="1.70" data-track-index="2" data-volume="0.6"></audio>
+      <audio id="prechime16" class="clip" src="assets/audio/prechime.m4a" data-start="268.79" data-duration="2.20" data-track-index="2" data-volume="0.8"></audio>
+      <audio id="next16" class="clip" src="assets/audio/next16.m4a" data-start="270.49" data-duration="3.20" data-track-index="1" data-volume="1"></audio>
+      <audio id="chime16" class="clip" src="assets/audio/chime.m4a" data-start="274.99" data-duration="1.28" data-track-index="2" data-volume="0.7"></audio>
+      <audio id="closechime16" class="clip" src="assets/audio/closechime.m4a" data-start="276.29" data-duration="1.70" data-track-index="2" data-volume="0.6"></audio>
+      <audio id="prechime17" class="clip" src="assets/audio/prechime.m4a" data-start="284.75" data-duration="2.20" data-track-index="2" data-volume="0.8"></audio>
+      <audio id="next17" class="clip" src="assets/audio/next17.m4a" data-start="286.45" data-duration="3.60" data-track-index="1" data-volume="1"></audio>
+      <audio id="chime17" class="clip" src="assets/audio/chime.m4a" data-start="291.35" data-duration="1.28" data-track-index="2" data-volume="0.7"></audio>
+      <audio id="closechime17" class="clip" src="assets/audio/closechime.m4a" data-start="292.65" data-duration="1.70" data-track-index="2" data-volume="0.6"></audio>
+      <audio id="prechime18" class="clip" src="assets/audio/prechime.m4a" data-start="299.27" data-duration="2.20" data-track-index="2" data-volume="0.8"></audio>
+      <audio id="next18" class="clip" src="assets/audio/next18.m4a" data-start="300.97" data-duration="3.40" data-track-index="1" data-volume="1"></audio>
+      <audio id="chime18" class="clip" src="assets/audio/chime.m4a" data-start="305.67" data-duration="1.28" data-track-index="2" data-volume="0.7"></audio>
+      <audio id="this18" class="clip" src="assets/audio/this18.m4a" data-start="306.47" data-duration="1.17" data-track-index="1" data-volume="1"></audio>
+      <audio id="closing18" class="clip" src="assets/audio/closing.m4a" data-start="308.47" data-duration="0.99" data-track-index="1" data-volume="1"></audio>
+      <audio id="closechime18" class="clip" src="assets/audio/closechime.m4a" data-start="309.47" data-duration="1.70" data-track-index="2" data-volume="0.7"></audio>
+      <audio id="notice2" class="clip" src="assets/audio/notice2.m4a" data-start="104.85" data-duration="5.80" data-track-index="1" data-volume="1"></audio>
+      <audio id="notice1" class="clip" src="assets/audio/notice1.m4a" data-start="242.98" data-duration="3.70" data-track-index="1" data-volume="1"></audio>
+      <audio id="music" class="clip" src="assets/audio/music.m4a" data-start="0.00" data-duration="342.00" data-track-index="4" data-volume="1"></audio>
+      <!-- audio:end -->
+    </div>
+    <script>
+      const tl = gsap.timeline({ paused: true });
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+    <script>
+      // The scene takes a moment to build (and the minimap image to decode):
+      // tell the renderer to wait for it before asking for frames.
+      window.__hf = window.__hf || {};
+      window.__hf.buildReady = window.__hf.buildReady || {};
+      window.__hf.buildReady.cab = new Promise((resolve) => { window.__cabReady = resolve; });
+    </script>
+    <script type="module">
+      import * as THREE from "./assets/vendor/three.module.js";
+      import cityWide from "./assets/city-wide.js";   // the wider city, for the closing shot (assets/city.js is the first, smaller one)
+      import corridor from "./assets/city-corridor.js";   // and along this film's new track (tools/build-corridor.mjs)
+      import intro from "./assets/city-intro.js";         // and what the opening looks over, south of 59th (tools/build-intro-area.mjs)
+      const city = { ...cityWide };
+      for (const k of ["buildings", "roads", "water", "parks"]) city[k] = cityWide[k].concat(corridor[k], intro[k]);
+      Object.assign(city, { introArea: intro.area, paths: intro.paths, avenues: intro.avenues, rails: intro.rails, trees: intro.trees, woods: intro.woods });
+      // and the buildings OpenStreetMap gets wrong, fixed by hand (assets/city-additions.js)
+      import additions from "./assets/city-additions.js";
+      {
+        const inRing = (x, z, r) => { let k = false; for (let i = 0, j = r.length - 2; i < r.length; j = i, i += 2) if ((r[i + 1] > z) !== (r[j + 1] > z) && x < (r[j] - r[i]) * (z - r[i + 1]) / (r[j + 1] - r[i + 1]) + r[i]) k = !k; return k; };
+        const centre = (b) => { const xs = b.p.filter((_, i) => i % 2 === 0), zs = b.p.filter((_, i) => i % 2 === 1); return [(Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...zs) + Math.max(...zs)) / 2]; };
+        city.buildings = city.buildings.filter((b) => !additions.replace.some((r) => inRing(...centre(b), r))).concat(additions.buildings);
+      }
+      import geo from "./assets/minimap-geo.js";
+      import captions from "./assets/captions.js";
+      import { createCabRide } from "./assets/cab-ride.js";
+      import { GLTFLoader } from "./assets/vendor/addons/GLTFLoader.js";
+      import { clone } from "./assets/vendor/addons/SkeletonUtils.js";
+      import art from "./assets/art.js";
+      const img = new Image();
+      img.src = "assets/minimap.png";
+      await img.decode();
+      // The ride is drawn from timeline time alone (the hf-seek protocol).
+      // the campaign's logos for the end credits (from buildthetunnelchicago.org)
+      const logo = async (src) => { const i = new Image(); i.src = src; await i.decode(); return i; };
+      const logos = { crosstowner: await logo("assets/logos/crosstowner.png"), starline: await logo("assets/logos/starline-chicago.png") };
+      // the people: Quaternius's Universal Base Characters (CC0, assets/people), dressed and posed in cab-ride.js
+      const gltf = new GLTFLoader(), tex = new THREE.TextureLoader();
+      const skinTex = async (file) => { const t = await tex.loadAsync("assets/people/bodies/" + file); t.flipY = false; t.colorSpace = THREE.SRGBColorSpace; return t; };
+      const HAIR = ["Hair_Buzzed", "Hair_SimpleParted", "Hair_Long", "Hair_Buns", "Hair_BuzzedFemale", "Hair_Beard"];
+      const USE_HUMANS = false;                                   // off for now: too slow to render (see cab-ride.js, `humans`)
+      const [male, female, maleSkin, femaleSkin, ...hairs] = !USE_HUMANS ? [] : await Promise.all([
+        gltf.loadAsync("assets/people/bodies/Superhero_Male_FullBody.gltf"), gltf.loadAsync("assets/people/bodies/Superhero_Female_FullBody.gltf"),
+        skinTex("T_Superhero_Male_Ligh.png"), skinTex("T_Superhero_Female_Light_BaseColor.png"),
+        ...HAIR.map((h) => gltf.loadAsync(`assets/people/hair/${h}.gltf`))]);
+      const humans = { male, female, skin: { male: maleSkin, female: femaleSkin }, hair: Object.fromEntries(HAIR.map((h, i) => [h, hairs[i]])), clone };
+      // the Art Institute of Chicago's paintings for the station walls (public domain)
+      const artwork = await Promise.all(art.map(async (a) => { const i = new Image(); i.src = a.file; await i.decode(); return { ...a, img: i }; }));
+      // ?size=WxH draws the film at another frame size without changing this file (tools/direct-render.mjs --size)
+      // ?web draws the cut for the web page: no story cards, captions or minimap; or ?nocards, ?nominimap, ?nocaptions
+      // one at a time (tools/direct-render.mjs --web, --no-cards, --no-minimap, --no-captions)
+      const params = new URLSearchParams(location.search);
+      const [W, H] = (params.get("size") || "3840x2160").split("x").map(Number);
+      const off = (k) => (params.has("no" + k) ? false : undefined);
+      const ride = createCabRide(THREE, city, document.getElementById("cab"), W, H, { img, geo }, logos, captions, USE_HUMANS ? humans : null, artwork,
+        { web: params.has("web"), cards: off("cards"), minimap: off("minimap"), captions: off("captions") });
+      window.__cabRide = ride;
+      window.addEventListener("hf-seek", (e) => ride.render(e.detail.time));
+      ride.render(0);
+      window.__cabReady();
+    </script>
+  </body>
+</html>

@@ -9,6 +9,8 @@ Build the cab-ride film from start to finish.
     ./build.py --no-open       # don't open the result in QuickTime
     ./build.py --gpu           # encode the video on the Mac's hardware H.264 encoder
     ./build.py --size 720p     # frame size: 720p, 1080p or 4k (it stays as set until changed again)
+    ./build.py --direct        # render straight from three.js on this Mac's GPU (tools/direct-render.mjs), not through
+                               # HyperFrames' screenshot capture: about 4.6 frames/s at 4K on an M1, against about 0.05
 
 Run it as ./build.py (not "python3 build.py"): the first line picks Homebrew's Python, which is
 built for Apple silicon, where "python3" on this Mac is Anaconda's Intel build running under Rosetta.
@@ -20,7 +22,7 @@ Steps, in order:
   2. Time every clip to the ride and set the film's length
      (tools/place-audio.mjs; the ride's own timing lives in assets/cab-ride.js).
   3. Run the HyperFrames check and stop if it reports an error.
-  4. Render to cab-ride-full-route-vN.mp4, N being one more than the newest.
+  4. Render to cab-ride-full-route-vN.mp4, N being one more than the newest (with --direct, by tools/direct-render.mjs).
   5. Open it in QuickTime Player.
 
 What to change where:
@@ -32,7 +34,8 @@ What to change where:
     (SPEEDUP, DWELL, DWELL_REAL, TRAIN, BANK_GAIN, BANK_MAX)
   * everything you see (train, stations, buildings) .. assets/cab-ride.js
 
-Needs: macOS (`say`), ffmpeg, node, and npx (for the hyperframes CLI).
+Needs: macOS (`say`), ffmpeg, node, and npx (for the hyperframes CLI); for --direct, Google Chrome and
+`npm install` (puppeteer-core).
 """
 import argparse
 import glob
@@ -50,22 +53,28 @@ HYPERFRAMES = ["npx", "--yes", "hyperframes@0.9.52"]   # same pinned version as 
 VOICE = "Zoe (Enhanced)"
 
 # File name (in assets/audio, without .wav) -> what is said.
-# next1..next5 play on the approach to each station, this1..this5 once the doors open.
+# next1..next8 play on the approach to each station, this1..this8 once the doors open.
 ANNOUNCEMENTS = {
     "welcome": "This is an X1 train to Highland Park.",
-    "next1": "Next stop, Roosevelt. Transfer to Red, Green, and Orange Line trains, and buses to "
+    "next1": "Next stop, 18th Street. Doors open on the right.",
+    "this1": "This is 18th Street.",
+    "next2": "Next stop, Roosevelt. Transfer to Red, Green, and Orange Line trains, and buses to "
              "the Museum Campus. Doors open on the right.",
-    "this1": "This is Roosevelt.",
-    "next2": "Next stop, Taylor and Clinton. Doors open on the right.",
-    "this2": "This is Taylor and Clinton.",
-    "next3": "Next stop, Union Station. Transfer to Blue Line, X5, and X6 trains, the G, J, K, M, "
+    "this2": "This is Roosevelt.",
+    "next3": "Next stop, Taylor and Clinton. Doors open on the right.",
+    "this3": "This is Taylor and Clinton.",
+    "next4": "Next stop, Union Station. Transfer to Blue Line, X5, and X6 trains, the G, J, K, M, "
              "and P lines, Amtrak, and the O'Hare Flyer. Doors open on the right.",
-    "this3": "This is Union Station.",
-    "next4": "Next stop, Randolph and Clinton. Transfer to Green and Pink Line trains, and the A, C, "
+    "this4": "This is Union Station.",
+    "next5": "Next stop, Randolph and Clinton. Transfer to Green and Pink Line trains, and the A, C, "
              "and E lines. Doors open on the right.",
-    "this4": "This is Randolph and Clinton.",
-    "next5": "Next stop, Chicago and Halsted. Doors open on the right.",
-    "this5": "This is Chicago and Halsted.",
+    "this5": "This is Randolph and Clinton.",
+    "next6": "Next stop, Chicago and Halsted. Doors open on the right.",
+    "this6": "This is Chicago and Halsted.",
+    "next7": "Next stop, Division and Elston. Doors open on the right.",
+    "this7": "This is Division and Elston.",
+    "next8": "Next stop, Clybourn. Doors open on the right.",
+    "this8": "This is Clybourn.",
     "closing": "Doors closing.",
     # Played once each, between stations, wherever there is room (tools/place-audio.mjs).
     "notice1": "This is a walkthrough train. Please make use of all available space.",
@@ -209,6 +218,7 @@ def main():
     ap.add_argument("--output", help="file name for the render (default: the next vN)")
     ap.add_argument("--gpu", action="store_true", help="encode on the hardware (VideoToolbox) encoder instead of in software")
     ap.add_argument("--size", choices=SIZES, help="frame size (default: whatever index.html is set to)")
+    ap.add_argument("--direct", action="store_true", help="render straight from three.js on the GPU (tools/direct-render.mjs)")
     args = ap.parse_args()
 
     if args.size:
@@ -232,7 +242,10 @@ def main():
         return
     out = args.output or next_output()
     print(f"4. Render -> {out}  (a few minutes)")
-    run(HYPERFRAMES + ["render", "--output", out] + (["--gpu"] if args.gpu else []))
+    if args.direct:
+        run(["node", "tools/direct-render.mjs", "--output", out])
+    else:
+        run(HYPERFRAMES + ["render", "--output", out] + (["--gpu"] if args.gpu else []))
     if not args.no_open:
         run(["open", "-a", "QuickTime Player", out])
     print(f"Done: {os.path.join(HERE, out)}")

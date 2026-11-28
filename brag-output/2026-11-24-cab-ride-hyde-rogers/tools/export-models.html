@@ -1,0 +1,49 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>export models</title></head>
+<body style="margin:0;background:#c4d3e0">
+<canvas id="c" width="1600" height="900"></canvas>
+<script type="module">
+// Builds the shareable pieces (assets/crosstowner-train.js, assets/flirt-powerpack.js, assets/ballys-chicago.js, assets/obama-center.js) on their own, renders a preview
+// of each and exports each as glTF binary (.glb). Driven by tools/export-models.mjs.
+import * as THREE from "../assets/vendor/three.module.js";
+import { GLTFExporter } from "../assets/vendor/addons/GLTFExporter.js";
+import { buildCrossTowner } from "../assets/crosstowner-train.js";
+import { buildBallys, BALLYS_CENTRE } from "../assets/ballys-chicago.js";
+import { buildPowerPack } from "../assets/flirt-powerpack.js";
+import { buildBallysResort } from "../assets/ballys-resort/index.js";
+import { buildKiss } from "../assets/kiss-train/index.js";
+import { buildObamaCenter, OBAMA_CENTRE } from "../assets/obama-center.js";
+import { buildMuseumPark, MUSEUM_PARK_CENTRE } from "../assets/museum-park.js";
+
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("c"), antialias: true, preserveDrawingBuffer: true });
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.2;
+const MODELS = {
+  "crosstowner-train": { make: () => buildCrossTowner({ THREE, layout: true }), cam: [16, 6, 26], look: [0, 2, -25] },
+  "flirt-powerpack": { make: () => buildPowerPack({ THREE, bogies: true }), cam: [9, 4.5, 11], look: [0, 2.4, 0] },
+  "kiss-train": { make: () => buildKiss({ THREE }), frame: [0.55, 0.32, 1.0] },   // (from ahead and to the side of its leading cab)
+  "ballys-resort": { make: () => buildBallysResort({ THREE }), frame: [-0.9, 0.55, 1.1] },   // (framed on its bounding box, from the south-west)
+  "ballys-chicago": { make: () => buildBallys({ THREE, origin: BALLYS_CENTRE }), cam: [-260, 140, 220], look: [0, 20, 0] },
+  "obama-center": { make: () => buildObamaCenter({ THREE, origin: OBAMA_CENTRE }), cam: [-250, 150, 250], look: [15, 20, 55] },   // from over Stony Island, south-west of the tower
+  "museum-park": { make: () => buildMuseumPark({ THREE, origin: MUSEUM_PARK_CENTRE }), cam: [430, 220, 400], look: [0, 95, -10] },   // from over the Metra Electric, south-east
+  "museum-park-north": { make: () => buildMuseumPark({ THREE, origin: MUSEUM_PARK_CENTRE }), cam: [-120, 160, -560], look: [10, 100, 30] },   // from over Grant Park, north (preview only; the same model)
+  "museum-park-nema": { make: () => buildMuseumPark({ THREE, origin: MUSEUM_PARK_CENTRE }), cam: [-95, 300, -75], look: [70, 185, -105] },   // from NEMA's top, east to One Museum Park, as in the Commons photographs (preview only)
+};
+window.exportModel = async (name) => {
+  const m = MODELS[name], obj = m.make();
+  const scene = new THREE.Scene(); scene.background = new THREE.Color(0xc4d3e0);
+  scene.add(new THREE.HemisphereLight(0xdfe9f3, 0x5a5f5c, 1.5));
+  const sun = new THREE.DirectionalLight(0xffffff, 2.2); sun.position.set(300, 500, 300); scene.add(sun);
+  scene.add(obj);
+  const cam = new THREE.PerspectiveCamera(40, 16 / 9, 0.1, 5000);
+  if (m.frame) {                                                  // looking at the middle of its bounding box from a direction, far enough off
+    const box = new THREE.Box3().setFromObject(obj), c = box.getCenter(new THREE.Vector3()), r = box.getSize(new THREE.Vector3()).length() * 0.62;
+    cam.position.copy(c).add(new THREE.Vector3(...m.frame).normalize().multiplyScalar(r)); cam.lookAt(c);
+  } else { cam.position.set(...m.cam); cam.lookAt(...m.look); }
+  renderer.render(scene, cam);
+  const png = renderer.domElement.toDataURL("image/png");
+  const glb = await new GLTFExporter().parseAsync(obj, { binary: true, maxTextureSize: 2048 });
+  let s = ""; const bytes = new Uint8Array(glb); for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return { png, glb: btoa(s) };
+};
+window.ready = true;
+</script></body></html>

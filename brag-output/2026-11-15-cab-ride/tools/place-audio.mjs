@@ -25,7 +25,7 @@ const fn = () => {};
 const ctx = new Proxy({}, { get: (t, k) => (k === "measureText" ? () => ({ width: 0 }) : () => ctx), set: () => true });   // every call returns the context, so gradients and the like work too
 const canvas = () => ({ width: 0, height: 0, getContext: () => ctx, style: {}, addEventListener: fn });
 globalThis.document = { createElement: canvas, createElementNS: canvas };
-class NoRenderer { setPixelRatio() {} setSize() {} render() {} }
+class NoRenderer { shadowMap = {}; setPixelRatio() {} setSize() {} render() {} }
 const { info } = createCabRide({ ...THREE, WebGLRenderer: NoRenderer }, city, canvas(), 1280, 720, null);
 
 // `--ride` just prints the ride's timing (for build.py, which makes the sound of the train from it)
