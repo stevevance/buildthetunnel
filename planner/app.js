@@ -5,12 +5,16 @@
  *   1. The user types an origin and destination address; each is geocoded via
  *      the Worker's Geocode.earth proxy and validated to be inside a
  *      Metra-service county.
- *   2. For a chosen departure slice we snap each endpoint to its nearest
- *      stations, look up the precomputed station-to-station minutes for both
- *      the "today" and "scenario" networks, add the walking access/egress, and
- *      show the best total for each -- so the rider sees today vs CrossTowner.
+ *   2. Each endpoint's walk to the stations around it is routed on the street
+ *      network (prebuilt OpenStreetMap tiles; see "walking on the street
+ *      network" below).
+ *   3. For a chosen departure slice we look up the precomputed station-to-
+ *      station minutes from those stations for both the "today" and "scenario"
+ *      networks, add the walking access/egress, and show the best total for
+ *      each -- so the rider sees today vs CrossTowner.
  *
- * All routing is precomputed; this file only does geometry + lookups.
+ * Transit routing is precomputed; this file does the walking (a small
+ * Dijkstra over street tiles), geometry and lookups.
  */
 (function () {
   "use strict";
@@ -309,20 +313,293 @@
     return out;
   }
 
+  /* ---- walking on the street network ------------------------------------ */
+  // The walk between an address and a station is routed on OpenStreetMap's
+  // streets and paths -- the same extract R5 walked riders on when it built
+  // the matrix -- so a river, a rail yard or an expressway is only crossed
+  // where a bridge, underpass or crossing really is. The network is prebuilt
+  // by planner/tools/build-walk-tiles.mjs into ~1 km tiles under
+  // CFG.walkBase. For each end of a trip we load the tiles within a
+  // maxWalkMin walk, snap the address onto the nearest street or path
+  // (counting that short straight connector at its length), and run one
+  // Dijkstra outward, capped at maxWalkMin, which gives the walking time to
+  // every station in reach. A station's walk ends at its access points: its
+  // OSM entrances, or else the nearest street (and platform, if mapped); a
+  // proposed station's are assumed. If the tiles can't be loaded or the
+  // address is off the network, that end falls back to the straight-line
+  // estimate (walkMinutes), so the planner never breaks.
+  var WALK_SNAP_M = 400;      // no street or path this close = off the network
+  var WALK_PAD_M = 50;        // load tiles a little past the walk radius
+  var walkIndexP = null;      // Promise of the walk index (reset if it fails)
+  var WALK = null;            // the walk index: grid, tile list, station access
+  var walkTileP = {};         // tile key -> Promise of its JSON
+  var walkCache = {};         // "lat,lon" -> Promise of that point's walk result
+  var walkCacheKeys = [];     // oldest first; only the last few are kept
+  var walks = { from: null, to: null };   // this trip's walk result per end
+  // The network loaded so far. It only grows: each tile is added once, and an
+  // edge that crosses a tile line (sent with every tile it touches) once.
+  var WG = {
+    tiles: {},                // tile key -> [edge index] (edges touching it)
+    byId: {},                 // shared edge id -> edge index
+    node: {},                 // "lonE6,latE6" -> node index
+    nx: [], ny: [], adj: [],  // node coords (millionths of a degree), edges
+    ea: [], eb: [], elen: [], eflag: [], epts: []  // per edge: end nodes,
+                              // meters, flags (1 = don't snap), [x0,y0,x1,y1..]
+  };
+
+  function walkMPerMin() { return CFG.walkSpeedKmh * 1000 / 60; }
+  function walkCapM() { return CFG.maxWalkMin * walkMPerMin(); }
+  function walkURL(rel) {
+    return CFG.walkBase + rel + (CFG.walkVersion ? "?v=" + encodeURIComponent(CFG.walkVersion) : "");
+  }
+  function walkIndex() {
+    if (!walkIndexP) {
+      walkIndexP = loadJSON(walkURL("/index.json")).then(function (idx) {
+        idx.tileSet = {};
+        idx.tiles.forEach(function (k) { idx.tileSet[k] = 1; });
+        WALK = idx;
+        return idx;
+      }).catch(function () { walkIndexP = null; return null; });   // retry next trip
+    }
+    return walkIndexP;
+  }
+  function walkTile(key) {
+    if (!walkTileP[key]) {
+      walkTileP[key] = loadJSON(walkURL("/t/" + key + ".json"))
+        .catch(function () { delete walkTileP[key]; return null; });
+    }
+    return walkTileP[key];
+  }
+
+  // Keys of the index's tiles within radiusM of a point.
+  function walkTilesAround(lat, lon, radiusM) {
+    var g = WALK.grid, KX = 111320 * Math.cos(lat * Math.PI / 180) / 1e6, KY = 111132 / 1e6;
+    var x = lon * 1e6, y = lat * 1e6, rx = radiusM / KX, ry = radiusM / KY, out = [];
+    var i0 = Math.floor((x - rx - g.lon0E6) / g.dLonE6), i1 = Math.floor((x + rx - g.lon0E6) / g.dLonE6);
+    var j0 = Math.floor((y - ry - g.lat0E6) / g.dLatE6), j1 = Math.floor((y + ry - g.lat0E6) / g.dLatE6);
+    for (var i = i0; i <= i1; i++) {
+      for (var j = j0; j <= j1; j++) {
+        var key = i + "_" + j;
+        if (!WALK.tileSet[key]) continue;
+        var w = g.lon0E6 + i * g.dLonE6, s = g.lat0E6 + j * g.dLatE6;
+        var cx = Math.max(w, Math.min(x, w + g.dLonE6)), cy = Math.max(s, Math.min(y, s + g.dLatE6));
+        if (Math.sqrt(Math.pow((cx - x) * KX, 2) + Math.pow((cy - y) * KY, 2)) <= radiusM) out.push(key);
+      }
+    }
+    return out;
+  }
+
+  function walkNode(x, y) {
+    var k = x + "," + y, n = WG.node[k];
+    if (n == null) { n = WG.node[k] = WG.nx.length; WG.nx.push(x); WG.ny.push(y); WG.adj.push([]); }
+    return n;
+  }
+  // Add one tile's edges to the network. A tile row is
+  // [id, meters, flags, x0, y0, dx1, dy1, ...] relative to the tile's corner.
+  function walkAddTile(key, data) {
+    if (WG.tiles[key]) return;
+    var p = key.split("_"), g = WALK.grid;
+    var ox = g.lon0E6 + (+p[0]) * g.dLonE6, oy = g.lat0E6 + (+p[1]) * g.dLatE6, list = [];
+    (data.e || []).forEach(function (row) {
+      var id = row[0];
+      if (id && WG.byId[id] != null) { list.push(WG.byId[id]); return; }
+      var x = ox + row[3], y = oy + row[4], pts = [x, y];
+      for (var k = 5; k + 1 < row.length; k += 2) { x += row[k]; y += row[k + 1]; pts.push(x, y); }
+      var ei = WG.ea.length, a = walkNode(pts[0], pts[1]), b = walkNode(x, y);
+      WG.ea.push(a); WG.eb.push(b); WG.elen.push(row[1]); WG.eflag.push(row[2]); WG.epts.push(pts);
+      WG.adj[a].push(ei);
+      if (b !== a) WG.adj[b].push(ei);
+      if (id) WG.byId[id] = ei;
+      list.push(ei);
+    });
+    WG.tiles[key] = list;
+  }
+
+  // The nearest point on the network to (lat, lon): { ei, k, t, d, f } --
+  // edge, segment (index into its flat point list), position on the segment,
+  // distance in meters, and fraction of the way along the edge. Prefers edges
+  // an address can sit on (not a bridge, tunnel or stairway). null if nothing
+  // is within WALK_SNAP_M.
+  function walkSnap(lat, lon) {
+    var x = lon * 1e6, y = lat * 1e6;
+    var KX = 111320 * Math.cos(lat * Math.PI / 180) / 1e6, KY = 111132 / 1e6;
+    var best = null, bestAny = null, seen = {};
+    walkTilesAround(lat, lon, WALK_SNAP_M).forEach(function (key) {
+      (WG.tiles[key] || []).forEach(function (ei) {
+        if (seen[ei]) return;
+        seen[ei] = 1;
+        var p = WG.epts[ei], along = 0, hit = null;
+        for (var k = 0; k + 3 < p.length; k += 2) {
+          var ax = (p[k] - x) * KX, ay = (p[k + 1] - y) * KY;
+          var dx = (p[k + 2] - p[k]) * KX, dy = (p[k + 3] - p[k + 1]) * KY;
+          var L2 = dx * dx + dy * dy, segL = Math.sqrt(L2);
+          var t = L2 > 0 ? Math.max(0, Math.min(1, -(ax * dx + ay * dy) / L2)) : 0;
+          var d = Math.sqrt(Math.pow(ax + t * dx, 2) + Math.pow(ay + t * dy, 2));
+          if (!hit || d < hit.d) hit = { ei: ei, k: k, t: t, d: d, along: along + t * segL };
+          along += segL;
+        }
+        if (!hit || hit.d > WALK_SNAP_M) return;
+        hit.f = along > 0 ? hit.along / along : 0;
+        if (!(WG.eflag[ei] & 1) && (!best || hit.d < best.d)) best = hit;
+        if (!bestAny || hit.d < bestAny.d) bestAny = hit;
+      });
+    });
+    return best || bestAny;
+  }
+
+  // A small binary min-heap of node indices keyed by distance.
+  function walkHeap() {
+    var keys = [], vals = [];
+    return {
+      size: function () { return vals.length; },
+      push: function (key, val) {
+        var i = vals.length;
+        keys.push(key); vals.push(val);
+        while (i > 0) {
+          var up = (i - 1) >> 1;
+          if (keys[up] <= key) break;
+          keys[i] = keys[up]; vals[i] = vals[up]; i = up;
+        }
+        keys[i] = key; vals[i] = val;
+      },
+      pop: function () {
+        var top = vals[0], k = keys.pop(), v = vals.pop(), n = vals.length, i = 0;
+        if (n) {
+          for (;;) {
+            var c = 2 * i + 1;
+            if (c >= n) break;
+            if (c + 1 < n && keys[c + 1] < keys[c]) c++;
+            if (keys[c] >= k) break;
+            keys[i] = keys[c]; vals[i] = vals[c]; i = c;
+          }
+          keys[i] = k; vals[i] = v;
+        }
+        return top;
+      }
+    };
+  }
+
+  // Walk outward from a point: snap it, then Dijkstra up to the walk cap.
+  // Returns { net: true, lat, lon, snap, dist, prev, stations: { id: { m, min,
+  // node } } }, or { net: false } when the point is off the network.
+  function walkFrom(lat, lon) {
+    var snap = walkSnap(lat, lon);
+    if (!snap) return { net: false, why: "off-network" };
+    var cap = walkCapM(), N = WG.nx.length, ei0 = snap.ei, len0 = WG.elen[ei0];
+    var dist = new Float64Array(N), prev = new Int32Array(N), heap = walkHeap(), i;
+    for (i = 0; i < N; i++) { dist[i] = Infinity; prev[i] = -1; }
+    // The address reaches both ends of the edge it snapped onto.
+    [[WG.ea[ei0], snap.d + snap.f * len0], [WG.eb[ei0], snap.d + (1 - snap.f) * len0]].forEach(function (s) {
+      if (s[1] < dist[s[0]]) { dist[s[0]] = s[1]; heap.push(s[1], s[0]); }
+    });
+    while (heap.size()) {
+      var n = heap.pop(), dn = dist[n], adj = WG.adj[n];
+      for (i = 0; i < adj.length; i++) {
+        var e = adj[i], m = WG.ea[e] === n ? WG.eb[e] : WG.ea[e], dm = dn + WG.elen[e];
+        if (dm < dist[m] && dm <= cap) { dist[m] = dm; prev[m] = e; heap.push(dm, m); }
+      }
+    }
+    // Lazy deletion: a node can sit in the heap twice; re-expanding it is
+    // harmless (its neighbours can't improve), so no visited set is needed.
+    var res = { net: true, lat: lat, lon: lon, snap: snap, dist: dist, prev: prev, stations: {} };
+    var mpm = walkMPerMin();
+    Object.keys(WALK.stations).forEach(function (id) {
+      var a = WALK.stations[id].a, best = null;
+      for (var j = 0; j < a.length; j++) {
+        var nd = WG.node[a[j][0] + "," + a[j][1]];
+        if (nd == null) continue;
+        var dm = dist[nd] + a[j][2];
+        if (dm <= cap && (!best || dm < best.m)) best = { m: dm, node: nd };
+      }
+      if (best) { best.min = best.m / mpm; res.stations[id] = best; }
+    });
+    return res;
+  }
+
+  // The walk from an end of the trip to a network node, as [[lat, lon], ...]:
+  // the address, the straight connector to where it snapped, part of that
+  // edge, then the edges Dijkstra followed.
+  function walkPath(res, node) {
+    var chain = [], n = node, guard = 0, i, k;
+    while (res.prev[n] >= 0 && guard++ < 1e5) {
+      var e = res.prev[n];
+      chain.push(e);
+      n = WG.ea[e] === n ? WG.eb[e] : WG.ea[e];
+    }
+    var s = res.snap, p = WG.epts[s.ei];
+    var px = p[s.k] + s.t * (p[s.k + 2] - p[s.k]), py = p[s.k + 1] + s.t * (p[s.k + 3] - p[s.k + 1]);
+    var out = [[res.lat, res.lon], [py / 1e6, px / 1e6]];
+    if (n === WG.ea[s.ei]) { for (k = s.k; k >= 0; k -= 2) out.push([p[k + 1] / 1e6, p[k] / 1e6]); }
+    else { for (k = s.k + 2; k < p.length; k += 2) out.push([p[k + 1] / 1e6, p[k] / 1e6]); }
+    for (i = chain.length - 1; i >= 0; i--) {
+      var ce = chain[i], q = WG.epts[ce], fwd = WG.ea[ce] === n;
+      if (fwd) { for (k = 2; k < q.length; k += 2) out.push([q[k + 1] / 1e6, q[k] / 1e6]); }
+      else { for (k = q.length - 4; k >= 0; k -= 2) out.push([q[k + 1] / 1e6, q[k] / 1e6]); }
+      n = fwd ? WG.eb[ce] : WG.ea[ce];
+    }
+    return out;
+  }
+
+  // Walk times from one end of the trip (memoized per point). Resolves to a
+  // walkFrom() result, { net: false } to fall back to straight-line estimates,
+  // or null for an end that isn't walked (an O'Hare terminal or South Shore
+  // station). Never rejects.
+  function prepareWalk(which) {
+    var ep = endpoints[which];
+    if (!ep || ep.airport || ep.ssl) return Promise.resolve(null);
+    var key = ep.lat.toFixed(6) + "," + ep.lon.toFixed(6);
+    if (walkCache[key]) return walkCache[key];
+    var p = walkIndex().then(function (idx) {
+      if (!idx) return { net: false, why: "no-index" };
+      // Every street a walk within the cap can use lies within the cap of the
+      // address (the snap connector counts against the cap too).
+      var keys = walkTilesAround(ep.lat, ep.lon, walkCapM() + WALK_PAD_M);
+      return Promise.all(keys.map(walkTile)).then(function (tiles) {
+        for (var i = 0; i < tiles.length; i++) {
+          if (!tiles[i]) return { net: false, why: "tiles" };
+          walkAddTile(keys[i], tiles[i]);
+        }
+        return walkFrom(ep.lat, ep.lon);
+      });
+    }).catch(function () { return { net: false, why: "error" }; }).then(function (res) {
+      if (!res.net && res.why !== "off-network") delete walkCache[key];   // retry later
+      return res;
+    });
+    walkCache[key] = p;
+    walkCacheKeys.push(key);
+    if (walkCacheKeys.length > 6) delete walkCache[walkCacheKeys.shift()];
+    return p;
+  }
+
+  // Walking minutes from a trip end to a station: { min, est } -- est when
+  // it's the straight-line estimate (no network for this end, or a station
+  // past the edge of the OSM extract) -- or null if it's beyond the walk cap.
+  function walkTo(side, s) {
+    var ep = endpoints[side], w = walks[side];
+    if (w && w.net && WALK && WALK.stations[s.id]) {
+      var r = w.stations[s.id];
+      return r ? { min: r.min, est: false } : null;
+    }
+    var m = walkMinutes(haversineKm(ep.lat, ep.lon, s.lat, s.lon));
+    return m <= CFG.maxWalkMin ? { min: m, est: true } : null;
+  }
+
   /* ---- nearest stations within the walk cap ----------------------------- */
-  function nearestStations(lat, lon, network) {
+  // Candidate stations for one end, by walking time. Origins are capped at
+  // CFG.nearestK (each costs a shard download); destinations aren't (they're
+  // just cells in the shards already loaded), so no better station is lost.
+  function nearestStations(side, network) {
     var cands = [];
     for (var i = 0; i < stations.length; i++) {
       var s = stations[i];
       // On the "today" network, only stations that exist today are boardable;
       // scenario allows the infill stations too.
       if (network === "today" && !s.exists_today) continue;
-      var km = haversineKm(lat, lon, s.lat, s.lon);
-      var wmin = walkMinutes(km);
-      if (wmin <= CFG.maxWalkMin) cands.push({ station: s, walk: wmin });
+      var w = walkTo(side, s);
+      if (w) cands.push({ station: s, walk: w.min, est: w.est });
     }
     cands.sort(function (a, b) { return a.walk - b.walk; });
-    return cands.slice(0, CFG.nearestK);
+    return side === "to" ? cands : cands.slice(0, CFG.nearestK);
   }
 
   // The single closest station to a point, ignoring the walk cap — used to
@@ -350,8 +627,9 @@
   // Boarding/alighting candidates for one endpoint: a South Shore endpoint uses
   // its transfer hubs with the South Shore connector baked in (see SSL); an
   // airport endpoint uses its two O'Hare rail stations with fixed ATS/walk
-  // egress (see OHARE); everything else uses the nearest walkable stations.
-  // `side` ("from"/"to") sets the South Shore travel direction.
+  // egress (see OHARE); everything else uses the stations within a walk (see
+  // nearestStations). `side` ("from"/"to") is which end this is, which also
+  // sets the South Shore travel direction.
   function candidateStations(ep, network, side) {
     if (ep && ep.ssl) return sslCandidates(ep, network, side);
     if (ep && ep.airport && OHARE.terminals[ep.airport]) {
@@ -365,7 +643,7 @@
       });
       return out;
     }
-    return nearestStations(ep.lat, ep.lon, network);
+    return nearestStations(side, network);
   }
 
   // R5's own walking, stored as its own leg: { mode:"WALK", ride }. A cell's
@@ -445,6 +723,8 @@
             best = {
               total: total, rt: rt, nlegs: nlegs,
               access: entry.o.walk, egress: d.walk,
+              // true when that walk is a straight-line estimate, not routed
+              accessEst: !!entry.o.est, egressEst: !!d.est,
               // "station-to-station" line covers the rail + connector time.
               ride: ride + sslExtra, routes: routes, legs: legs,
               // Whether the cell itemized its walking (see foldWalks): if it
@@ -513,12 +793,14 @@
   }
 
   // Walking minutes from an endpoint to a station, in the planner's own walk
-  // model. null when the endpoint isn't reached on foot: an O'Hare terminal
-  // (people mover / fixed egress) or a South Shore station the rider starts at.
+  // model: routed on the street network when this end was, else the
+  // straight-line estimate. null when the endpoint isn't reached on foot: an
+  // O'Hare terminal (people mover / fixed egress) or a South Shore station.
   function epWalkMin(which, station) {
     var ep = endpoints[which];
     if (!ep || ep.airport || ep.ssl || !station) return null;
-    return walkMinutes(haversineKm(ep.lat, ep.lon, station.lat, station.lon));
+    var w = walks[which], r = w && w.net && station.id && w.stations[station.id];
+    return r ? r.min : walkMinutes(haversineKm(ep.lat, ep.lon, station.lat, station.lon));
   }
 
   // Walking minutes between two stations named by legs (an out-of-station
@@ -533,8 +815,9 @@
   // One access ("from") or egress ("to") hop as an <li>. For an O'Hare terminal
   // endpoint the hop is to/from a specific terminal, and is labeled as an ATS
   // ride or a walk depending on which station served it — so we never call the
-  // people mover a "walk".
-  function hopLi(side, station, minutes, boardName) {
+  // people mover a "walk". `est` marks a walk that couldn't be routed on the
+  // street network and is a straight-line estimate.
+  function hopLi(side, station, minutes, boardName, est) {
     var ep = endpoints[side];
     // A South Shore endpoint *is* the boarding/alighting station (you start or
     // end on the platform), so there's no access/egress walk to show. Nor is
@@ -551,9 +834,10 @@
         ? "<li>" + verb + " from <b>" + term + "</b> to <b>" + boardName + "</b></li>"
         : "<li>" + verb + " to <b>" + term + "</b></li>";
     }
+    var estTxt = est ? ' <span class="text-secondary">(straight-line estimate)</span>' : "";
     return side === "from"
-      ? "<li>Walk " + fmtMin(minutes) + " to <b>" + boardName + "</b></li>"
-      : "<li>Walk " + fmtMin(minutes) + " to your destination</li>";
+      ? "<li>Walk " + fmtMin(minutes) + estTxt + " to <b>" + boardName + "</b></li>"
+      : "<li>Walk " + fmtMin(minutes) + estTxt + " to your destination</li>";
   }
 
   /* ---- render ----------------------------------------------------------- */
@@ -646,7 +930,7 @@
       var steps;
       if (r.legs && r.legs.length) {
         // Detailed legs: board/alight stations + in-vehicle ride per vehicle.
-        steps = hopLi("from", bSt, accessMin, stationLabel(bSt) || first.from);
+        steps = hopLi("from", bSt, accessMin, stationLabel(bSt) || first.from, r.accessEst);
         var ref = [endpoints.from.lat, endpoints.from.lon], prevToNm = "";
         r.legs.forEach(function (leg, i) {
           var label = routeLabel(leg.line, net) || leg.mode;
@@ -688,10 +972,10 @@
           steps += '<li>Ride ' + leg.ride + ' min &rarr; alight at <b>' + toNm + '</b></li>';
           prevToNm = toNm;
         });
-        steps += hopLi("to", aSt, egressMin, null);
+        steps += hopLi("to", aSt, egressMin, null, r.egressEst);
       } else {
         // Fallback: route sequence only (no station-level detail).
-        steps = hopLi("from", r.board, r.access, stationLabel(r.board));
+        steps = hopLi("from", r.board, r.access, stationLabel(r.board), r.accessEst);
         if (rr && rr.labels.length) {
           rr.labels.forEach(function (lbl, i) {
             steps += '<li>' + (i === 0 ? 'Board the <b>' : 'Transfer to the <b>') + lbl + '</b></li>';
@@ -699,7 +983,7 @@
         } else {
           steps += '<li>Ride ' + stationLabel(r.board) + ' &rarr; ' + stationLabel(r.alight) + '</li>';
         }
-        steps += hopLi("to", r.alight, r.egress, null);
+        steps += hopLi("to", r.alight, r.egress, null, r.egressEst);
       }
       // In-vehicle time, summed from the legs, so the headline under the total
       // always reconciles with the ride steps below it. (r.ride is the matrix
@@ -740,9 +1024,10 @@
     var note = document.getElementById("method-note");
     if (note) note.innerHTML = 'Precomputed median travel time in a 30-minute period ' +
       sliceLabel(slice) + ', assuming 2.75 mph walk speed and a 20-minute maximum walk to any one station. ' +
-      'Walking inside the trip — to the platform, at a transfer, or out at the far end — is measured on the street ' +
-      'network, so the steps add up to the total; the walk between your address and a station is a straight-line ' +
-      'estimate. The line you board reflects a representative departure at this time.';
+      'Every walk is measured on OpenStreetMap\'s streets and paths: the walk between your address and a station ' +
+      'is routed in your browser, and walking inside the trip — to the platform, at a transfer, or out at the far ' +
+      'end — comes from the trip planning engine, so the steps add up to the total. Walks to proposed stations ' +
+      'start from assumed entrances. The line you board reflects a representative departure at this time.';
     drawRoute(today, scen);
     scrollToResults(el);
   }
@@ -753,15 +1038,23 @@
   function noRouteHtml() {
     var cap = CFG.maxWalkMin;
     var ends = [
-      { label: "starting point", n: nearestAnyStation(endpoints.from.lat, endpoints.from.lon) },
-      { label: "destination",    n: nearestAnyStation(endpoints.to.lat,   endpoints.to.lon) }
+      { label: "starting point", side: "from", n: nearestAnyStation(endpoints.from.lat, endpoints.from.lon) },
+      { label: "destination",    side: "to",   n: nearestAnyStation(endpoints.to.lat,   endpoints.to.lon) }
     ];
-    var far = ends.filter(function (e) { return e.n && e.n.walk > cap; });
+    // An end is out of reach when no station is within the walk cap -- on the
+    // street network when it was routed, which can be the case even though a
+    // station looks close as the crow flies (across a river or a rail yard).
+    var far = ends.filter(function (e) {
+      return e.n && !candidateStations(endpoints[e.side], "scenario", e.side).length;
+    });
     var why = far.length
       ? '<p class="mb-2">' + far.map(function (e) {
-          var mi = (e.n.km * 0.621371).toFixed(1);
-          return "Your " + e.label + " is about a <b>" + Math.round(e.n.walk) +
-            "-minute walk</b> from the nearest station (" + stationLabel(e.n.station) + ", " + mi + " mi away).";
+          var mi = (e.n.km * 0.621371).toFixed(1), w = walks[e.side];
+          return (w && w.net)
+            ? "Your " + e.label + " is more than a <b>" + cap + "-minute walk</b> from any station by street " +
+              "(the nearest, " + stationLabel(e.n.station) + ", is " + mi + " mi away as the crow flies)."
+            : "Your " + e.label + " is about a <b>" + Math.round(e.n.walk) +
+              "-minute walk</b> from the nearest station (" + stationLabel(e.n.station) + ", " + mi + " mi away).";
         }).join(" ") + '</p>'
       : '<p class="mb-2">There\'s no rail connection between these two points in the network.</p>';
     return '<div class="alert alert-warning" role="alert">' +
@@ -963,9 +1256,22 @@
     if (ai > bi2) seg.reverse();
     return seg;
   }
-  function stCoord(name, leg, near) {
-    var s = stNamed(name, leg, near);
-    return s ? [s.lat, s.lon] : null;
+  // The walk between an end of the trip and a station, as [[lat, lon], ...] in
+  // trip order: address -> station for "from", station -> address for "to".
+  // On the street network when this end was routed: to the station itself if
+  // it's within the walk, else to `via` -- the station the trip was looked up
+  // under, from which the matrix walked the rider on (the last stretch is
+  // drawn straight, as R5's own path isn't stored). A straight line otherwise.
+  function accessLine(side, st, via) {
+    var ep = endpoints[side], w = walks[side], line = null;
+    function path(s) { var r = w && w.net && s && s.id && w.stations[s.id]; return r ? walkPath(w, r.node) : null; }
+    if (w && w.net) {
+      line = path(st);
+      if (!line && via && via !== st) { line = path(via); if (line) line.push([via.lat, via.lon]); }
+    }
+    if (line) line.push([st.lat, st.lon]);
+    else line = [[ep.lat, ep.lon], [st.lat, st.lon]];
+    return side === "to" ? line.reverse() : line;
   }
 
   function drawRoute(today, scen) {
@@ -1067,13 +1373,17 @@
     if (r && r.legs && r.legs.length) {
       var fromAirport = endpoints.from.airport && ohareStationKey(r.board.id);
       var toAirport   = endpoints.to.airport   && ohareStationKey(r.alight.id);
-      var prevPt = [endpoints.from.lat, endpoints.from.lon];
+      var prevPt = [endpoints.from.lat, endpoints.from.lon], prevSt = null;
       r.legs.forEach(function (leg, i) {
-        var from = stCoord(leg.from, leg, prevPt);
-        var to   = stCoord(leg.to, leg, from || prevPt);
-        // i===0 is the access hop (airport connector); i>0 are transfer walks.
+        var fromSt = stNamed(leg.from, leg, prevPt);
+        var from = fromSt ? [fromSt.lat, fromSt.lon] : null;
+        var toSt = stNamed(leg.to, leg, from || prevPt);
+        var to = toSt ? [toSt.lat, toSt.lon] : null;
+        // i===0 is the access hop (the walk from the address, or the airport
+        // connector); i>0 are transfer walks, drawn straight.
         if (from) {
           if (i === 0 && fromAirport) drawAirportHop(r.board, endpoints.from);
+          else if (i === 0) drawWalk(accessLine("from", fromSt, r.board));
           else walk([prevPt, from]);
           allPts.push(from);
         }
@@ -1081,9 +1391,10 @@
           if (leg.ssl) drawSSLLeg(leg, from, to);
           else drawClipped(leg.line, from, to, lineColor(leg.line));
         }
-        if (to) prevPt = to;
+        if (to) { prevPt = to; prevSt = toSt; }
       });
       if (toAirport) drawAirportHop(r.alight, endpoints.to);
+      else if (prevSt) drawWalk(accessLine("to", prevSt, r.alight));
       else walk([prevPt, [endpoints.to.lat, endpoints.to.lon]]);
     } else if (r) {
       ride([[endpoints.from.lat, endpoints.from.lon], [r.board.lat, r.board.lon],
@@ -1095,6 +1406,7 @@
   /* ---- setting an endpoint (used by examples, permalinks, and geocode) -- */
   function setEndpoint(which, ep) {
     endpoints[which] = ep;
+    prepareWalk(which);   // start fetching this end's street tiles now (memoized)
     var inp = document.getElementById(which);
     if (inp) inp.value = ep.label;
     var list = document.getElementById(which + "-list");   // may be absent (Option B has no dropdown)
@@ -1485,7 +1797,9 @@
   // (Plan button, autocomplete pick, swap) is a normal "search". The Plan
   // button passes a click Event here, so anything unrecognized normalizes to
   // "search".
+  var planSeq = 0;   // bumped per plan, so a slower earlier plan can't overwrite a newer one
   function onPlan(source) {
+    var seq = ++planSeq;
     var src = (source === "predefined" || source === "permalink") ? source : "search";
     var slice = document.getElementById("slice").value;
     var res = document.getElementById("results");
@@ -1511,15 +1825,21 @@
         showMapLoading(false);
         return;
       }
-      Promise.all([bestTotal("today", slice), bestTotal("scenario", slice)])
-        .then(function (r) {
-          renderResults(slice, r[0], r[1]);
-          if (!r[0] && !r[1]) { logFailed("no_route", slice, src, diagnoseNoRoute(slice)); return; }
-          var shareUrl = updatePermalink(slice, r[0], r[1]);
-          var ttoken = randomToken();
-          addShareButton(shareUrl, ttoken);
-          trackTrip(slice, r[0], r[1], src, ttoken);
-        });
+      // Walk times from each end first (street network, or the straight-line
+      // fallback); candidate stations and totals are built from them.
+      return Promise.all([prepareWalk("from"), prepareWalk("to")]).then(function (w) {
+        if (seq !== planSeq) return null;
+        walks.from = w[0]; walks.to = w[1];
+        return Promise.all([bestTotal("today", slice), bestTotal("scenario", slice)]);
+      }).then(function (r) {
+        if (!r || seq !== planSeq) return;
+        renderResults(slice, r[0], r[1]);
+        if (!r[0] && !r[1]) { logFailed("no_route", slice, src, diagnoseNoRoute(slice)); return; }
+        var shareUrl = updatePermalink(slice, r[0], r[1]);
+        var ttoken = randomToken();
+        addShareButton(shareUrl, ttoken);
+        trackTrip(slice, r[0], r[1], src, ttoken);
+      });
     }).catch(function () { showMapLoading(false); });   // never leave the spinner stuck
   }
 
@@ -1560,7 +1880,9 @@
    * URL (dropping the shareable ?trip params).
    */
   function onReset() {
+    planSeq++;   // drop any plan still in flight
     endpoints = { from: null, to: null };
+    walks = { from: null, to: null };
     ["from", "to"].forEach(function (which) {
       var inp = document.getElementById(which);
       if (inp) inp.value = "";

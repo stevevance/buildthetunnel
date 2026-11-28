@@ -90,6 +90,23 @@ window.PLANNER_CONFIG = {
   /* Walk model -- must match precompute_matrix.R. */
   walkSpeedKmh: 4.43,   /* 2.75 mph */
   maxWalkMin: 20,       /* access/egress cap; also the matrix's max_walk_time */
-  detourFactor: 1.3,    /* straight-line -> street-network fudge */
-  nearestK: 3           /* candidate stations to try on each end */
+  detourFactor: 1.3,    /* straight-line -> street-network fudge; only used when
+                           the walking network can't be loaded (see walkBase) */
+  /* Origin stations to try: the 8 closest by walking time. Each one costs a
+   * matrix shard download (~11 KB gzipped), so they're capped; destination
+   * stations cost nothing extra (they're cells in shards already loaded), so
+   * every station within maxWalkMin of the destination is tried. In a test of
+   * 91 sample trips, a cap of 3 lost a faster trip 5 times and 5 lost one
+   * twice; 8 lost none against trying every station in reach. */
+  nearestK: 8,
+
+  /* The walking network: OpenStreetMap streets and paths, prebuilt into ~1 km
+   * tiles by planner/tools/build-walk-tiles.mjs and uploaded to R2 with
+   * planner/tools/upload-walk-tiles.sh <version>; the buildthetunnel-media
+   * Worker (media-worker/) serves them, open to any origin. Each build gets its
+   * own folder (the Worker's responses are cached for a year): after a rebuild,
+   * upload it under a new version and set that here, at the end of walkBase and
+   * as walkVersion. ("data/walk" reads a local build instead, for testing.) */
+  walkBase: "https://buildthetunnel-media.buildthetunnel.workers.dev/walk/2026-11-27",
+  walkVersion: "2026-11-27"
 };

@@ -9,7 +9,7 @@
  * GitHub Pages; this runs on workers.dev because the domain's DNS isn't on Cloudflare. Upload with
  *   npx wrangler r2 object put cabride-media/<file> --file <path> --remote
  */
-const TYPES = { mp4: "video/mp4", vtt: "text/vtt", jpg: "image/jpeg" };
+const TYPES = { mp4: "video/mp4", vtt: "text/vtt", jpg: "image/jpeg", json: "application/json" };   // (json: the trip planner's walking tiles, walk/<version>/...)
 
 export default {
   async fetch(request, env) {

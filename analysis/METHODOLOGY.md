@@ -401,9 +401,15 @@ full README are in `analysis/planner/`.
   Millennium↔Ogilvie gap) from counting as a transfer, matching reality. Read
   the planner's numbers as a stricter-walk variant of the map numbers.
 - **Door-to-door.** The frontend geocodes typed addresses (Geocode.earth, via
-  a Cloudflare Worker proxy), snaps each end to the nearest stations within the
-  20-minute cap (straight-line × 1.3 detour ÷ 2.75 mph), adds that walk to the
-  matrix time, and reports the best total per network. Trips are limited to the
+  a Cloudflare Worker proxy), places each end on the nearest street or path, and
+  routes the walk to the stations within the 20-minute cap on OpenStreetMap's
+  walkable network at 2.75 mph: r5r's own extract, prebuilt into ~1 km tiles by
+  `planner/tools/build-walk-tiles.mjs` and served from R2
+  (`planner/tools/upload-walk-tiles.sh`). Every station in reach of the
+  destination is tried, and the eight closest to the origin (each origin costs a
+  matrix shard). It adds that walk to the matrix time and reports the best total
+  per network. If the tiles can't be loaded it falls back to straight-line ×
+  1.3 detour ÷ 2.75 mph, and says so. Trips are limited to the
   six Metra-service counties (Cook, DuPage, Lake, Kane, McHenry, Will).
 - **O'Hare terminals (special-cased egress).** O'Hare's terminals are not rail
   stations, and two very different rail nodes serve them: the CTA Blue Line

@@ -49,8 +49,8 @@
   the R interface to <a href="https://github.com/conveyal/r5" target="_blank" rel="noopener">Conveyal R5</a> —
   an open-source transit routing engine used by transportation planners. Because the set of rail stations
   is fixed, we precompute the travel time between <b>every pair of stations</b> ahead of time and ship the
-  results as static data. That's why the site is instant: your browser is looking up a precomputed answer,
-  not routing live.</p>
+  results as static data. That's why the site is instant: your browser is looking up a precomputed answer for
+  the train trip, not routing it live. Only the walk at each end is worked out on the spot (see below).</p>
 
   <div class="box">
     <b>Two networks are compared:</b>
@@ -63,21 +63,29 @@
 
   <h2>How we handle walking to and from stations</h2>
   <p>A trip is more than the train ride — you have to walk to the first station and from the last one. Here's how
-  that's estimated:</p>
+  that's worked out:</p>
   <ol>
-    <li>Your typed address (or a picked example) is turned into a point on the map.</li>
-    <li>We find the <b>nearest rail stations</b> to each end of your trip (up to a few candidates).</li>
-    <li>The walk to each station is estimated from the straight-line distance, multiplied by <b>1.3</b> to
-    approximate real streets (you rarely walk in a perfectly straight line), then divided by a walking speed
-    of <b>2.75 mph</b> (4.43 km/h).</li>
-    <li>If the nearest station is more than a <b>20-minute walk</b> away, that end is considered out of reach
-    and the trip isn't shown.</li>
+    <li>Your typed address (or a picked example) is turned into a point on the map, and that point is placed on
+    the nearest street or path. The short gap between the two counts as part of the walk.</li>
+    <li>The walk is <b>routed on OpenStreetMap's streets, sidewalks, and paths</b> — the same map data the
+    routing engine uses for walking inside the trip — at a walking speed of <b>2.75 mph</b> (4.43 km/h). A
+    river, rail yard, or expressway is crossed only where a bridge, underpass, or crosswalk actually is, and
+    ways you can't walk on (expressways, private roads) are left out.</li>
+    <li>Each walk ends at a station <b>entrance</b> where OpenStreetMap maps one, and otherwise at the street
+    closest to the station. Proposed stations (the CrossTowner infill stations and the Red Line Extension) have
+    no entrances yet, so walks to them start and end at an <b>assumed entrance</b> on the nearest street.</li>
+    <li>Every station within a <b>20-minute walk</b> of your destination is tried, and the eight closest within
+    a 20-minute walk of your starting point. If an end has no station within that walk, it's out of reach and
+    the trip isn't shown.</li>
     <li>The total is <code>walk to station + train time + walk from station</code>, and the planner keeps the
     fastest combination.</li>
   </ol>
   <p class="text-secondary">The 2.75 mph figure is a deliberately unhurried pace grounded in US walking-speed
   studies, so estimates aren't rosy. The train time itself (station to station) also includes any transfers and
-  waiting, computed by R5 from the actual schedules.</p>
+  waiting, computed by R5 from the actual schedules. The walk is routed in your browser, from street data
+  prepared in advance; if that data can't be loaded, the planner falls back to the straight-line distance
+  multiplied by <b>1.3</b> (you rarely walk in a perfectly straight line), and the step says it's a
+  straight-line estimate.</p>
 
   <h3 class="h6 mt-3">Walking that happens <i>between</i> stations</h3>
   <p>The station-to-station time R5 gives us is measured between two station points, but R5 is free to walk you
@@ -87,9 +95,9 @@
   board there, and a trip that rides to Cermak-Chinatown will say plainly that McCormick Place is a 20-odd-minute
   walk from that platform rather than pretending you've arrived.</p>
   <p class="text-secondary">Those in-trip walks are R5's own street-network times, stored leg by leg alongside the
-  ride times, so the steps add up to the total at the top of the card. The one walk still estimated straight-line
-  is the one between your own address and a station: R5 measures from a station point, and your front door isn't
-  in its network. Note also that the 20-minute walking limit applies to <i>each</i> walk separately, not to the
+  ride times, so the steps add up to the total at the top of the card. The walk between your own address and a
+  station is routed on the same OpenStreetMap streets, but in your browser rather than by R5: R5 measures from a
+  station point, and your front door isn't in its network. Note also that the 20-minute walking limit applies to <i>each</i> walk separately, not to the
   trip as a whole, so a trip can legitimately contain more than 20 minutes of walking in total.</p>
 
   <h3 class="h6 mt-3">The waiting time shown</h3>
@@ -188,6 +196,9 @@
     <li>The future scenario is <b>additive</b>: it adds the new lines on top of some of today's service without restructuring existing routes.</li>
     <li>Times reflect ordinary weekday service. Game-day and special-event buses (which the transit agencies don't always publish in their schedule data) are not included.</li>
     <li>No fares, crowding, or reliability are modeled.</li>
+    <li>Walks follow OpenStreetMap. Where a sidewalk, crosswalk, or path is missing or mis-tagged there, a walk
+    can detour around the gap (or, rarely, take a shortcut that doesn't exist), and a station whose entrances
+    aren't mapped is reached at the nearest street.</li>
     <li>South Shore Line trips are <b>grafted</b> onto the network at a shared transfer hub rather than routed
     end-to-end, and use a typical (half-headway) wait for the infrequent morning service — see &ldquo;Reaching
     the South Shore Line&rdquo; above.</li>

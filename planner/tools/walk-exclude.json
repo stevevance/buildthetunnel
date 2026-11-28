@@ -1,0 +1,9 @@
+{
+  "note": "OSM ways the walking tiles leave out although the OpenStreetMap extract they're built from still has them open to walkers, each with its reason. Remove an entry once the extract (analysis/r5r_network_inputs/chicago-streets.osm.pbf) has been re-downloaded with the fix in it. Read by planner/tools/build-walk-tiles.mjs.",
+  "ways": {
+    "1491061646": "River City's Riverwalk along the marina (covered): private, for marina owners only; access=private in OSM changeset 192528380 (Steven Vance, 2026-11-27)",
+    "1491061647": "River City's Riverwalk along the marina: private, for marina owners only; access=private in OSM changeset 192528380 (Steven Vance, 2026-11-27)",
+    "1491061648": "River City's Riverwalk along the marina (covered): private, for marina owners only; access=private in OSM changeset 192528380 (Steven Vance, 2026-11-27)",
+    "1576827398": "River City's Riverwalk: private, for marina owners only; access=private in OSM changeset 192528380 (Steven Vance, 2026-11-27)"
+  }
+}
